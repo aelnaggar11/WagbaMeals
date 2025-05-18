@@ -6,6 +6,7 @@ import { Meal, PortionSize } from "@shared/schema";
 interface MealCardProps {
   meal: Meal;
   isSelected: boolean;
+  selectedCount: number;
   onSelect: (mealId: number, portionSize: PortionSize) => void;
   onRemove: (mealId: number) => void;
   disabled?: boolean;
@@ -14,14 +15,12 @@ interface MealCardProps {
 const MealCard = ({
   meal,
   isSelected,
+  selectedCount,
   onSelect,
   onRemove,
   disabled = false,
 }: MealCardProps) => {
   const [portionSize, setPortionSize] = useState<PortionSize>("standard");
-  
-  // Count should be 1 if selected, 0 if not
-  const selectedCount = isSelected ? 1 : 0;
   
   const handlePortionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newSize = e.target.value as PortionSize;

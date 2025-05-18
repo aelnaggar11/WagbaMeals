@@ -79,6 +79,11 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
     return selectedMeals.some(item => item.mealId === mealId);
   };
 
+  // Get count of how many times a meal is selected
+  const getMealCount = (mealId: number) => {
+    return selectedMeals.filter(item => item.mealId === mealId).length;
+  };
+
   const isSelectionComplete = selectedMeals.length === mealCount;
 
   // Group meals by category
@@ -167,6 +172,7 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
                     key={meal.id}
                     meal={meal}
                     isSelected={isMealSelected(meal.id)}
+                    selectedCount={getMealCount(meal.id)}
                     onSelect={handleSelectMeal}
                     onRemove={handleRemoveMeal}
                     disabled={isSelectionComplete && !isMealSelected(meal.id)}
