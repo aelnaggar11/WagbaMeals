@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, Plus, Info } from "lucide-react";
+import { Plus, Minus, Info } from "lucide-react";
 import { Meal, PortionSize } from "@shared/schema";
 
 interface MealCardProps {
@@ -20,13 +20,7 @@ const MealCard = ({
 }: MealCardProps) => {
   const [portionSize, setPortionSize] = useState<PortionSize>("standard");
   
-  const handleToggleSelection = () => {
-    if (isSelected) {
-      onRemove(meal.id);
-    } else {
-      onSelect(meal.id, portionSize);
-    }
-  };
+  const selectedCount = isSelected ? 1 : 0;
   
   const handlePortionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newSize = e.target.value as PortionSize;
@@ -57,13 +51,23 @@ const MealCard = ({
       <CardContent className="p-4">
         <div className="flex justify-between items-start mb-3">
           <h3 className="text-lg font-bold font-poppins">{meal.title}</h3>
-          <div className="flex items-center">
+          <div className="flex items-center space-x-2">
             <button 
-              className={`w-6 h-6 rounded-full ${isSelected ? 'bg-primary' : 'bg-gray-200'} flex items-center justify-center ${isSelected ? 'text-white' : 'text-gray-500'}`}
-              onClick={handleToggleSelection}
+              className="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-500"
+              onClick={() => onRemove(meal.id)}
+              disabled={!isSelected || disabled}
+            >
+              <Minus size={14} />
+            </button>
+            <span className="font-medium w-4 text-center">
+              {selectedCount}
+            </span>
+            <button 
+              className="w-6 h-6 rounded-full bg-primary hover:bg-primary/90 flex items-center justify-center text-white"
+              onClick={() => onSelect(meal.id, portionSize)}
               disabled={disabled && !isSelected}
             >
-              {isSelected ? <Check size={14} /> : <Plus size={14} />}
+              <Plus size={14} />
             </button>
           </div>
         </div>
