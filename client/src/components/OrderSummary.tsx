@@ -61,6 +61,11 @@ const OrderSummary = ({
     return calculateSubtotal();
   };
 
+  // Get user authentication status
+  const { data: user } = useQuery<{ id: number } | null>({
+    queryKey: ['/api/auth/me'],
+  });
+
   const handleCheckout = async () => {
     if (selectedMeals.length < mealCount) {
       toast({
@@ -68,6 +73,18 @@ const OrderSummary = ({
         description: `Please select all ${mealCount} meals before proceeding to checkout.`,
         variant: "destructive"
       });
+      return;
+    }
+
+    // Check if user is logged in
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "You need to be logged in to checkout. Please sign in or create an account.",
+        variant: "destructive"
+      });
+      // Redirect to auth page with return URL
+      window.location.href = `/auth?returnTo=${encodeURIComponent(window.location.pathname)}`;
       return;
     }
 
@@ -84,6 +101,7 @@ const OrderSummary = ({
       // Redirect to checkout page
       window.location.href = '/checkout';
     } catch (error) {
+      console.error("Checkout error:", error);
       toast({
         title: "Error",
         description: "There was a problem saving your order. Please try again.",

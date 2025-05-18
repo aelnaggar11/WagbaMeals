@@ -60,14 +60,22 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
       return;
     }
 
+    // Allow selecting the same meal multiple times
     setSelectedMeals([...selectedMeals, { mealId, portionSize: selectedPortionSize }]);
   };
 
   const handleRemoveMeal = (mealId: number) => {
-    setSelectedMeals(selectedMeals.filter(item => item.mealId !== mealId));
+    // Remove only the first occurrence of the meal
+    const index = selectedMeals.findIndex(item => item.mealId === mealId);
+    if (index !== -1) {
+      const updatedMeals = [...selectedMeals];
+      updatedMeals.splice(index, 1);
+      setSelectedMeals(updatedMeals);
+    }
   };
 
   const isMealSelected = (mealId: number) => {
+    // Check if this specific meal is in the selected meals array
     return selectedMeals.some(item => item.mealId === mealId);
   };
 
