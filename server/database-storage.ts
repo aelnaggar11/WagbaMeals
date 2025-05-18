@@ -291,7 +291,9 @@ export class DatabaseStorage implements IStorage {
       password: "$2a$10$h.dl5J86rGH7I8bD9bZeZe68djXiTFjj4krTUe.fNbjQsP9vdhnda", // 'password'
       email: "admin@example.com",
       name: "Admin User",
-      isAdmin: true
+      isAdmin: true,
+      phone: null,
+      address: null
     });
 
     // Create regular user
@@ -300,13 +302,14 @@ export class DatabaseStorage implements IStorage {
       password: "$2a$10$h.dl5J86rGH7I8bD9bZeZe68djXiTFjj4krTUe.fNbjQsP9vdhnda", // 'password'
       email: "user@example.com",
       name: "Regular User",
+      isAdmin: false,
+      phone: "+201234567890",
       address: JSON.stringify({
         street: "Cairo Street",
         building: "123",
         apartment: "4B",
         area: "Nasr City",
-        landmark: "Near Cairo Mall",
-        phone: "+201234567890"
+        landmark: "Near Cairo Mall"
       })
     });
 
@@ -317,7 +320,7 @@ export class DatabaseStorage implements IStorage {
       startDate: new Date("2025-05-12"),
       endDate: new Date("2025-05-18"),
       orderDeadline: new Date("2025-05-10"),
-      deliveryDate: "Monday, May 12, 2025",
+      deliveryDate: new Date("2025-05-12"),
       isActive: true,
       isSelectable: true
     });
@@ -328,7 +331,7 @@ export class DatabaseStorage implements IStorage {
       startDate: new Date("2025-05-19"),
       endDate: new Date("2025-05-25"),
       orderDeadline: new Date("2025-05-17"),
-      deliveryDate: "Monday, May 19, 2025",
+      deliveryDate: new Date("2025-05-19"),
       isActive: true,
       isSelectable: true
     });
