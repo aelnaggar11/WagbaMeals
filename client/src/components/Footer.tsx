@@ -20,15 +20,15 @@ const Footer = () => {
               Healthy, chef-prepared meals delivered weekly to your door in Cairo.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-white transition duration-300">
+              <button type="button" className="text-gray-400 hover:text-white transition duration-300">
                 <Facebook size={18} />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition duration-300">
+              </button>
+              <button type="button" className="text-gray-400 hover:text-white transition duration-300">
                 <Instagram size={18} />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition duration-300">
+              </button>
+              <button type="button" className="text-gray-400 hover:text-white transition duration-300">
                 <Twitter size={18} />
-              </a>
+              </button>
             </div>
           </div>
           
@@ -36,28 +36,28 @@ const Footer = () => {
             <h3 className="text-lg font-bold mb-4">Site Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/">
-                  <a className="text-gray-400 hover:text-white transition duration-300">Home</a>
+                <Link href="/" className="text-gray-400 hover:text-white transition duration-300">
+                  Home
                 </Link>
               </li>
               <li>
-                <Link href="/#how-it-works">
-                  <a className="text-gray-400 hover:text-white transition duration-300">How It Works</a>
+                <Link href="/#how-it-works" className="text-gray-400 hover:text-white transition duration-300">
+                  How It Works
                 </Link>
               </li>
               <li>
-                <Link href="/menu/current">
-                  <a className="text-gray-400 hover:text-white transition duration-300">Menu</a>
+                <Link href="/menu/current" className="text-gray-400 hover:text-white transition duration-300">
+                  Menu
                 </Link>
               </li>
               <li>
-                <Link href="/meal-plans">
-                  <a className="text-gray-400 hover:text-white transition duration-300">Pricing</a>
+                <Link href="/meal-plans" className="text-gray-400 hover:text-white transition duration-300">
+                  Pricing
                 </Link>
               </li>
               <li>
-                <Link href="/about">
-                  <a className="text-gray-400 hover:text-white transition duration-300">About Us</a>
+                <Link href="/about" className="text-gray-400 hover:text-white transition duration-300">
+                  About Us
                 </Link>
               </li>
             </ul>
@@ -67,23 +67,23 @@ const Footer = () => {
             <h3 className="text-lg font-bold mb-4">Support</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/faq">
-                  <a className="text-gray-400 hover:text-white transition duration-300">FAQ</a>
+                <Link href="/faq" className="text-gray-400 hover:text-white transition duration-300">
+                  FAQ
                 </Link>
               </li>
               <li>
-                <Link href="/contact">
-                  <a className="text-gray-400 hover:text-white transition duration-300">Contact Us</a>
+                <Link href="/contact" className="text-gray-400 hover:text-white transition duration-300">
+                  Contact Us
                 </Link>
               </li>
               <li>
-                <Link href="/terms">
-                  <a className="text-gray-400 hover:text-white transition duration-300">Terms of Service</a>
+                <Link href="/terms" className="text-gray-400 hover:text-white transition duration-300">
+                  Terms of Service
                 </Link>
               </li>
               <li>
-                <Link href="/privacy">
-                  <a className="text-gray-400 hover:text-white transition duration-300">Privacy Policy</a>
+                <Link href="/privacy" className="text-gray-400 hover:text-white transition duration-300">
+                  Privacy Policy
                 </Link>
               </li>
             </ul>
