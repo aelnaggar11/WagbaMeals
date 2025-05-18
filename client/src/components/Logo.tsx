@@ -29,7 +29,7 @@ const Logo = ({ className = "", color = "dark" }: LogoProps) => {
         alt="Wagba" 
         className="h-8"
         style={{ 
-          filter: color === "dark" ? "brightness(0) saturate(100%)" : "none"
+          filter: color === "dark" ? "invert(19%) sepia(83%) saturate(2160%) hue-rotate(353deg) brightness(92%) contrast(95%)" : "none"
         }}
       />
     </div>
