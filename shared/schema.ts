@@ -172,5 +172,50 @@ export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 
 export type PortionSize = "standard" | "large";
 
+// Storage interface
+export interface IStorage {
+  // User methods
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, userData: Partial<User>): Promise<User>;
+  getAllUsers(): Promise<User[]>;
+  
+  // Meal methods
+  getMeal(id: number): Promise<Meal | undefined>;
+  getMealsByWeek(weekId: number): Promise<Meal[]>;
+  createMeal(meal: InsertMeal): Promise<Meal>;
+  updateMeal(id: number, mealData: Partial<Meal>): Promise<Meal>;
+  deleteMeal(id: number): Promise<void>;
+  getAllMeals(): Promise<Meal[]>;
+  
+  // Week methods
+  getWeek(id: number): Promise<Week | undefined>;
+  getWeeks(): Promise<Week[]>;
+  getCurrentWeek(): Promise<Week | undefined>;
+  createWeek(week: InsertWeek): Promise<Week>;
+  updateWeek(id: number, weekData: Partial<Week>): Promise<Week>;
+  
+  // WeekMeal methods
+  addMealToWeek(weekMeal: InsertWeekMeal): Promise<WeekMeal>;
+  removeMealFromWeek(weekId: number, mealId: number): Promise<void>;
+  getWeekMeals(weekId: number): Promise<WeekMeal[]>;
+  
+  // Order methods
+  getOrder(id: number): Promise<Order | undefined>;
+  getOrdersByUser(userId: number): Promise<Order[]>;
+  getOrderByUserAndWeek(userId: number, weekId: number): Promise<any | undefined>;
+  getPendingOrderByUser(userId: number): Promise<Order | undefined>;
+  createOrder(order: InsertOrder): Promise<Order>;
+  updateOrder(id: number, orderData: Partial<Order>): Promise<Order>;
+  getAllOrders(): Promise<Order[]>;
+  getOrdersByWeek(weekId: number): Promise<Order[]>;
+  
+  // OrderItem methods
+  getOrderItems(orderId: number): Promise<OrderItemFull[]>;
+  addOrderItem(orderItem: InsertOrderItem): Promise<OrderItemFull>;
+}
+
 // Helper functions for pricing
 export { getPriceForMealCount };

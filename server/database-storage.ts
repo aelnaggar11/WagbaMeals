@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { and, eq, isNull, isNotNull } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { users, meals, weeks, weekMeals, orders, orderItems } from "@shared/schema";
 import type { User, InsertUser, Meal, InsertMeal, Week, InsertWeek, WeekMeal, InsertWeekMeal, Order, InsertOrder, OrderItemFull, InsertOrderItem, IStorage } from "@shared/schema";
@@ -71,9 +71,7 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(meals)
-      .where(
-        db.sql`${meals.id} IN (${db.sql.join(mealIds, db.sql`, `)})`
-      );
+      .where(inArray(meals.id, mealIds));
   }
 
   async createMeal(insertMeal: InsertMeal): Promise<Meal> {
