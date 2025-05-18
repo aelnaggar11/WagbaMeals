@@ -103,9 +103,17 @@ const Navigation = () => {
             </NavLink>
           )}
           
-          <Link href={user ? "/account" : "/auth"}>
+          {!user && (
+            <NavLink
+              href="/auth"
+              className="hidden md:inline-block text-accent-foreground hover:text-primary font-medium mr-4"
+            >
+              Login
+            </NavLink>
+          )}
+          <Link href={user ? "/account" : "/meal-plans"}>
             <Button variant="default" className="bg-primary hover:bg-primary/90 text-white">
-              {user ? "My Meals" : "Sign Up"}
+              {user ? "My Meals" : "Get Started"}
             </Button>
           </Link>
           
