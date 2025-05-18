@@ -19,6 +19,7 @@ const Logo = ({ className = "", color = "dark" }: LogoProps) => {
     <div 
       className={`flex items-center cursor-pointer ${className}`}
       onClick={handleClick}
+      onKeyDown={(e) => e.key === 'Enter' && handleClick(e as any)}
       role="button"
       tabIndex={0}
     >
