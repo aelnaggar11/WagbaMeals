@@ -171,10 +171,18 @@ const OrderSummary = ({
           </div>
           
           <div className="space-y-3">
-            {selectedMeals.map((item) => {
+            {Object.values(selectedMeals.reduce((acc, item) => {
+              const key = `${item.mealId}-${item.portionSize}`;
+              if (!acc[key]) {
+                acc[key] = { ...item, count: 1 };
+              } else {
+                acc[key].count++;
+              }
+              return acc;
+            }, {} as Record<string, OrderItem & { count: number }>)).map((item) => {
               const meal = getMealById(item.mealId);
               return meal ? (
-                <div key={item.mealId} className="flex items-center justify-between">
+                <div key={`${item.mealId}-${item.portionSize}`} className="flex items-center justify-between">
                   <div className="flex items-center">
                     <img 
                       src={meal.imageUrl} 
@@ -182,13 +190,15 @@ const OrderSummary = ({
                       className="w-12 h-12 object-cover rounded-md mr-3"
                     />
                     <div>
-                      <h4 className="font-medium">{meal.title}</h4>
+                      <h4 className="font-medium">
+                        {meal.title} {item.count > 1 && <span className="text-sm text-gray-600">×{item.count}</span>}
+                      </h4>
                       <p className="text-sm text-gray-600">
                         {item.portionSize.charAt(0).toUpperCase() + item.portionSize.slice(1)} Portion
                       </p>
                     </div>
                   </div>
-                  <span className="font-medium">EGP {calculateMealPrice(item)}</span>
+                  <span className="font-medium">EGP {calculateMealPrice(item) * item.count}</span>
                 </div>
               ) : null;
             })}
