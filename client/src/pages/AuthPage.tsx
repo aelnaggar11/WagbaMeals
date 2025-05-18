@@ -1,0 +1,269 @@
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
+
+interface AuthFormData {
+  username: string;
+  password: string;
+  confirmPassword?: string;
+  email?: string;
+  name?: string;
+}
+
+const AuthPage = () => {
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<AuthFormData>({
+    username: "",
+    password: "",
+    confirmPassword: "",
+    email: "",
+    name: ""
+  });
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  const handleLogin = async () => {
+    // Validation
+    if (!formData.username || !formData.password) {
+      toast({
+        title: "Missing information",
+        description: "Please enter both username and password",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      await apiRequest('POST', '/api/auth/login', {
+        username: formData.username,
+        password: formData.password
+      });
+      
+      // Invalidate queries to refresh auth state
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome back to Wagba!"
+      });
+      
+      // Redirect to account page
+      navigate('/account');
+    } catch (error) {
+      toast({
+        title: "Login failed",
+        description: "Invalid username or password. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  const handleRegister = async () => {
+    // Validation
+    if (!formData.username || !formData.password || !formData.email) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "Please make sure both passwords are the same",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (formData.password.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      await apiRequest('POST', '/api/auth/register', {
+        username: formData.username,
+        password: formData.password,
+        email: formData.email,
+        name: formData.name,
+        isAdmin: false
+      });
+      
+      // Invalidate queries to refresh auth state
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      
+      toast({
+        title: "Registration successful",
+        description: "Welcome to Wagba! Your account has been created."
+      });
+      
+      // Redirect to account page
+      navigate('/meal-plans');
+    } catch (error) {
+      toast({
+        title: "Registration failed",
+        description: "Username or email already exists. Please try again with different credentials.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  return (
+    <div className="container mx-auto px-4 py-16">
+      <div className="max-w-md mx-auto">
+        <Tabs defaultValue="login" className="w-full">
+          <TabsList className="grid grid-cols-2 mb-6">
+            <TabsTrigger value="login">Login</TabsTrigger>
+            <TabsTrigger value="register">Register</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="login">
+            <Card>
+              <CardHeader>
+                <CardTitle>Welcome Back</CardTitle>
+                <CardDescription>Login to manage your meal plans and orders</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="login-username">Username</Label>
+                  <Input 
+                    id="login-username" 
+                    name="username" 
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    placeholder="Enter your username"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">Password</Label>
+                  <Input 
+                    id="login-password" 
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    placeholder="Enter your password"
+                  />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  className="w-full bg-primary hover:bg-primary/90 text-white"
+                  onClick={handleLogin}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Logging in..." : "Log In"}
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="register">
+            <Card>
+              <CardHeader>
+                <CardTitle>Create an Account</CardTitle>
+                <CardDescription>Sign up to start ordering delicious healthy meals</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="register-name">Full Name</Label>
+                  <Input 
+                    id="register-name" 
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="Enter your full name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-email">Email</Label>
+                  <Input 
+                    id="register-email" 
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="Enter your email address"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-username">Username</Label>
+                  <Input 
+                    id="register-username" 
+                    name="username"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    placeholder="Choose a username"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-password">Password</Label>
+                  <Input 
+                    id="register-password" 
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    placeholder="Choose a password"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-confirm-password">Confirm Password</Label>
+                  <Input 
+                    id="register-confirm-password" 
+                    name="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    placeholder="Confirm your password"
+                  />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  className="w-full bg-primary hover:bg-primary/90 text-white"
+                  onClick={handleRegister}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Creating Account..." : "Create Account"}
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default AuthPage;

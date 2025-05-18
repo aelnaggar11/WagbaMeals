@@ -1,0 +1,352 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useLocation } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
+import { Order } from "@shared/schema";
+
+const CheckoutPage = () => {
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("card");
+  const [deliveryNotes, setDeliveryNotes] = useState("");
+  
+  // Fetch current order
+  const { data: pendingOrder, isLoading } = useQuery<Order>({
+    queryKey: ['/api/orders/pending'],
+  });
+  
+  // Fetch user profile for delivery address
+  const { data: userProfile } = useQuery<{
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+  }>({
+    queryKey: ['/api/user/profile'],
+  });
+  
+  // Form state for delivery address
+  const [address, setAddress] = useState({
+    street: "",
+    apartment: "",
+    building: "",
+    area: "",
+    landmark: "",
+    phone: ""
+  });
+  
+  // Update address form with user profile data when available
+  useState(() => {
+    if (userProfile?.address) {
+      try {
+        const savedAddress = JSON.parse(userProfile.address);
+        setAddress({
+          ...address,
+          ...savedAddress
+        });
+      } catch (e) {
+        console.error("Error parsing saved address:", e);
+      }
+    }
+    
+    if (userProfile?.phone) {
+      setAddress({
+        ...address,
+        phone: userProfile.phone
+      });
+    }
+  });
+  
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setAddress({
+      ...address,
+      [name]: value
+    });
+  };
+  
+  const handleSubmitOrder = async () => {
+    // Validation
+    if (!address.street || !address.building || !address.area || !address.phone) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required delivery information",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      await apiRequest('POST', '/api/orders/checkout', {
+        orderId: pendingOrder?.id,
+        paymentMethod,
+        address,
+        deliveryNotes
+      });
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      
+      toast({
+        title: "Order placed successfully!",
+        description: "Your meals will be delivered on the scheduled delivery date.",
+        variant: "default"
+      });
+      
+      // Redirect to account page
+      navigate('/account');
+    } catch (error) {
+      toast({
+        title: "Error placing order",
+        description: "There was a problem processing your order. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-4xl mx-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!pendingOrder) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-md mx-auto text-center">
+          <h1 className="text-2xl font-bold mb-4">No Pending Order</h1>
+          <p className="text-gray-600 mb-6">You don't have any orders ready for checkout.</p>
+          <Button onClick={() => navigate('/menu/current')}>Browse Menu</Button>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="container mx-auto px-4 py-16">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold mb-2">Checkout</h1>
+        <p className="text-gray-600 mb-8">Complete your order by providing delivery and payment information</p>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            {/* Delivery Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Delivery Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="street">Street Address *</Label>
+                    <Input 
+                      id="street" 
+                      name="street" 
+                      value={address.street} 
+                      onChange={handleAddressChange} 
+                      placeholder="Street name" 
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="building">Building Number *</Label>
+                    <Input 
+                      id="building" 
+                      name="building" 
+                      value={address.building} 
+                      onChange={handleAddressChange} 
+                      placeholder="Building number" 
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="apartment">Apartment (Optional)</Label>
+                    <Input 
+                      id="apartment" 
+                      name="apartment" 
+                      value={address.apartment} 
+                      onChange={handleAddressChange} 
+                      placeholder="Apartment number"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="area">Area/District *</Label>
+                    <Input 
+                      id="area" 
+                      name="area" 
+                      value={address.area} 
+                      onChange={handleAddressChange} 
+                      placeholder="Area or district" 
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="landmark">Landmark (Optional)</Label>
+                    <Input 
+                      id="landmark" 
+                      name="landmark" 
+                      value={address.landmark} 
+                      onChange={handleAddressChange} 
+                      placeholder="Nearby landmark"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Input 
+                      id="phone" 
+                      name="phone" 
+                      value={address.phone} 
+                      onChange={handleAddressChange} 
+                      placeholder="Phone number for delivery" 
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="deliveryNotes">Delivery Notes (Optional)</Label>
+                  <Textarea 
+                    id="deliveryNotes" 
+                    value={deliveryNotes} 
+                    onChange={e => setDeliveryNotes(e.target.value)} 
+                    placeholder="Any special instructions for delivery"
+                    className="min-h-[100px]"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Payment Method */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment Method</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Tabs 
+                  defaultValue="card" 
+                  value={paymentMethod}
+                  onValueChange={setPaymentMethod}
+                  className="w-full"
+                >
+                  <TabsList className="grid grid-cols-3 mb-4">
+                    <TabsTrigger value="card">Credit Card</TabsTrigger>
+                    <TabsTrigger value="cash">Cash on Delivery</TabsTrigger>
+                    <TabsTrigger value="wallet">Wallet</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="card" className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="cardNumber">Card Number</Label>
+                        <Input id="cardNumber" placeholder="1234 5678 9012 3456" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="cardName">Name on Card</Label>
+                        <Input id="cardName" placeholder="John Doe" />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="expiryDate">Expiry Date</Label>
+                        <Input id="expiryDate" placeholder="MM/YY" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="cvv">CVV</Label>
+                        <Input id="cvv" placeholder="123" />
+                      </div>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="cash">
+                    <p className="text-gray-600">You'll pay in cash when your order is delivered.</p>
+                  </TabsContent>
+                  
+                  <TabsContent value="wallet">
+                    <p className="text-gray-600">Your wallet balance: EGP 0.00</p>
+                    <p className="text-red-500 mt-2">Insufficient balance. Please add funds or select another payment method.</p>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Order Summary */}
+          <div>
+            <Card className="sticky top-24">
+              <CardHeader>
+                <CardTitle>Order Summary</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between">
+                  <span>Subtotal</span>
+                  <span>EGP {pendingOrder.subtotal.toFixed(0)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Delivery Fee</span>
+                  <span>EGP 0.00</span>
+                </div>
+                {pendingOrder.discount > 0 && (
+                  <div className="flex justify-between text-accent">
+                    <span>Discount</span>
+                    <span>-EGP {pendingOrder.discount.toFixed(0)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold text-lg pt-4 border-t">
+                  <span>Total</span>
+                  <span className="text-primary">EGP {pendingOrder.total.toFixed(0)}</span>
+                </div>
+                
+                <div className="pt-2">
+                  <h4 className="font-medium mb-2">Delivery Date:</h4>
+                  <div className="bg-secondary rounded-lg p-3 text-center">
+                    <p className="font-medium">{pendingOrder.deliveryDate}</p>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  className="w-full bg-primary hover:bg-primary/90 text-white"
+                  onClick={handleSubmitOrder}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Processing..." : "Place Order"}
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CheckoutPage;
