@@ -1,6 +1,7 @@
 
 import { useCallback } from "react";
 import { useLocation } from "wouter";
+import logoImage from "/attached_assets/image_1747602753968.png";
 
 interface LogoProps {
   className?: string;
@@ -24,10 +25,12 @@ const Logo = ({ className = "", color = "dark" }: LogoProps) => {
       tabIndex={0}
     >
       <img 
-        src="/attached_assets/image_1747602753968.png" 
+        src={logoImage}
         alt="Wagba" 
         className="h-8"
-        style={{ filter: `brightness(0) saturate(100%) invert(8%) sepia(78%) saturate(5436%) hue-rotate(356deg) brightness(95%) contrast(94%)` }}
+        style={{ 
+          filter: color === "dark" ? "brightness(0) saturate(100%)" : "none"
+        }}
       />
     </div>
   );
