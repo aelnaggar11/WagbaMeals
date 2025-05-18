@@ -81,90 +81,38 @@ const Navigation = () => {
             <>
               <NavLink 
                 href="/account"
-                className="hidden md:inline-block text-accent-foreground hover:text-primary font-medium"
+                className="text-accent-foreground hover:text-primary font-medium"
               >
                 My Account
               </NavLink>
               {user.isAdmin && (
                 <NavLink
                   href="/admin"
-                  className="hidden md:inline-block text-accent-foreground hover:text-primary font-medium"
+                  className="text-accent-foreground hover:text-primary font-medium"
                 >
                   Admin
                 </NavLink>
               )}
             </>
           ) : (
-            <NavLink
-              href="/auth"
-              className="hidden md:inline-block text-accent-foreground hover:text-primary font-medium"
-            >
-              Log In
-            </NavLink>
+            <>
+              <NavLink
+                href="/auth"
+                className="text-accent-foreground hover:text-primary font-medium"
+              >
+                Login
+              </NavLink>
+              <Link href="/meal-plans">
+                <Button variant="default" className="bg-primary hover:bg-primary/90 text-white">
+                  Get Started
+                </Button>
+              </Link>
+            </>
           )}
-          
-          {!user && (
-            <NavLink
-              href="/auth"
-              className="hidden md:inline-block text-accent-foreground hover:text-primary font-medium mr-4"
-            >
-              Login
-            </NavLink>
-          )}
-          <Link href={user ? "/account" : "/meal-plans"}>
-            <Button variant="default" className="bg-primary hover:bg-primary/90 text-white">
-              {user ? "My Meals" : "Get Started"}
-            </Button>
-          </Link>
-          
-          <button className="md:hidden text-gray-700 focus:outline-none" onClick={toggleMobileMenu}>
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
         </div>
       </div>
       
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-t">
-          <div className="container mx-auto px-4 py-3 flex flex-col space-y-4">
-            <NavLink
-              href="/#how-it-works"
-              className="text-gray-700 hover:text-primary font-medium py-2"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              How It Works
-            </NavLink>
-            <NavLink
-              href="/meal-plans"
-              className="text-gray-700 hover:text-primary font-medium py-2"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Pricing
-            </NavLink>
-            <NavLink
-              href="/menu/current"
-              className="text-gray-700 hover:text-primary font-medium py-2"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Menu
-            </NavLink>
-            <NavLink
-              href="/about"
-              className="text-gray-700 hover:text-primary font-medium py-2"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              About Us
-            </NavLink>
-            <NavLink
-              href="/auth"
-              className="text-accent-foreground hover:text-primary font-medium py-2"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Log In
-            </NavLink>
-          </div>
-        </div>
-      )}
+      
     </header>
   );
 };
