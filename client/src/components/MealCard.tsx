@@ -20,7 +20,8 @@ const MealCard = ({
 }: MealCardProps) => {
   const [portionSize, setPortionSize] = useState<PortionSize>("standard");
   
-  const selectedCount = selectedMeals.filter(m => m.mealId === meal.id).length;
+  // Count should be 1 if selected, 0 if not
+  const selectedCount = isSelected ? 1 : 0;
   
   const handlePortionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newSize = e.target.value as PortionSize;
