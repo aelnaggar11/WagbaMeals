@@ -1,7 +1,7 @@
 
 import { useCallback } from "react";
 import { useLocation } from "wouter";
-import logoImage from "/attached_assets/image_1747602753968.png";
+import logoImage from "@assets/Logo tm.png";
 
 interface LogoProps {
   className?: string;
