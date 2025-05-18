@@ -1,0 +1,88 @@
+
+Wagba – Product Requirements Document (PRD)
+
+1. Overview
+Wagba is a Cairo-based weekly meal delivery service offering healthy, chef-prepared meals. Users select meals each week, choosing quantity and portion size. Prices decrease with larger orders, and meals are delivered once weekly. The system is designed for simplicity, health, and convenience — especially for busy professionals. Wagba is a fully responsive web app that works equally well on mobile and desktop.
+
+2. Key Product Principles
+* Single weekly delivery day
+* Users must order before a deadline (e.g., Wednesday) — configurable by admin
+* If no selection is made, a fallback set of meals is auto-selected
+* Two portion sizes: Standard and Large
+* Users can order any number of meals per week; discounts applied based on quantity
+* Prices and weekly menus are editable by admins
+* Fully responsive: desktop and mobile parity
+* Menus are week-specific and updated regularly 
+
+3. Core Features
+3.1 User Features
+* Fully responsive web app (mobile-first design)
+* Weekly order cycle: view, select, and manage meals week by week
+* Portion size selection: Standard or Large
+* Quantity-based pricing with automatic discount calculation
+* Weekly menu preview and selection
+* Management of multiple weeks at once
+* Fallback auto-selection if user misses cutoff
+* Payment gateway integration
+* Email and SMS notifications for reminders and order confirmations
+* Ability to skip or pause weeks
+* Order history and reordering functionality 
+3.2 Admin Features
+* Weekly menu setup with meal metadata (image, title, calories, protein, etc.) 
+* Set delivery day and order cutoff deadline per week 
+* Portion size configuration (calorie/protein targets) 
+* Pricing tiers by meal quantity and portion size 
+* Fallback meal logic (admin-defined or random) 
+* View and export user orders per week. Including totals for each separate item on the menu.  
+* Edit and manage existing orders (if before cutoff) 
+* Admin dashboard for managing menus, orders, and settings 
+
+4. Pricing Structure
+Standard Portion
+* 4 meals: EGP 249 each 
+* 5–6 meals: EGP 239 each 
+* 7–9 meals: EGP 219 each 
+* 10+ meals: EGP 199 each 
+Large Portion
+* +EGP 99 per meal over the Standard price 
+All pricing should be editable via the admin panel.
+
+5. Onboarding user flow
+1. Get started (from landing page)
+2. Choose your number of meals (4, 6, 8, 10, 12, 14)
+3. Choose size (Small, Large, Mix & Match)
+4. Details (email, address)
+5. View the menu (for the next for which the deadline has not passed yet)
+6. Select meals
+7. Checkout 
+
+6. Account
+1. Once a user is signed up, they are logged into their account
+2. from their account, they can see and edit the meals they want to add for each week. 
+3. They can edit the number of meals or delivery address, both for a specific week, or for the full plan. 
+4. skip/unskip deliveries
+5. cancel plan 
+6. change billing or contact details 
+
+
+7. User Stories
+As a user, I want to:
+* Select meals for upcoming week based 
+* Choose portion size (Standard or Large) 
+* Order more meals to receive a lower price per meal 
+* Be reminded before the weekly cutoff 
+* Skip or pause a delivery week 
+* Edit future weeks independently 
+* Have meals auto-selected if I forget 
+As an admin, I want to:
+* Create and manage weekly menus 
+* Adjust pricing tiers 
+* Set and modify delivery dates and cutoff deadlines 
+* View/export weekly orders 
+* Track user engagement and selections
+
+Style Guide:
+- Colors: Primary #A80906 (wagba red), Secondary #f2ecde (cream), Background #FFFFFF (white), Text #6ac66b (lime green), Accent #25632d (dark green), Accent (#ff9045)
+- Design: Regular Display/Degular Text, card-based meal display, prominent food photography, mobile-first responsive design with easy-to-tap elements, 16px base spacing
+- logo: logo tm.png
+- imperfect circle.png is a visual element we want to use throughput the brand and website.
