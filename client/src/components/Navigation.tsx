@@ -26,7 +26,7 @@ const Navigation = () => {
     <header className="sticky top-0 z-50 bg-white shadow-md">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <div className="flex items-center">
-          <Logo />
+          <Logo linkWrapped={true} />
         </div>
         
         <nav className="hidden md:flex space-x-8">

@@ -1,0 +1,37 @@
+Warning: validateDOMNesting(...): <a> cannot appear as a descendant of &lt;a&gt;.
+    at a
+    at a
+    at https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=8f4d87c9:337:18
+    at Logo (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/src/components/Logo.tsx:18:17)
+    at div
+    at div
+    at header
+    at Navigation (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/src/components/Navigation.tsx:26:47)
+    at div
+    at Layout (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/src/components/Layout.tsx:19:19)
+    at Route (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=8f4d87c9:323:16)
+    at Switch (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=8f4d87c9:379:17)
+    at App (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/src/App.tsx?v=LWZIBMozoPMZbLA9KNzxv:33:26)
+    at Provider (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-M3NVYRND.js?v=8dd6300c:48:15)
+    at TooltipProvider (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=2b9d36c0:58:5)
+    at QueryClientProvider (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=8093a2cb:2805:3)
+at a
+at a
+at https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=8f4d87c9:337:18
+at Logo (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/src/components/Logo.tsx:18:17)
+at div
+at div
+at header
+at Navigation (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/src/components/Navigation.tsx:26:47)
+at div
+at Layout (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/src/components/Layout.tsx:19:19)
+at Route (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=8f4d87c9:323:16)
+at Switch (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=8f4d87c9:379:17)
+at App (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/src/App.tsx?v=LWZIBMozoPMZbLA9KNzxv:33:26)
+at Provider (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-M3NVYRND.js?v=8dd6300c:48:15)
+at TooltipProvider (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=2b9d36c0:58:5)
+at QueryClientProvider (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=8093a2cb:2805:3)
+at t.value (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
