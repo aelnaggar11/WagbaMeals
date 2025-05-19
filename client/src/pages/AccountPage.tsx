@@ -39,6 +39,36 @@ const AccountPage = () => {
     enabled: !!user,
   });
   
+  // Upcoming meals
+  const { data: upcomingMealsData } = useQuery<{ 
+    upcomingMeals: Array<{
+      orderId: number;
+      weekId: number;
+      weekLabel: string;
+      deliveryDate: string;
+      orderDeadline: string;
+      items: Array<{
+        id: number;
+        mealId: number;
+        portionSize: string;
+        meal: {
+          id: number;
+          title: string;
+          description: string;
+          imageUrl: string;
+          calories: number;
+          proteins: number;
+          carbs: number;
+          fats: number;
+        }
+      }>;
+      canEdit: boolean;
+    }>
+  }>({
+    queryKey: ['/api/user/upcoming-meals'],
+    enabled: !!user,
+  });
+  
   // Form state
   const [formData, setFormData] = useState({
     name: "",
@@ -164,17 +194,98 @@ const AccountPage = () => {
         <h1 className="text-3xl font-bold mb-2">My Account</h1>
         <p className="text-gray-600 mb-8">Manage your profile and view your orders</p>
         
-        <Tabs defaultValue="orders" className="space-y-8">
+        <Tabs defaultValue="upcoming" className="space-y-8">
           <TabsList>
-            <TabsTrigger value="orders">My Orders</TabsTrigger>
+            <TabsTrigger value="upcoming">Upcoming Meals</TabsTrigger>
+            <TabsTrigger value="orders">Order History</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="upcoming" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Upcoming Meal Deliveries</CardTitle>
+                <CardDescription>View and manage your upcoming meal selections</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {upcomingMealsData?.upcomingMeals && upcomingMealsData.upcomingMeals.length > 0 ? (
+                  <div className="space-y-8">
+                    {upcomingMealsData.upcomingMeals.map((upcomingMeal) => (
+                      <div key={upcomingMeal.orderId} className="border rounded-lg p-6">
+                        <div className="flex justify-between items-center mb-4">
+                          <div>
+                            <h3 className="text-lg font-medium">{upcomingMeal.weekLabel}</h3>
+                            <p className="text-gray-500">
+                              Delivery on {new Date(upcomingMeal.deliveryDate).toLocaleDateString('en-US', { 
+                                weekday: 'long', 
+                                month: 'long', 
+                                day: 'numeric' 
+                              })}
+                            </p>
+                          </div>
+                          
+                          {upcomingMeal.canEdit ? (
+                            <Button 
+                              variant="outline" 
+                              onClick={() => navigate(`/menu/${upcomingMeal.weekId}?edit=true`)}
+                            >
+                              Edit Selections
+                            </Button>
+                          ) : (
+                            <div className="text-amber-600 text-sm flex items-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Order deadline passed
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                          {upcomingMeal.items.map((item) => (
+                            <div key={item.id} className="flex border rounded-md overflow-hidden">
+                              <div className="w-20 h-20 bg-gray-100">
+                                {item.meal.imageUrl && (
+                                  <img 
+                                    src={item.meal.imageUrl} 
+                                    alt={item.meal.title} 
+                                    className="w-full h-full object-cover"
+                                  />
+                                )}
+                              </div>
+                              <div className="flex-1 p-3">
+                                <h4 className="font-medium text-sm">{item.meal.title}</h4>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {item.portionSize === 'large' ? 'Large portion' : 'Standard portion'}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="mb-4 text-gray-400">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-medium mb-2">No upcoming meal deliveries</h3>
+                    <p className="text-gray-500 mb-6">You don't have any upcoming meal deliveries scheduled</p>
+                    <Button onClick={() => navigate('/meal-plans')}>Choose a Meal Plan</Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
           
           <TabsContent value="orders" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Order History</CardTitle>
-                <CardDescription>View all your past and upcoming orders</CardDescription>
+                <CardDescription>View all your past orders</CardDescription>
               </CardHeader>
               <CardContent>
                 {orderData?.orders && orderData.orders.length > 0 ? (
