@@ -41,14 +41,36 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
     queryKey: [`/api/orders/${weekId}`],
   });
 
-  // Update selections if existing order is found
+  // Update selections if existing order is found or if there are stored selections in session
   useEffect(() => {
-    if (existingOrder) {
+    // First check for stored selections from previous session (after login redirect)
+    const storedSelectionsString = sessionStorage.getItem('mealSelections');
+    if (storedSelectionsString) {
+      try {
+        const storedSelections = JSON.parse(storedSelectionsString);
+        if (storedSelections.weekId === weekId) {
+          setMealCount(storedSelections.mealCount);
+          setPortionSize(storedSelections.portionSize);
+          setSelectedMeals(storedSelections.selectedMeals);
+          // Clear the stored selections to avoid reusing them unintentionally
+          sessionStorage.removeItem('mealSelections');
+          
+          toast({
+            title: "Selections Restored",
+            description: "Your meal selections have been restored.",
+          });
+        }
+      } catch (error) {
+        console.error("Error parsing stored selections:", error);
+      }
+    } 
+    // Then check for existing order (this takes precedence if both exist)
+    else if (existingOrder) {
       setMealCount(existingOrder.mealCount);
       setPortionSize(existingOrder.defaultPortionSize);
       setSelectedMeals(existingOrder.items);
     }
-  }, [existingOrder]);
+  }, [existingOrder, weekId, toast]);
 
   // Meal selection handlers
   const handleSelectMeal = (mealId: number, selectedPortionSize: PortionSize) => {

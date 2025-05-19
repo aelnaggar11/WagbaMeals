@@ -1,4 +1,5 @@
 import React from 'react';
+import Logo from '@/components/Logo';
 
 export interface Step {
   id: number;
@@ -14,16 +15,12 @@ const ProgressIndicator = ({ steps, currentStep }: ProgressIndicatorProps) => {
   return (
     <div className="w-full max-w-3xl mx-auto mb-10">
       <div className="flex items-center justify-center mb-8">
-        <img 
-          src="/attached_assets/Logo tm.png" 
-          alt="Wagba" 
-          className="h-16"
-        />
+        <Logo className="h-16" />
       </div>
       
       <div className="flex items-center justify-center">
         {steps.map((step, index) => (
-          <React.Fragment key={step.id}>
+          <div key={step.id} className="flex items-center">
             {/* Step Circle */}
             <div 
               className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm ${
@@ -45,7 +42,7 @@ const ProgressIndicator = ({ steps, currentStep }: ProgressIndicatorProps) => {
                 }`}
               />
             )}
-          </React.Fragment>
+          </div>
         ))}
       </div>
       

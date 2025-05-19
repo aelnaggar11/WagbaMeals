@@ -83,6 +83,16 @@ const OrderSummary = ({
         description: "You need to be logged in to checkout. Please sign in or create an account.",
         variant: "destructive"
       });
+      
+      // Save current selections to sessionStorage
+      const selections = {
+        selectedMeals,
+        mealCount,
+        portionSize,
+        weekId
+      };
+      sessionStorage.setItem('mealSelections', JSON.stringify(selections));
+      
       // Redirect to auth page with return URL
       window.location.href = `/auth?returnTo=${encodeURIComponent(window.location.pathname)}`;
       return;
