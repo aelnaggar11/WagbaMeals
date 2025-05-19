@@ -10,7 +10,7 @@ interface WeekSelectorProps {
 }
 
 interface Week {
-  id: string;
+  id: number;
   label: string;
   startDate: Date;
   endDate: Date;
@@ -27,7 +27,7 @@ const WeekSelector = ({ currentWeekId }: WeekSelectorProps) => {
   });
   
   const [weeks, setWeeks] = useState<Week[]>([]);
-  const [selectedWeekId, setSelectedWeekId] = useState(currentWeekId);
+  const [selectedWeekId, setSelectedWeekId] = useState<string>(currentWeekId);
   
   useEffect(() => {
     if (weeksData?.weeks) {
@@ -49,10 +49,11 @@ const WeekSelector = ({ currentWeekId }: WeekSelectorProps) => {
       // If no week is selected or the current week's deadline has passed,
       // default to the first available week
       if (availableWeeks.length > 0) {
-        const currentWeekIndex = availableWeeks.findIndex(week => week.id === currentWeekId);
+        const currentWeekIndex = availableWeeks.findIndex(week => String(week.id) === currentWeekId);
         if (currentWeekIndex === -1) {
-          setSelectedWeekId(availableWeeks[0].id);
-          navigate(`/menu/${availableWeeks[0].id}`);
+          const firstWeekId = String(availableWeeks[0].id);
+          setSelectedWeekId(firstWeekId);
+          navigate(`/menu/${firstWeekId}`);
         } else {
           setSelectedWeekId(currentWeekId);
         }
@@ -69,8 +70,7 @@ const WeekSelector = ({ currentWeekId }: WeekSelectorProps) => {
     return <div className="flex items-center justify-center h-10">Loading available delivery weeks...</div>;
   }
   
-  const selectedWeek = weeks.find(week => week.id === selectedWeekId) || weeks[0];
-  const today = new Date();
+  const selectedWeek = weeks.find(week => String(week.id) === selectedWeekId) || weeks[0];
   
   return (
     <div className="flex flex-col items-center mb-8">
