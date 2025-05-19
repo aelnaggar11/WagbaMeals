@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import WeekSelector from "@/components/WeekSelector";
 import MealCard from "@/components/MealCard";
 import OrderSummary from "@/components/OrderSummary";
+import ProgressIndicator from "@/components/ProgressIndicator";
 import { Meal, PortionSize, OrderItem } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -127,10 +128,19 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
     );
   }
 
+  // Define the checkout steps
+  const steps = [
+    { id: 1, label: "Choose Your Plan" },
+    { id: 2, label: "Create Your Wagba Account" },
+    { id: 3, label: "Complete Checkout" }
+  ];
+  
   return (
-    <div className="bg-white py-16">
+    <div className="bg-white py-8">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-8">
+        <ProgressIndicator steps={steps} currentStep={1} />
+        
+        <div className="text-center mb-8 mt-6">
           <span className="inline-block bg-accent-secondary bg-opacity-20 text-accent-secondary px-3 py-1 rounded-full text-sm font-medium mb-4">Fresh Selection</span>
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4 font-poppins">This Week's Menu</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">

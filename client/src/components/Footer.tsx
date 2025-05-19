@@ -41,9 +41,9 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/#how-it-works" className="text-gray-400 hover:text-white transition duration-300">
+                <span className="text-gray-400 hover:text-white transition duration-300 cursor-pointer" onClick={() => window.location.href = '/#how-it-works'}>
                   How It Works
-                </Link>
+                </span>
               </li>
               <li>
                 <Link href="/menu/current" className="text-gray-400 hover:text-white transition duration-300">

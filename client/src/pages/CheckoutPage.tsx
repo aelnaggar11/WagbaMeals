@@ -145,9 +145,18 @@ const CheckoutPage = () => {
     );
   }
   
+  // Define the checkout steps
+  const steps = [
+    { id: 1, label: "Choose Your Plan" },
+    { id: 2, label: "Create Your Wagba Account" },
+    { id: 3, label: "Complete Checkout" }
+  ];
+
   return (
-    <div className="container mx-auto px-4 py-16">
-      <div className="max-w-4xl mx-auto">
+    <div className="container mx-auto px-4 py-8">
+      <ProgressIndicator steps={steps} currentStep={3} />
+      
+      <div className="max-w-4xl mx-auto mt-8">
         <h1 className="text-3xl font-bold mb-2">Checkout</h1>
         <p className="text-gray-600 mb-8">Complete your order by providing delivery and payment information</p>
         

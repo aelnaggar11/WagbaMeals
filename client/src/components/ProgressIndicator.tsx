@@ -15,7 +15,7 @@ const ProgressIndicator = ({ steps, currentStep }: ProgressIndicatorProps) => {
     <div className="w-full max-w-3xl mx-auto mb-10">
       <div className="flex items-center justify-center mb-8">
         <img 
-          src="https://images.unsplash.com/photo-1529042410759-befb1204b468?q=80&w=360&auto=format" 
+          src="/attached_assets/Logo tm.png" 
           alt="Wagba" 
           className="h-16"
         />
