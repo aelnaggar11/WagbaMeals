@@ -455,31 +455,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orderId = parseInt(req.params.orderId);
       const { skip } = req.body;
       
+      console.log(`Handling skip/unskip for order ${orderId}, skip = ${skip}`);
+      
       // Get the order
       const order = await storage.getOrder(orderId);
       
       // Check if order exists and belongs to user
       if (!order || order.userId !== req.session.userId) {
+        console.log('Order not found or does not belong to user');
         return res.status(404).json({ message: 'Order not found' });
       }
+      
+      console.log(`Current order status: ${order.status}`);
       
       // Get the order's week to check deadline
       const week = await storage.getWeek(order.weekId);
       if (!week) {
+        console.log('Week not found');
         return res.status(404).json({ message: 'Week not found' });
       }
       
       // Check if deadline has passed
       const now = new Date();
-      if (new Date(week.orderDeadline) <= now) {
+      const orderDeadline = new Date(week.orderDeadline);
+      console.log(`Order deadline: ${orderDeadline.toISOString()}, Current time: ${now.toISOString()}`);
+      
+      if (orderDeadline <= now) {
+        console.log('Order deadline has passed');
         return res.status(400).json({ message: 'Order deadline has passed' });
       }
       
+      // Set new status
+      const newStatus = skip ? 'skipped' : 'pending';
+      console.log(`Setting order status to: ${newStatus}`);
+      
       // Update order status
       const updatedOrder = await storage.updateOrder(orderId, {
-        status: skip ? 'skipped' : 'pending'
+        status: newStatus
       });
       
+      console.log(`Updated order status: ${updatedOrder.status}`);
       res.json(updatedOrder);
     } catch (error) {
       console.error('Error skipping/unskipping order:', error);

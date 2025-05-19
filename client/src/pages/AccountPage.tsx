@@ -186,10 +186,14 @@ const AccountPage = () => {
   // Handle skipping/unskipping a delivery
   const handleSkipDelivery = async (orderId: number, skip: boolean) => {
     try {
-      await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
+      console.log(`Attempting to ${skip ? 'skip' : 'unskip'} order ID: ${orderId}`);
       
-      // Invalidate queries to refresh data
+      const response = await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
+      console.log('Skip/unskip response:', response);
+      
+      // Force refresh of data
       queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       
       toast({
         title: skip ? "Delivery Skipped" : "Delivery Restored",
@@ -197,7 +201,16 @@ const AccountPage = () => {
           ? "Your delivery has been skipped. You can unskip it anytime before the order deadline." 
           : "Your delivery has been restored. You can now edit your meal selections."
       });
+      
+      // Set a small timeout to allow the UI to update
+      setTimeout(() => {
+        if (upcomingMealsData?.upcomingMeals) {
+          const currentWeek = upcomingMealsData.upcomingMeals.find(week => week.weekId === selectedWeekId);
+          console.log('Current week after update:', currentWeek);
+        }
+      }, 500);
     } catch (error) {
+      console.error('Error in skip/unskip:', error);
       toast({
         title: "Error",
         description: "There was an error updating your delivery. Please try again.",
