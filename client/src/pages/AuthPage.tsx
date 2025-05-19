@@ -23,7 +23,6 @@ const AuthPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [returnTo, setReturnTo] = useState<string | null>(null);
   const [formData, setFormData] = useState<AuthFormData>({
-    username: "",
     password: "",
     confirmPassword: "",
     email: "",
