@@ -115,11 +115,14 @@ const AuthPage = () => {
     setIsSubmitting(true);
     
     try {
+      // Generate a unique username from the email
+      const username = formData.email.split('@')[0] + '_' + Math.floor(Math.random() * 10000);
+      
       await apiRequest('POST', '/api/auth/register', {
-        username: formData.username,
+        username: username,
         password: formData.password,
         email: formData.email,
-        name: formData.name,
+        name: formData.email.split('@')[0], // Use part of email as name
         isAdmin: false
       });
       
@@ -248,17 +251,6 @@ const AuthPage = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="register-username">Username</Label>
-                  <Input 
-                    id="register-username" 
-                    name="username"
-                    value={formData.username}
-                    onChange={handleInputChange}
-                    placeholder="Choose a unique username"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="register-email">Email</Label>
                   <Input 
                     id="register-email" 
@@ -268,16 +260,6 @@ const AuthPage = () => {
                     onChange={handleInputChange}
                     placeholder="Enter your email address"
                     required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="register-name">Full Name</Label>
-                  <Input 
-                    id="register-name" 
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="Enter your full name"
                   />
                 </div>
                 <div className="space-y-2">
