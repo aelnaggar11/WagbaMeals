@@ -158,8 +158,6 @@ const CheckoutPage = () => {
       <ProgressIndicator steps={steps} currentStep={4} />
       
       <div className="max-w-4xl mx-auto mt-8">
-        <h1 className="text-3xl font-bold mb-2">Checkout</h1>
-        <p className="text-gray-600 mb-8">Complete your order by providing delivery and payment information</p>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
@@ -169,6 +167,17 @@ const CheckoutPage = () => {
                 <CardTitle>Delivery Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name *</Label>
+                  <Input 
+                    id="name" 
+                    name="name" 
+                    value={address.name || ''} 
+                    onChange={handleAddressChange} 
+                    placeholder="Enter your full name"
+                    required
+                  />
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="street">Street Address *</Label>
@@ -220,16 +229,6 @@ const CheckoutPage = () => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="landmark">Landmark (Optional)</Label>
-                    <Input 
-                      id="landmark" 
-                      name="landmark" 
-                      value={address.landmark} 
-                      onChange={handleAddressChange} 
-                      placeholder="Nearby landmark"
-                    />
-                  </div>
-                  <div className="space-y-2">
                     <Label htmlFor="phone">Phone Number *</Label>
                     <Input 
                       id="phone" 
@@ -267,10 +266,9 @@ const CheckoutPage = () => {
                   onValueChange={setPaymentMethod}
                   className="w-full"
                 >
-                  <TabsList className="grid grid-cols-3 mb-4">
+                  <TabsList className="grid grid-cols-2 mb-4">
                     <TabsTrigger value="card">Credit Card</TabsTrigger>
-                    <TabsTrigger value="cash">Cash on Delivery</TabsTrigger>
-                    <TabsTrigger value="wallet">Wallet</TabsTrigger>
+                    <TabsTrigger value="instapay">InstaPay (+7%)</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="card" className="space-y-4">
@@ -297,13 +295,8 @@ const CheckoutPage = () => {
                     </div>
                   </TabsContent>
                   
-                  <TabsContent value="cash">
-                    <p className="text-gray-600">You'll pay in cash when your order is delivered.</p>
-                  </TabsContent>
-                  
-                  <TabsContent value="wallet">
-                    <p className="text-gray-600">Your wallet balance: EGP 0.00</p>
-                    <p className="text-red-500 mt-2">Insufficient balance. Please add funds or select another payment method.</p>
+                  <TabsContent value="instapay">
+                    <p className="text-gray-600">Pay securely using InstaPay. A 7% processing fee will be added to your total.</p>
                   </TabsContent>
                 </Tabs>
               </CardContent>
