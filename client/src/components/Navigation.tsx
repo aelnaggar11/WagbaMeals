@@ -97,7 +97,7 @@ const Navigation = () => {
           ) : (
             <>
               <NavLink
-                href="/auth"
+                href="/auth?skip_progress=true"
                 className="text-accent-foreground hover:text-primary font-medium"
               >
                 Login

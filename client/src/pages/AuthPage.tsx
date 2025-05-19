@@ -191,9 +191,13 @@ const AuthPage = () => {
     { id: 4, label: "Complete Checkout" }
   ];
 
+  // Check if we should skip progress indicators (direct login)
+  const params = new URLSearchParams(window.location.search);
+  const skipProgress = params.get('skip_progress') === 'true';
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <ProgressIndicator steps={steps} currentStep={3} />
+      {!skipProgress && <ProgressIndicator steps={steps} currentStep={3} />}
       
       <div className="max-w-md mx-auto">
         <Tabs defaultValue="register" className="w-full">
