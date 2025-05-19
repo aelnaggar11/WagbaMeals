@@ -22,8 +22,9 @@ const PortionSelector = ({ selectedPortionSize, onPortionSizeChange }: PortionSe
               onClick={() => onPortionSizeChange("standard")}
             >
               <h4 className="font-bold mb-2">Standard</h4>
-              <p className="text-sm text-gray-600 mb-2">Regular portion with balanced nutritional value</p>
-              <p className="text-sm text-gray-600">~500-600 calories per meal</p>
+              
+              <p className="text-sm text-gray-600">500-600 Calories</p>
+              <p className="text-sm text-gray-600">30-40g Protein</p>
             </button>
 
             <button
@@ -35,8 +36,9 @@ const PortionSelector = ({ selectedPortionSize, onPortionSizeChange }: PortionSe
               onClick={() => onPortionSizeChange("large")}
             >
               <h4 className="font-bold mb-2">Large</h4>
-              <p className="text-sm text-gray-600 mb-2">Extra protein and larger serving size</p>
-              <p className="text-sm text-gray-600">~700-800 calories per meal</p>
+              
+              <p className="text-sm text-gray-600">750-850 Calories</p>
+              <p className="text-sm text-gray-600">45-60g Protein</p>
             </button>
 
             <button
@@ -49,7 +51,7 @@ const PortionSelector = ({ selectedPortionSize, onPortionSizeChange }: PortionSe
             >
               <h4 className="font-bold mb-2">Mix & Match</h4>
               <p className="text-sm text-gray-600 mb-2">Select portion size per meal</p>
-              <p className="text-sm text-gray-600">Customize each meal</p>
+             
             </button>
           </div>
         </CardContent>
