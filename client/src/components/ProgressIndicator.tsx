@@ -24,10 +24,8 @@ const ProgressIndicator = ({ steps, currentStep }: ProgressIndicatorProps) => {
             {/* Step Circle */}
             <div 
               className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm ${
-                step.id === currentStep
+                step.id <= currentStep
                   ? 'bg-primary text-white'
-                  : step.id < currentStep
-                  ? 'bg-accent-secondary text-white'
                   : 'bg-gray-200 text-gray-500'
               }`}
             >
@@ -38,7 +36,7 @@ const ProgressIndicator = ({ steps, currentStep }: ProgressIndicatorProps) => {
             {index < steps.length - 1 && (
               <div 
                 className={`h-px w-16 mx-2 ${
-                  step.id < currentStep ? 'bg-accent-secondary' : 'bg-gray-200'
+                  step.id < currentStep ? 'bg-primary' : 'bg-gray-200'
                 }`}
               />
             )}
