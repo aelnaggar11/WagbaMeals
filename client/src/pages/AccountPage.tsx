@@ -247,17 +247,25 @@ const AccountPage = () => {
                       <button
                         key={week.weekId}
                         onClick={() => setSelectedWeekId(week.weekId)}
-                        className={`py-4 px-2 text-center rounded-md transition-colors ${
+                        className={`py-4 px-2 text-center rounded-md transition-colors relative ${
                           selectedWeekId === week.weekId 
                             ? 'border-2 border-primary bg-primary/5' 
                             : 'border border-gray-200 hover:bg-gray-50'
-                        } ${week.isSkipped ? 'opacity-50' : ''}`}
+                        } ${week.isSkipped ? 'bg-gray-100' : ''}`}
                       >
-                        <div className="font-medium">
+                        <div className="font-medium mt-3">
                           {week.weekLabel.replace(/\d{4}/, '').trim()}
                         </div>
+                        <div className="text-sm mt-1">
+                          {new Date(week.deliveryDate).toLocaleDateString('en-US', {
+                            day: 'numeric',
+                            month: 'short'
+                          })}
+                        </div>
                         {week.isSkipped && (
-                          <div className="text-sm text-gray-500 mt-1">Skipped</div>
+                          <div className="absolute top-0 right-0 left-0 bg-red-500 text-white text-xs py-0.5 font-medium">
+                            SKIPPED
+                          </div>
                         )}
                       </button>
                     ))}
@@ -277,20 +285,29 @@ const AccountPage = () => {
                     return (
                       <div key={week.weekId} className="space-y-6">
                         {/* Order deadline notice */}
-                        <div className={`p-4 rounded-lg ${week.isSkipped ? 'bg-gray-100' : 'bg-red-50'}`}>
+                        <div className={`p-4 rounded-lg ${week.isSkipped ? 'bg-red-50 border border-red-200' : 'bg-amber-50 border border-amber-200'}`}>
                           <div className="flex items-start">
-                            <div className={`mr-3 ${week.isSkipped ? 'text-gray-500' : 'text-red-500'}`}>
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
+                            <div className={`mr-3 ${week.isSkipped ? 'text-red-500' : 'text-amber-500'}`}>
+                              {week.isSkipped ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              )}
                             </div>
                             <div>
                               {week.isSkipped ? (
-                                <p className="font-medium text-gray-600">This delivery is skipped</p>
+                                <>
+                                  <p className="font-medium text-red-800">This delivery has been skipped</p>
+                                  <p className="text-sm text-red-700 mt-1">You can unskip this delivery until {deadlineFormatted}</p>
+                                </>
                               ) : (
                                 <>
-                                  <p className="font-medium text-gray-800">Order can be changed until {deadlineFormatted}</p>
-                                  <p className="text-sm text-gray-600 mt-1">Make your meal selections before the deadline</p>
+                                  <p className="font-medium text-amber-800">Order can be changed until {deadlineFormatted}</p>
+                                  <p className="text-sm text-amber-700 mt-1">Make your meal selections before the deadline</p>
                                 </>
                               )}
                             </div>
@@ -298,7 +315,7 @@ const AccountPage = () => {
                         </div>
                         
                         {/* Action buttons */}
-                        <div className="flex space-x-4">
+                        <div className="flex flex-wrap gap-3">
                           {week.canEdit && !week.isSkipped && (
                             <Button 
                               onClick={() => navigate(`/menu/${week.weekId}?edit=true`)}
@@ -307,7 +324,7 @@ const AccountPage = () => {
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                               </svg>
-                              Edit Delivery
+                              Edit Meals
                             </Button>
                           )}
                           
@@ -315,25 +332,25 @@ const AccountPage = () => {
                             <Button 
                               variant="outline" 
                               onClick={() => handleSkipDelivery(week.orderId as number, true)}
-                              className="flex items-center"
+                              className="flex items-center border-red-300 text-red-700 hover:bg-red-50"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                               </svg>
-                              Skip Delivery
+                              Skip This Delivery
                             </Button>
                           )}
                           
                           {week.orderId && week.canUnskip && week.isSkipped && (
                             <Button 
-                              variant="outline" 
+                              variant="default"
                               onClick={() => handleSkipDelivery(week.orderId as number, false)}
-                              className="flex items-center"
+                              className="flex items-center bg-green-600 hover:bg-green-700"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                               </svg>
-                              Unskip Delivery
+                              Restore This Delivery
                             </Button>
                           )}
                         </div>
