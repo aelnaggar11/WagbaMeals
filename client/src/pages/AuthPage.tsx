@@ -160,13 +160,14 @@ const AuthPage = () => {
   // Define the checkout steps
   const steps = [
     { id: 1, label: "Choose Your Plan" },
-    { id: 2, label: "Create Your Wagba Account" },
-    { id: 3, label: "Complete Checkout" }
+    { id: 2, label: "Your Selections" },
+    { id: 3, label: "Create Account" },
+    { id: 4, label: "Complete Checkout" }
   ];
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <ProgressIndicator steps={steps} currentStep={2} />
+      <ProgressIndicator steps={steps} currentStep={3} />
       
       <div className="max-w-md mx-auto">
         <Tabs defaultValue="login" className="w-full">

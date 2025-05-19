@@ -153,14 +153,15 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
   // Define the checkout steps
   const steps = [
     { id: 1, label: "Choose Your Plan" },
-    { id: 2, label: "Create Your Wagba Account" },
-    { id: 3, label: "Complete Checkout" }
+    { id: 2, label: "Your Selections" },
+    { id: 3, label: "Create Account" },
+    { id: 4, label: "Complete Checkout" }
   ];
   
   return (
     <div className="bg-white py-8">
       <div className="container mx-auto px-4">
-        <ProgressIndicator steps={steps} currentStep={1} />
+        <ProgressIndicator steps={steps} currentStep={2} />
         
         <div className="text-center mb-8 mt-6">
           <span className="inline-block bg-accent-secondary bg-opacity-20 text-accent-secondary px-3 py-1 rounded-full text-sm font-medium mb-4">Fresh Selection</span>

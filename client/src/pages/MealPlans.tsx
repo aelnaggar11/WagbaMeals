@@ -46,8 +46,9 @@ const MealPlans = () => {
       <div className="container mx-auto px-4">
         <ProgressIndicator steps={[
           { id: 1, label: "Choose Your Plan" },
-          { id: 2, label: "Create Your Wagba Account" },
-          { id: 3, label: "Complete Checkout" }
+          { id: 2, label: "Your Selections" },
+          { id: 3, label: "Create Account" },
+          { id: 4, label: "Complete Checkout" }
         ]} currentStep={1} />
         
         <div className="text-center mb-12 mt-6">

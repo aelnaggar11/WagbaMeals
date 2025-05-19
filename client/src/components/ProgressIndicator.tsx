@@ -52,9 +52,12 @@ const ProgressIndicator = ({ steps, currentStep }: ProgressIndicatorProps) => {
           <p className="text-gray-600 mt-2">Choose your meal plan and customize your weekly deliveries</p>
         )}
         {currentStep === 2 && (
-          <p className="text-gray-600 mt-2">Set up your account to start your meal subscription</p>
+          <p className="text-gray-600 mt-2">Select your meals for the week</p>
         )}
         {currentStep === 3 && (
+          <p className="text-gray-600 mt-2">Create your account to start your meal subscription</p>
+        )}
+        {currentStep === 4 && (
           <p className="text-gray-600 mt-2">Review your order and complete payment</p>
         )}
       </div>
