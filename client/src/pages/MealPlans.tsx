@@ -52,10 +52,8 @@ const MealPlans = () => {
         ]} currentStep={1} />
         
         <div className="text-center mb-12 mt-6">
-          <span className="inline-block bg-accent bg-opacity-20 text-accent-foreground px-3 py-1 rounded-full text-sm font-medium mb-4">Flexible Options</span>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4 font-poppins">Choose Your Meal Plan</h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Select the number of meals and your preferred portion size. The more you order, the more you save!
+          <p className="text-lg text-primary max-w-2xl mx-auto">
+            Select the number of meals and your preferred portion size
           </p>
         </div>
 
