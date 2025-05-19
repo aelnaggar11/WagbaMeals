@@ -163,12 +163,7 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
       <div className="container mx-auto px-4">
         <ProgressIndicator steps={steps} currentStep={2} />
         
-        <div className="text-center mb-8 mt-6">
-          <span className="inline-block bg-accent-secondary bg-opacity-20 text-accent-secondary px-3 py-1 rounded-full text-sm font-medium mb-4">Fresh Selection</span>
-          <p className="text-lg text-primary max-w-2xl mx-auto">
-            Select {mealCount} meals from our chef-prepared options
-          </p>
-        </div>
+        <div className="text-center mb-8 mt-6"></div>
         
         {/* Week Selection */}
         <WeekSelector currentWeekId={weekId} />
