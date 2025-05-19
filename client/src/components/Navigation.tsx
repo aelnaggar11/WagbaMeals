@@ -5,10 +5,13 @@ import { Button } from "@/components/ui/button";
 import Logo from "@/components/Logo";
 import { useQuery } from "@tanstack/react-query";
 import { User } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 const Navigation = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
+  const { toast } = useToast();
   
   const { data: user } = useQuery<User | null>({
     queryKey: ['/api/auth/me'],
@@ -20,6 +23,20 @@ const Navigation = () => {
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await apiRequest('POST', '/api/auth/logout', {});
+      queryClient.invalidateQueries();
+      navigate('/');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "There was an error logging out. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   // This is a workaround for wouter's Link component to avoid nesting <a> tags
@@ -77,7 +94,7 @@ const Navigation = () => {
         </nav>
         
         <div className="flex items-center space-x-4">
-          {user ? (
+          {user && location !== '/account' ? (
             <>
               <NavLink 
                 href="/account"
@@ -94,6 +111,14 @@ const Navigation = () => {
                 </NavLink>
               )}
             </>
+          ) : user && location === '/account' ? (
+            <Button 
+              variant="ghost" 
+              className="text-accent-foreground hover:text-primary font-medium"
+              onClick={handleLogout}
+            >
+              Logout
+            </Button>
           ) : (
             <>
               <NavLink
