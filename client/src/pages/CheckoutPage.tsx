@@ -37,6 +37,7 @@ const CheckoutPage = () => {
   
   // Form state for delivery address
   const [address, setAddress] = useState({
+    name: "",
     street: "",
     apartment: "",
     building: "",
@@ -46,7 +47,7 @@ const CheckoutPage = () => {
   });
   
   // Update address form with user profile data when available
-  useState(() => {
+  useEffect(() => {
     if (userProfile?.address) {
       try {
         const savedAddress = JSON.parse(userProfile.address);
