@@ -77,7 +77,7 @@ const CheckoutPage = () => {
   
   const handleSubmitOrder = async () => {
     // Validation
-    if (!address.street || !address.building || !address.area || !address.phone) {
+    if (!address.street || !address.area || !address.phone) {
       toast({
         title: "Missing information",
         description: "Please fill in all required delivery information",
@@ -190,18 +190,7 @@ const CheckoutPage = () => {
                       required
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="building">Building Number *</Label>
-                    <Input 
-                      id="building" 
-                      name="building" 
-                      value={address.building} 
-                      onChange={handleAddressChange} 
-                      placeholder="Building number" 
-                      required
-                    />
                   </div>
-                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -327,13 +316,6 @@ const CheckoutPage = () => {
                 <div className="flex justify-between font-bold text-lg pt-4 border-t">
                   <span>Total</span>
                   <span className="text-primary">EGP {pendingOrder.total.toFixed(0)}</span>
-                </div>
-                
-                <div className="pt-2">
-                  <h4 className="font-medium mb-2">Delivery Date:</h4>
-                  <div className="bg-secondary rounded-lg p-3 text-center">
-                    <p className="font-medium">{pendingOrder.deliveryDate}</p>
-                  </div>
                 </div>
               </CardContent>
               <CardFooter>
