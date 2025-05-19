@@ -87,7 +87,7 @@ const WeekSelector = ({ currentWeekId }: WeekSelectorProps) => {
           </SelectTrigger>
           <SelectContent>
             {weeks.map((week) => (
-              <SelectItem key={week.id} value={week.id}>
+              <SelectItem key={week.id} value={String(week.id)}>
                 {week.label}
               </SelectItem>
             ))}
