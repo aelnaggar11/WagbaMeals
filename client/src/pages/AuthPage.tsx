@@ -170,7 +170,7 @@ const AuthPage = () => {
       <ProgressIndicator steps={steps} currentStep={3} />
       
       <div className="max-w-md mx-auto">
-        <Tabs defaultValue={returnTo ? "register" : "login"} className="w-full">
+        <Tabs defaultValue="register" className="w-full">
           <TabsList className="grid grid-cols-2 mb-6">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="register">Register</TabsTrigger>
