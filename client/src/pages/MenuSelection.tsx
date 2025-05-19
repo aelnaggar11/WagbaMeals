@@ -183,32 +183,22 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
           </div>
         </div>
         
-        {/* Meals by Category */}
-        <Tabs defaultValue={categoryNames[0] || "Main Dishes"} className="max-w-6xl mx-auto mb-10">
-          <TabsList className="mb-6">
-            {categoryNames.map((category) => (
-              <TabsTrigger key={category} value={category}>{category}</TabsTrigger>
+        {/* All Meals */}
+        <div className="max-w-6xl mx-auto mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {menuData?.meals.map((meal) => (
+              <MealCard 
+                key={meal.id}
+                meal={meal}
+                isSelected={isMealSelected(meal.id)}
+                selectedCount={getMealCount(meal.id)}
+                onSelect={handleSelectMeal}
+                onRemove={handleRemoveMeal}
+                disabled={isSelectionComplete && !isMealSelected(meal.id)}
+              />
             ))}
-          </TabsList>
-          
-          {categoryNames.map((category) => (
-            <TabsContent key={category} value={category} className="animate-in fade-in-50">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {mealCategories[category]?.map((meal) => (
-                  <MealCard 
-                    key={meal.id}
-                    meal={meal}
-                    isSelected={isMealSelected(meal.id)}
-                    selectedCount={getMealCount(meal.id)}
-                    onSelect={handleSelectMeal}
-                    onRemove={handleRemoveMeal}
-                    disabled={isSelectionComplete && !isMealSelected(meal.id)}
-                  />
-                ))}
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+          </div>
+        </div>
         
         {/* Order Summary */}
         <div className="mt-10">
