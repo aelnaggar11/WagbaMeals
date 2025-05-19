@@ -131,11 +131,43 @@ const AuthPage = () => {
         description: "Welcome to Wagba! Your account has been created."
       });
       
-      // Redirect to return URL if available, otherwise to the meal-plans page
-      if (returnTo) {
-        navigate(returnTo);
+      // If the user has saved meal selections, create an order and proceed to checkout
+      const savedSelections = sessionStorage.getItem('mealSelections');
+      
+      if (savedSelections) {
+        try {
+          const selections = JSON.parse(savedSelections);
+          
+          // Create the order using the saved selections
+          await apiRequest('POST', '/api/orders', {
+            weekId: selections.weekId,
+            mealCount: selections.mealCount,
+            defaultPortionSize: selections.portionSize,
+            items: selections.selectedMeals
+          });
+          
+          // Clear the saved selections
+          sessionStorage.removeItem('mealSelections');
+          
+          // Redirect to checkout
+          navigate('/checkout');
+        } catch (error) {
+          console.error("Error creating order:", error);
+          
+          // Redirect to return URL if available or meal selection as fallback
+          if (returnTo) {
+            navigate(returnTo);
+          } else {
+            navigate('/menu/current');
+          }
+        }
       } else {
-        navigate('/meal-plans');
+        // No saved selections, redirect to return URL if available or meal plans as fallback
+        if (returnTo) {
+          navigate(returnTo);
+        } else {
+          navigate('/meal-plans');
+        }
       }
     } catch (error) {
       toast({
