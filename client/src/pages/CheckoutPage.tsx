@@ -192,28 +192,16 @@ const CheckoutPage = () => {
                   </div>
                   </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="apartment">Apartment (Optional)</Label>
-                    <Input 
-                      id="apartment" 
-                      name="apartment" 
-                      value={address.apartment} 
-                      onChange={handleAddressChange} 
-                      placeholder="Apartment number"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="area">Area/District *</Label>
-                    <Input 
-                      id="area" 
-                      name="area" 
-                      value={address.area} 
-                      onChange={handleAddressChange} 
-                      placeholder="Area or district" 
-                      required
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="area">Area/District *</Label>
+                  <Input 
+                    id="area" 
+                    name="area" 
+                    value={address.area} 
+                    onChange={handleAddressChange} 
+                    placeholder="Area or district" 
+                    required
+                  />
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
