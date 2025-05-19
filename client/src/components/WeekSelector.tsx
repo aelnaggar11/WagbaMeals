@@ -31,20 +31,28 @@ const WeekSelector = ({ currentWeekId }: WeekSelectorProps) => {
   
   useEffect(() => {
     if (weeksData?.weeks) {
-      // Sort weeks by date - temporarily show all weeks for demonstration
-      const sortedWeeks = [...weeksData.weeks].sort((a, b) => {
-        // Sort by start date ascending
-        return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
-      });
+      // Sort weeks by date and filter out past weeks
+      const now = new Date();
+      const availableWeeks = weeksData.weeks
+        .filter(week => {
+          // Include weeks where the deadline hasn't passed yet
+          const deadline = new Date(week.orderDeadline);
+          return isAfter(deadline, now);
+        })
+        .sort((a, b) => {
+          // Sort by start date ascending
+          return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+        });
       
-      setWeeks(sortedWeeks);
+      setWeeks(availableWeeks);
       
-      // If no week is selected, default to the first week
-      if (sortedWeeks.length > 0) {
-        const currentWeekIndex = sortedWeeks.findIndex(week => week.id === currentWeekId);
+      // If no week is selected or the current week's deadline has passed,
+      // default to the first available week
+      if (availableWeeks.length > 0) {
+        const currentWeekIndex = availableWeeks.findIndex(week => week.id === currentWeekId);
         if (currentWeekIndex === -1) {
-          setSelectedWeekId(sortedWeeks[0].id);
-          navigate(`/menu/${sortedWeeks[0].id}`);
+          setSelectedWeekId(availableWeeks[0].id);
+          navigate(`/menu/${availableWeeks[0].id}`);
         } else {
           setSelectedWeekId(currentWeekId);
         }
