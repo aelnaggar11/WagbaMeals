@@ -96,15 +96,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/auth/login', async (req, res) => {
     try {
-      const { username, password } = req.body;
+      const { email, password } = req.body;
       
       // Validate input
-      if (!username || !password) {
-        return res.status(400).json({ message: 'Username and password are required' });
+      if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
       }
       
       // Get user
-      const user = await storage.getUserByUsername(username);
+      const user = await storage.getUserByEmail(email);
       if (!user) {
         return res.status(400).json({ message: 'Invalid credentials' });
       }
@@ -137,6 +137,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ message: 'Logged out successfully' });
     });
+  });
+  
+  app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: 'Email is required' });
+      }
+      
+      // Check if user exists
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // For security reasons, still return success even if email doesn't exist
+        return res.json({ message: 'Password reset instructions sent if email exists' });
+      }
+      
+      // In a real application, we would generate a token and send an email with reset instructions
+      // For this demo, we'll just return a success message
+      
+      res.json({ message: 'Password reset instructions sent if email exists' });
+    } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+    }
   });
 
   app.get('/api/auth/me', async (req, res) => {

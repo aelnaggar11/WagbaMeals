@@ -11,10 +11,9 @@ import { queryClient } from "@/lib/queryClient";
 import ProgressIndicator from "@/components/ProgressIndicator";
 
 interface AuthFormData {
-  username: string;
   password: string;
   confirmPassword?: string;
-  email?: string;
+  email: string;
   name?: string;
 }
 
@@ -50,10 +49,10 @@ const AuthPage = () => {
   
   const handleLogin = async () => {
     // Validation
-    if (!formData.username || !formData.password) {
+    if (!formData.email || !formData.password) {
       toast({
         title: "Missing information",
-        description: "Please enter both username and password",
+        description: "Please enter both email and password",
         variant: "destructive"
       });
       return;
@@ -63,7 +62,7 @@ const AuthPage = () => {
     
     try {
       await apiRequest('POST', '/api/auth/login', {
-        username: formData.username,
+        email: formData.email,
         password: formData.password
       });
       
@@ -84,7 +83,39 @@ const AuthPage = () => {
     } catch (error) {
       toast({
         title: "Login failed",
-        description: "Invalid username or password. Please try again.",
+        description: "Invalid email or password. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  const handleForgotPassword = async () => {
+    if (!formData.email) {
+      toast({
+        title: "Email required",
+        description: "Please enter your email address to reset your password",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      await apiRequest('POST', '/api/auth/forgot-password', {
+        email: formData.email
+      });
+      
+      toast({
+        title: "Password reset initiated",
+        description: "If your email is in our system, you'll receive password reset instructions shortly.",
+      });
+    } catch (error) {
+      toast({
+        title: "Request failed",
+        description: "Unable to process your request. Please try again later.",
         variant: "destructive"
       });
     } finally {
@@ -214,13 +245,14 @@ const AuthPage = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-username">Username</Label>
+                  <Label htmlFor="login-email">Email</Label>
                   <Input 
-                    id="login-username" 
-                    name="username" 
-                    value={formData.username}
+                    id="login-email" 
+                    name="email" 
+                    type="email"
+                    value={formData.email}
                     onChange={handleInputChange}
-                    placeholder="Enter your username"
+                    placeholder="Enter your email address"
                   />
                 </div>
                 <div className="space-y-2">
@@ -233,6 +265,16 @@ const AuthPage = () => {
                     onChange={handleInputChange}
                     placeholder="Enter your password"
                   />
+                </div>
+                <div className="text-right">
+                  <button 
+                    type="button"
+                    className="text-sm text-primary hover:underline"
+                    onClick={handleForgotPassword}
+                    disabled={isSubmitting}
+                  >
+                    Forgot password?
+                  </button>
                 </div>
               </CardContent>
               <CardFooter>
