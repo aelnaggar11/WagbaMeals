@@ -165,8 +165,8 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
         
         <div className="text-center mb-8 mt-6"></div>
         
-        {/* Week Selection */}
-        <WeekSelector currentWeekId={weekId} />
+        {/* Week Selection - Hidden during Get Started flow */}
+        {!params.get("fromPlan") && <WeekSelector currentWeekId={weekId} />}
         
         {/* Meal Selection Count */}
         <div className="max-w-6xl mx-auto mb-6 flex items-center justify-between px-4">
