@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { Order } from "@shared/schema";
+import ProgressIndicator from "@/components/ProgressIndicator";
 
 const CheckoutPage = () => {
   const [, navigate] = useLocation();

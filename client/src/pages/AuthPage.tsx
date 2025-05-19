@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
+import ProgressIndicator from "@/components/ProgressIndicator";
 
 interface AuthFormData {
   username: string;
@@ -21,6 +22,7 @@ const AuthPage = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [returnTo, setReturnTo] = useState<string | null>(null);
   const [formData, setFormData] = useState<AuthFormData>({
     username: "",
     password: "",
@@ -28,6 +30,15 @@ const AuthPage = () => {
     email: "",
     name: ""
   });
+  
+  // Get the return URL from query params if available
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const returnToPath = params.get('returnTo');
+    if (returnToPath) {
+      setReturnTo(returnToPath);
+    }
+  }, []);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -64,8 +75,12 @@ const AuthPage = () => {
         description: "Welcome back to Wagba!"
       });
       
-      // Redirect to account page
-      navigate('/account');
+      // Redirect to return URL if available, otherwise to account page
+      if (returnTo) {
+        navigate(returnTo);
+      } else {
+        navigate('/account');
+      }
     } catch (error) {
       toast({
         title: "Login failed",
@@ -125,8 +140,12 @@ const AuthPage = () => {
         description: "Welcome to Wagba! Your account has been created."
       });
       
-      // Redirect to account page
-      navigate('/meal-plans');
+      // Redirect to return URL if available, otherwise to the meal-plans page
+      if (returnTo) {
+        navigate(returnTo);
+      } else {
+        navigate('/meal-plans');
+      }
     } catch (error) {
       toast({
         title: "Registration failed",
@@ -138,8 +157,17 @@ const AuthPage = () => {
     }
   };
   
+  // Define the checkout steps
+  const steps = [
+    { id: 1, label: "Choose Your Plan" },
+    { id: 2, label: "Create Your Wagba Account" },
+    { id: 3, label: "Complete Checkout" }
+  ];
+
   return (
-    <div className="container mx-auto px-4 py-16">
+    <div className="container mx-auto px-4 py-8">
+      <ProgressIndicator steps={steps} currentStep={2} />
+      
       <div className="max-w-md mx-auto">
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid grid-cols-2 mb-6">
