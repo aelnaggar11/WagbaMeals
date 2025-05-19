@@ -94,19 +94,10 @@ const AuthPage = () => {
   
   const handleRegister = async () => {
     // Validation
-    if (!formData.username || !formData.password || !formData.email) {
+    if (!formData.password || !formData.email) {
       toast({
         title: "Missing information",
         description: "Please fill in all required fields",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Passwords don't match",
-        description: "Please make sure both passwords are the same",
         variant: "destructive"
       });
       return;
@@ -225,16 +216,6 @@ const AuthPage = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="register-name">Full Name</Label>
-                  <Input 
-                    id="register-name" 
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="Enter your full name"
-                  />
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="register-email">Email</Label>
                   <Input 
                     id="register-email" 
@@ -243,16 +224,7 @@ const AuthPage = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     placeholder="Enter your email address"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="register-username">Username</Label>
-                  <Input 
-                    id="register-username" 
-                    name="username"
-                    value={formData.username}
-                    onChange={handleInputChange}
-                    placeholder="Choose a username"
+                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -263,18 +235,8 @@ const AuthPage = () => {
                     type="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    placeholder="Choose a password"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="register-confirm-password">Confirm Password</Label>
-                  <Input 
-                    id="register-confirm-password" 
-                    name="confirmPassword"
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    placeholder="Confirm your password"
+                    placeholder="Choose a password (min. 6 characters)"
+                    required
                   />
                 </div>
               </CardContent>
