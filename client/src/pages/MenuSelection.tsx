@@ -165,8 +165,7 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
         
         <div className="text-center mb-8 mt-6">
           <span className="inline-block bg-accent-secondary bg-opacity-20 text-accent-secondary px-3 py-1 rounded-full text-sm font-medium mb-4">Fresh Selection</span>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4 font-poppins">This Week's Menu</h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg text-primary max-w-2xl mx-auto">
             Select {mealCount} meals from our chef-prepared options
           </p>
         </div>
