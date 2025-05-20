@@ -11,7 +11,7 @@ import { Order, User } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatDate, getStatusClass } from "@/lib/utils";
 import { useLocation } from "wouter";
-import MealSelectionPanel from "@/components/MealSelectionPanel";
+import SimpleInlineMealSelector from "@/components/SimpleInlineMealSelector";
 
 const AccountPage = () => {
   const [, navigate] = useLocation();
