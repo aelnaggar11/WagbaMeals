@@ -188,10 +188,31 @@ const AccountPage = () => {
     try {
       console.log(`Attempting to ${skip ? 'skip' : 'unskip'} order ID: ${orderId}`);
       
+      // Optimistically update UI first
+      if (upcomingMealsData?.upcomingMeals) {
+        const updatedMeals = upcomingMealsData.upcomingMeals.map(week => {
+          if (week.orderId === orderId) {
+            return {
+              ...week,
+              isSkipped: skip,
+              canSkip: !skip,
+              canUnskip: skip
+            };
+          }
+          return week;
+        });
+        
+        // Manually update the query cache
+        queryClient.setQueryData(['/api/user/upcoming-meals'], {
+          upcomingMeals: updatedMeals
+        });
+      }
+      
+      // Send the API request
       const response = await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
       console.log('Skip/unskip response:', response);
       
-      // Force refresh of data
+      // Force refresh data from server
       queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       
@@ -202,15 +223,34 @@ const AccountPage = () => {
           : "Your delivery has been restored. You can now edit your meal selections."
       });
       
-      // Set a small timeout to allow the UI to update
-      setTimeout(() => {
-        if (upcomingMealsData?.upcomingMeals) {
-          const currentWeek = upcomingMealsData.upcomingMeals.find(week => week.weekId === selectedWeekId);
-          console.log('Current week after update:', currentWeek);
+      // If unskipping, offer to edit meals
+      if (!skip) {
+        // Find the week that was just unskipped
+        const unskippedWeek = upcomingMealsData?.upcomingMeals.find(week => week.orderId === orderId);
+        if (unskippedWeek) {
+          setTimeout(() => {
+            toast({
+              title: "Ready to edit meals",
+              description: "Your delivery has been restored. Would you like to edit your meal selections now?",
+              action: (
+                <Button 
+                  onClick={() => navigate(`/menu/${unskippedWeek.weekId}?edit=true`)}
+                  variant="outline" 
+                  className="bg-white hover:bg-gray-50"
+                >
+                  Edit Meals
+                </Button>
+              )
+            });
+          }, 1000);
         }
-      }, 500);
+      }
     } catch (error) {
       console.error('Error in skip/unskip:', error);
+      
+      // Revert the optimistic update
+      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      
       toast({
         title: "Error",
         description: "There was an error updating your delivery. Please try again.",
@@ -369,59 +409,80 @@ const AccountPage = () => {
                         </div>
                         
                         {/* Meal selection status */}
-                        {!week.isSkipped && (
-                          <div className="border rounded-lg p-6">
-                            <h3 className="text-lg font-semibold mb-4">Select Your Meals</h3>
-                            
-                            {week.items.length > 0 ? (
-                              <>
-                                <div className="text-right mb-4">
-                                  <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-medium">
-                                    {week.items.length} of {week.mealCount} selected
-                                  </span>
-                                </div>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  {week.items.map((item) => (
-                                    <div key={item.id} className="flex border rounded-md overflow-hidden">
-                                      <div className="w-24 h-24 bg-gray-100">
-                                        {item.meal.imageUrl && (
-                                          <img 
-                                            src={item.meal.imageUrl} 
-                                            alt={item.meal.title} 
-                                            className="w-full h-full object-cover"
-                                          />
-                                        )}
-                                      </div>
-                                      <div className="flex-1 p-3 flex flex-col justify-between">
-                                        <div>
-                                          <h4 className="font-medium">{item.meal.title}</h4>
-                                          <div className="flex items-center mt-1 text-sm text-gray-500">
-                                            <span>{item.meal.calories} cal</span>
-                                            <span className="mx-2">•</span>
-                                            <span>{item.meal.proteins}g protein</span>
+                        <div className={`border rounded-lg p-6 ${week.isSkipped ? 'bg-gray-50' : ''}`}>
+                          <h3 className="text-lg font-semibold mb-4">
+                            {week.isSkipped ? 'Delivery Skipped' : 'Select Your Meals'}
+                          </h3>
+                          
+                          {week.isSkipped ? (
+                            <div className="text-center py-6">
+                              <p className="text-gray-500 mb-4">
+                                You've chosen to skip this delivery. Restore this delivery to select meals.
+                              </p>
+                              {week.canUnskip && (
+                                <Button 
+                                  onClick={() => handleSkipDelivery(week.orderId as number, false)}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                  </svg>
+                                  Restore This Delivery
+                                </Button>
+                              )}
+                            </div>
+                          ) : (
+                            <>
+                              {week.items.length > 0 ? (
+                                <>
+                                  <div className="text-right mb-4">
+                                    <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-medium">
+                                      {week.items.length} of {week.mealCount} selected
+                                    </span>
+                                  </div>
+                                  
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {week.items.map((item) => (
+                                      <div key={item.id} className="flex border rounded-md overflow-hidden">
+                                        <div className="w-24 h-24 bg-gray-100">
+                                          {item.meal.imageUrl && (
+                                            <img 
+                                              src={item.meal.imageUrl} 
+                                              alt={item.meal.title} 
+                                              className="w-full h-full object-cover"
+                                            />
+                                          )}
+                                        </div>
+                                        <div className="flex-1 p-3 flex flex-col justify-between">
+                                          <div>
+                                            <h4 className="font-medium">{item.meal.title}</h4>
+                                            <div className="flex items-center mt-1 text-sm text-gray-500">
+                                              <span>{item.meal.calories} cal</span>
+                                              <span className="mx-2">•</span>
+                                              <span>{item.meal.proteins}g protein</span>
+                                            </div>
+                                          </div>
+                                          <div className="text-sm text-gray-600">
+                                            {item.portionSize === 'large' ? 'Large portion' : 'Standard portion'}
                                           </div>
                                         </div>
-                                        <div className="text-sm text-gray-600">
-                                          {item.portionSize === 'large' ? 'Large portion' : 'Standard portion'}
-                                        </div>
                                       </div>
-                                    </div>
-                                  ))}
+                                    ))}
+                                  </div>
+                                </>
+                              ) : (
+                                <div className="text-center py-6">
+                                  <p className="text-gray-500 mb-4">You haven't selected any meals for this delivery yet.</p>
+                                  {week.canEdit && (
+                                    <Button onClick={() => navigate(`/menu/${week.weekId}`)}>
+                                      Select Meals
+                                    </Button>
+                                  )}
                                 </div>
-                              </>
-                            ) : (
-                              <div className="text-center py-6">
-                                <p className="text-gray-500 mb-4">You haven't selected any meals for this delivery yet.</p>
-                                {week.canEdit && (
-                                  <Button onClick={() => navigate(`/menu/${week.weekId}`)}>
-                                    Select Meals
-                                  </Button>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        )}
+                              )}
+                            </>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
