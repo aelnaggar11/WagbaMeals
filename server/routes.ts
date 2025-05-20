@@ -360,6 +360,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Server error' });
     }
   });
+  
+  // Get meals for a specific week
+  app.get('/api/menu/:weekId', authMiddleware, async (req, res) => {
+    try {
+      const weekId = parseInt(req.params.weekId);
+      
+      // Get meals for the specific week
+      const meals = await storage.getMealsByWeek(weekId);
+      
+      res.json({ meals });
+    } catch (error) {
+      console.error('Error fetching meals for week:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
 
   // Order Routes
   app.get('/api/orders', authMiddleware, async (req, res) => {
