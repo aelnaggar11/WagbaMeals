@@ -301,7 +301,7 @@ const AccountPage = () => {
                         <div className="flex space-x-4">
                           {week.canEdit && !week.isSkipped && (
                             <Button 
-                              onClick={() => navigate(`/menu/${week.weekId}?edit=true`)}
+                              onClick={() => navigate(`/menu/${week.weekId}?edit=true&fromAccount=true`)}
                               className="flex items-center"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -384,7 +384,7 @@ const AccountPage = () => {
                               <div className="text-center py-6">
                                 <p className="text-gray-500 mb-4">You haven't selected any meals for this delivery yet.</p>
                                 {week.canEdit && (
-                                  <Button onClick={() => navigate(`/menu/${week.weekId}`)}>
+                                  <Button onClick={() => navigate(`/menu/${week.weekId}?fromAccount=true`)}>
                                     Select Meals
                                   </Button>
                                 )}
