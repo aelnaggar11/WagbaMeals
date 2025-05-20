@@ -35,11 +35,11 @@ export default function AccountPageMealSelector({
 }: AccountPageMealSelectorProps) {
   const { toast } = useToast();
 
-  // Use React Query to fetch meals
-  const { data: mealsData, isLoading } = useQuery({
-    queryKey: ['/api/meals'],
+  // Use React Query to fetch meals for this specific week
+  const { data: menuData, isLoading } = useQuery({
+    queryKey: [`/api/menu/${weekId}`],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/meals');
+      const response = await apiRequest('GET', `/api/menu/${weekId}`);
       return response?.meals || [];
     }
   });
@@ -78,62 +78,44 @@ export default function AccountPageMealSelector({
         });
       }
 
-      // Refresh data
+      // Invalidate relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
-      
+
       toast({
         title: "Meal added",
         description: `${meal.title} has been added to your selections.`
       });
     } catch (error) {
-      console.error("Error adding meal:", error);
       toast({
         title: "Error",
-        description: "Failed to add meal. Please try again."
+        description: "There was an error updating your meal selections. Please try again.",
+        variant: "destructive"
       });
     }
   };
 
   const handleRemoveMeal = async (meal: Meal) => {
-    // Find the item in items
-    const itemToRemove = items.find(item => item.mealId === meal.id);
-    if (!itemToRemove || !orderId) return;
+    const mealItem = items.find(item => item.mealId === meal.id);
+    if (!mealItem || !orderId) return;
 
     try {
-      // Remove from order
-      await apiRequest('DELETE', `/api/orders/${orderId}/items/${itemToRemove.id}`);
-      
-      // Refresh data
+      await apiRequest('DELETE', `/api/orders/${orderId}/items/${mealItem.id}`);
+
+      // Invalidate relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
-      
+
       toast({
         title: "Meal removed",
         description: `${meal.title} has been removed from your selections.`
       });
     } catch (error) {
-      console.error("Error removing meal:", error);
       toast({
         title: "Error",
-        description: "Failed to remove meal. Please try again."
+        description: "There was an error updating your meal selections. Please try again.",
+        variant: "destructive"
       });
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="py-8 flex justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!mealsData || mealsData.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">No meals available.</p>
-      </div>
-    );
-  }
 
   return (
     <div>
@@ -144,64 +126,78 @@ export default function AccountPageMealSelector({
         </span>
       </div>
 
-      <div className="space-y-4">
-        {mealsData.map((meal: Meal) => {
-          const count = getMealCount(meal.id);
-          const isSelected = count > 0;
-          const isMaxReached = items.length >= mealCount;
-          
-          return (
-            <div key={meal.id} className="border rounded-lg overflow-hidden">
-              <div className="flex items-center p-4">
-                <div className="w-20 h-20 bg-gray-100 rounded-md overflow-hidden mr-4">
-                  {meal.imageUrl && (
-                    <img 
-                      src={meal.imageUrl} 
-                      alt={meal.title} 
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-                </div>
-                
-                <div className="flex-1">
-                  <h4 className="font-medium text-lg">{meal.title}</h4>
-                  <div className="flex items-center mt-1 text-sm text-gray-600">
-                    <span>{meal.calories || 0} cal</span>
-                    <span className="mx-2">•</span>
-                    <span>{meal.protein || 0}g protein</span>
+      {isLoading ? (
+        <div className="py-8 flex justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      ) : (
+        <>
+          {menuData && menuData.length > 0 ? (
+            <div className="space-y-4">
+              {menuData.map((meal) => {
+                const count = getMealCount(meal.id);
+                const isSelected = count > 0;
+                const isMaxReached = items.length >= mealCount;
+
+                return (
+                  <div key={meal.id} className="border rounded-lg overflow-hidden">
+                    <div className="flex items-center p-4">
+                      <div className="w-20 h-20 bg-gray-100 rounded-md overflow-hidden mr-4">
+                        {meal.imageUrl && (
+                          <img 
+                            src={meal.imageUrl} 
+                            alt={meal.title} 
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
+
+                      <div className="flex-1">
+                        <h4 className="font-medium text-lg">{meal.title}</h4>
+                        <div className="flex items-center mt-1 text-sm text-gray-600">
+                          <span>{meal.calories || 0} cal</span>
+                          <span className="mx-2">•</span>
+                          <span>{meal.protein || 0}g protein</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={!isSelected}
+                          onClick={() => handleRemoveMeal(meal)}
+                          className={isSelected ? 'text-red-500 hover:bg-red-50 hover:text-red-700' : 'text-gray-300'}
+                        >
+                          <MinusCircle size={24} />
+                        </Button>
+
+                        <span className="w-8 text-center font-medium">
+                          {count}
+                        </span>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={isMaxReached && !isSelected}
+                          onClick={() => handleAddMeal(meal)}
+                          className={(!isMaxReached || isSelected) ? 'text-green-500 hover:bg-green-50 hover:text-green-700' : 'text-gray-300'}
+                        >
+                          <PlusCircle size={24} />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="flex items-center">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    disabled={!isSelected}
-                    onClick={() => handleRemoveMeal(meal)}
-                    className={isSelected ? 'text-red-500 hover:bg-red-50 hover:text-red-700' : 'text-gray-300'}
-                  >
-                    <MinusCircle size={24} />
-                  </Button>
-                  
-                  <span className="w-8 text-center font-medium">
-                    {count}
-                  </span>
-                  
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    disabled={isMaxReached && !isSelected}
-                    onClick={() => handleAddMeal(meal)}
-                    className={(!isMaxReached || isSelected) ? 'text-green-500 hover:bg-green-50 hover:text-green-700' : 'text-gray-300'}
-                  >
-                    <PlusCircle size={24} />
-                  </Button>
-                </div>
-              </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No meals available for this week.</p>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
