@@ -370,6 +370,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Server error' });
     }
   });
+  
+  // Get upcoming meal selections for a user
+  app.get('/api/user/upcoming-meals', authMiddleware, async (req, res) => {
+    try {
+      // Get all available weeks
+      const weeks = await storage.getWeeks();
+      
+      // Get current date
+      const now = new Date();
+      
+      // Filter weeks that are upcoming (delivery date is in the future)
+      const upcomingWeeks = weeks.filter(week => {
+        const deliveryDate = new Date(week.deliveryDate);
+        return deliveryDate > now;
+      }).sort((a, b) => {
+        return new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime();
+      });
+      
+      // For each upcoming week, get the user's order if it exists
+      const upcomingMeals = [];
+      
+      for (const week of upcomingWeeks) {
+        const order = await storage.getOrderByUserAndWeek(req.session.userId, week.id);
+        const orderDeadlinePassed = new Date(week.orderDeadline) <= now;
+        
+        // Check if there's an existing order
+        if (order) {
+          // Get the detailed meal information for each order item
+          const orderItems = await storage.getOrderItems(order.id);
+          const itemsWithMeals = [];
+          
+          for (const item of orderItems) {
+            const meal = await storage.getMeal(item.mealId);
+            if (meal) {
+              itemsWithMeals.push({
+                ...item,
+                meal
+              });
+            }
+          }
+          
+          upcomingMeals.push({
+            orderId: order.id,
+            weekId: week.id,
+            weekLabel: week.label,
+            deliveryDate: week.deliveryDate,
+            orderDeadline: week.orderDeadline,
+            items: itemsWithMeals,
+            isSkipped: order.status === 'skipped',
+            canEdit: !orderDeadlinePassed,
+            canSkip: !orderDeadlinePassed && order.status !== 'skipped',
+            canUnskip: !orderDeadlinePassed && order.status === 'skipped',
+            mealCount: order.mealCount
+          });
+        } else {
+          // No order yet for this week
+          upcomingMeals.push({
+            orderId: null,
+            weekId: week.id,
+            weekLabel: week.label,
+            deliveryDate: week.deliveryDate,
+            orderDeadline: week.orderDeadline,
+            items: [],
+            isSkipped: false,
+            canEdit: !orderDeadlinePassed,
+            canSkip: false, // Can't skip an order that doesn't exist yet
+            canUnskip: false,
+            mealCount: 0
+          });
+        }
+      }
+      
+      res.json({ upcomingMeals });
+    } catch (error) {
+      console.error('Error fetching upcoming meals:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
+  // Skip or unskip a delivery
+  app.patch('/api/orders/:orderId/skip', authMiddleware, async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const { skip } = req.body;
+      
+      // Get the order
+      const order = await storage.getOrder(orderId);
+      
+      // Check if order exists and belongs to user
+      if (!order || order.userId !== req.session.userId) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      
+      // Get the order's week to check deadline
+      const week = await storage.getWeek(order.weekId);
+      if (!week) {
+        return res.status(404).json({ message: 'Week not found' });
+      }
+      
+      // Check if deadline has passed
+      const now = new Date();
+      if (new Date(week.orderDeadline) <= now) {
+        return res.status(400).json({ message: 'Order deadline has passed' });
+      }
+      
+      // Update order status
+      const updatedOrder = await storage.updateOrder(orderId, {
+        status: skip ? 'skipped' : 'pending'
+      });
+      
+      res.json(updatedOrder);
+    } catch (error) {
+      console.error('Error skipping/unskipping order:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
 
   app.get('/api/orders/pending', authMiddleware, async (req, res) => {
     try {

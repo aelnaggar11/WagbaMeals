@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +39,43 @@ const AccountPage = () => {
     enabled: !!user,
   });
   
+  // Upcoming meals
+  const { data: upcomingMealsData } = useQuery<{ 
+    upcomingMeals: Array<{
+      orderId: number | null;
+      weekId: number;
+      weekLabel: string;
+      deliveryDate: string;
+      orderDeadline: string;
+      items: Array<{
+        id: number;
+        mealId: number;
+        portionSize: string;
+        meal: {
+          id: number;
+          title: string;
+          description: string;
+          imageUrl: string;
+          calories: number;
+          proteins: number;
+          carbs: number;
+          fats: number;
+        }
+      }>;
+      isSkipped: boolean;
+      canEdit: boolean;
+      canSkip: boolean;
+      canUnskip: boolean;
+      mealCount: number;
+    }>
+  }>({
+    queryKey: ['/api/user/upcoming-meals'],
+    enabled: !!user,
+  });
+  
+  // State for tracking selected week in upcoming meals view
+  const [selectedWeekId, setSelectedWeekId] = useState<number | null>(null);
+  
   // Form state
   const [formData, setFormData] = useState({
     name: "",
@@ -52,7 +89,7 @@ const AccountPage = () => {
   });
   
   // Update form data when profile data is loaded
-  useState(() => {
+  useEffect(() => {
     if (profile) {
       setFormData({
         name: profile.name || "",
@@ -82,7 +119,7 @@ const AccountPage = () => {
         }
       }
     }
-  });
+  }, [profile]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -146,6 +183,36 @@ const AccountPage = () => {
     }
   };
   
+  // Handle skipping/unskipping a delivery
+  const handleSkipDelivery = async (orderId: number, skip: boolean) => {
+    try {
+      await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      
+      toast({
+        title: skip ? "Delivery Skipped" : "Delivery Restored",
+        description: skip 
+          ? "Your delivery has been skipped. You can unskip it anytime before the order deadline." 
+          : "Your delivery has been restored. You can now edit your meal selections."
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "There was an error updating your delivery. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Set initial selected week when data is loaded
+  useEffect(() => {
+    if (upcomingMealsData?.upcomingMeals && upcomingMealsData.upcomingMeals.length > 0 && !selectedWeekId) {
+      setSelectedWeekId(upcomingMealsData.upcomingMeals[0].weekId);
+    }
+  }, [upcomingMealsData, selectedWeekId]);
+  
   if (!user || !profile) {
     return (
       <div className="container mx-auto px-4 py-16">
@@ -161,20 +228,194 @@ const AccountPage = () => {
   return (
     <div className="container mx-auto px-4 py-16">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-2">My Account</h1>
-        <p className="text-gray-600 mb-8">Manage your profile and view your orders</p>
-        
-        <Tabs defaultValue="orders" className="space-y-8">
+        <Tabs defaultValue="upcoming" className="space-y-8">
           <TabsList>
-            <TabsTrigger value="orders">My Orders</TabsTrigger>
+            <TabsTrigger value="upcoming">Upcoming Meals</TabsTrigger>
+            <TabsTrigger value="orders">Order History</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="upcoming" className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-primary mb-6">Upcoming Deliveries</h2>
+              
+              {upcomingMealsData?.upcomingMeals && upcomingMealsData.upcomingMeals.length > 0 ? (
+                <div className="space-y-6">
+                  {/* Week selector */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-8">
+                    {upcomingMealsData.upcomingMeals.map((week) => (
+                      <button
+                        key={week.weekId}
+                        onClick={() => setSelectedWeekId(week.weekId)}
+                        className={`py-4 px-2 text-center rounded-md transition-colors ${
+                          selectedWeekId === week.weekId 
+                            ? 'border-2 border-primary bg-primary/5' 
+                            : 'border border-gray-200 hover:bg-gray-50'
+                        } ${week.isSkipped ? 'opacity-50' : ''}`}
+                      >
+                        <div className="font-medium">
+                          {week.weekLabel.replace(/\d{4}/, '').trim()}
+                        </div>
+                        {week.isSkipped && (
+                          <div className="text-sm text-gray-500 mt-1">Skipped</div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  {/* Selected week details */}
+                  {selectedWeekId && upcomingMealsData.upcomingMeals.map(week => {
+                    if (week.weekId !== selectedWeekId) return null;
+                    
+                    const deadline = new Date(week.orderDeadline);
+                    const deadlineFormatted = deadline.toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      month: 'long',
+                      day: 'numeric'
+                    });
+                    
+                    return (
+                      <div key={week.weekId} className="space-y-6">
+                        {/* Order deadline notice */}
+                        <div className={`p-4 rounded-lg ${week.isSkipped ? 'bg-gray-100' : 'bg-red-50'}`}>
+                          <div className="flex items-start">
+                            <div className={`mr-3 ${week.isSkipped ? 'text-gray-500' : 'text-red-500'}`}>
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            </div>
+                            <div>
+                              {week.isSkipped ? (
+                                <p className="font-medium text-gray-600">This delivery is skipped</p>
+                              ) : (
+                                <>
+                                  <p className="font-medium text-gray-800">Order can be changed until {deadlineFormatted}</p>
+                                  <p className="text-sm text-gray-600 mt-1">Make your meal selections before the deadline</p>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Action buttons */}
+                        <div className="flex space-x-4">
+                          {week.canEdit && !week.isSkipped && (
+                            <Button 
+                              onClick={() => navigate(`/menu/${week.weekId}?edit=true`)}
+                              className="flex items-center"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                              </svg>
+                              Edit Delivery
+                            </Button>
+                          )}
+                          
+                          {week.orderId && week.canSkip && !week.isSkipped && (
+                            <Button 
+                              variant="outline" 
+                              onClick={() => handleSkipDelivery(week.orderId as number, true)}
+                              className="flex items-center"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                              Skip Delivery
+                            </Button>
+                          )}
+                          
+                          {week.orderId && week.canUnskip && week.isSkipped && (
+                            <Button 
+                              variant="outline" 
+                              onClick={() => handleSkipDelivery(week.orderId as number, false)}
+                              className="flex items-center"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                              </svg>
+                              Unskip Delivery
+                            </Button>
+                          )}
+                        </div>
+                        
+                        {/* Meal selection status */}
+                        {!week.isSkipped && (
+                          <div className="border rounded-lg p-6">
+                            <h3 className="text-lg font-semibold mb-4">Select Your Meals</h3>
+                            
+                            {week.items.length > 0 ? (
+                              <>
+                                <div className="text-right mb-4">
+                                  <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-medium">
+                                    {week.items.length} of {week.mealCount} selected
+                                  </span>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  {week.items.map((item) => (
+                                    <div key={item.id} className="flex border rounded-md overflow-hidden">
+                                      <div className="w-24 h-24 bg-gray-100">
+                                        {item.meal.imageUrl && (
+                                          <img 
+                                            src={item.meal.imageUrl} 
+                                            alt={item.meal.title} 
+                                            className="w-full h-full object-cover"
+                                          />
+                                        )}
+                                      </div>
+                                      <div className="flex-1 p-3 flex flex-col justify-between">
+                                        <div>
+                                          <h4 className="font-medium">{item.meal.title}</h4>
+                                          <div className="flex items-center mt-1 text-sm text-gray-500">
+                                            <span>{item.meal.calories} cal</span>
+                                            <span className="mx-2">•</span>
+                                            <span>{item.meal.proteins}g protein</span>
+                                          </div>
+                                        </div>
+                                        <div className="text-sm text-gray-600">
+                                          {item.portionSize === 'large' ? 'Large portion' : 'Standard portion'}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </>
+                            ) : (
+                              <div className="text-center py-6">
+                                <p className="text-gray-500 mb-4">You haven't selected any meals for this delivery yet.</p>
+                                {week.canEdit && (
+                                  <Button onClick={() => navigate(`/menu/${week.weekId}`)}>
+                                    Select Meals
+                                  </Button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 border rounded-lg">
+                  <div className="mb-4 text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium mb-2">No upcoming meal deliveries</h3>
+                  <p className="text-gray-500 mb-6">You don't have any upcoming meal deliveries scheduled</p>
+                  <Button onClick={() => navigate('/meal-plans')}>Choose a Meal Plan</Button>
+                </div>
+              )}
+            </div>
+          </TabsContent>
           
           <TabsContent value="orders" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Order History</CardTitle>
-                <CardDescription>View all your past and upcoming orders</CardDescription>
+                <CardDescription>View all your past orders</CardDescription>
               </CardHeader>
               <CardContent>
                 {orderData?.orders && orderData.orders.length > 0 ? (
