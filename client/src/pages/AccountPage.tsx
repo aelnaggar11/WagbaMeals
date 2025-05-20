@@ -11,7 +11,7 @@ import { Order, User } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatDate, getStatusClass } from "@/lib/utils";
 import { useLocation } from "wouter";
-import AccountPageMealSelector from "@/components/AccountPageMealSelector";
+import FixedMealSelector from "@/pages/FixedMealSelector";
 
 const AccountPage = () => {
   const [, navigate] = useLocation();
@@ -489,11 +489,11 @@ const AccountPage = () => {
                         {/* Meal selection directly on account page */}
                         {!week.isSkipped && (
                           <div className="border rounded-lg p-6 mt-4">
-                            <AccountPageMealSelector
+                            <FixedMealSelector
                               weekId={week.weekId}
                               orderId={week.orderId}
                               mealCount={week.mealCount}
-                              items={week.items}
+                              initialItems={week.items}
                             />
                           </div>
                         )}

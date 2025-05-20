@@ -117,12 +117,20 @@ export default function AccountPageMealSelector({
     }
   };
 
+  // Debug information
+  console.log("Meal selector received items:", items);
+  console.log("Meal selector received mealCount:", mealCount);
+  
+  // Properly calculate the number of selected meals (make sure items is defined)
+  const selectedCount = items?.length || 0;
+  const maxMeals = mealCount || 3; // Default to 3 if not specified
+  
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-semibold">Select Your Meals</h3>
         <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-medium">
-          {items.length} of {mealCount} selected
+          {selectedCount} of {maxMeals} selected
         </span>
       </div>
 
