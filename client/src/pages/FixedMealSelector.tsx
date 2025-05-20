@@ -61,23 +61,54 @@ export default function FixedMealSelector({
     }
 
     try {
+      console.log("Adding meal:", meal.id, "to order:", orderId);
+      
+      // Optimistically update UI
+      const updatedItems = [...selectedItems, {
+        id: Date.now(), // Temporary ID for UI
+        mealId: meal.id,
+        portionSize: "standard",
+        meal: meal
+      }];
+      setSelectedItems(updatedItems);
+
       if (orderId) {
         // Add to existing order
-        await apiRequest('POST', `/api/orders/${orderId}/items`, {
-          mealId: meal.id,
-          portionSize: "standard"
-        });
-      } else {
-        // Create new order
-        await apiRequest('POST', '/api/orders', {
-          weekId,
-          mealCount,
-          defaultPortionSize: "standard",
-          items: [{
+        const response = await fetch(`/api/orders/${orderId}/items`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
             mealId: meal.id,
             portionSize: "standard"
-          }]
+          }),
         });
+        
+        if (!response.ok) {
+          throw new Error('Failed to add meal');
+        }
+      } else {
+        // Create new order
+        const response = await fetch('/api/orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            weekId,
+            mealCount,
+            defaultPortionSize: "standard",
+            items: [{
+              mealId: meal.id,
+              portionSize: "standard"
+            }]
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to create order');
+        }
       }
 
       // Refresh data
@@ -89,6 +120,9 @@ export default function FixedMealSelector({
       });
     } catch (error) {
       console.error("Error adding meal:", error);
+      // Revert the optimistic update
+      setSelectedItems(selectedItems);
+      
       toast({
         title: "Error",
         description: "Failed to add meal. Please try again."
@@ -103,8 +137,25 @@ export default function FixedMealSelector({
     if (!itemToRemove || !orderId) return;
 
     try {
-      // Remove from order
-      await apiRequest('DELETE', `/api/orders/${orderId}/items/${itemToRemove.id}`);
+      console.log("Removing meal:", meal.id, "item:", itemToRemove.id, "from order:", orderId);
+      
+      // Optimistically update UI
+      const updatedItems = selectedItems.filter(item => 
+        !(item.mealId === meal.id && item.id === itemToRemove.id)
+      );
+      setSelectedItems(updatedItems);
+
+      // Remove from order using direct fetch for more control
+      const response = await fetch(`/api/orders/${orderId}/items/${itemToRemove.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to remove meal');
+      }
       
       // Refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
@@ -115,6 +166,9 @@ export default function FixedMealSelector({
       });
     } catch (error) {
       console.error("Error removing meal:", error);
+      // Revert the optimistic update
+      setSelectedItems(selectedItems);
+      
       toast({
         title: "Error",
         description: "Failed to remove meal. Please try again."

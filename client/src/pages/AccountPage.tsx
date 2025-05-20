@@ -449,7 +449,13 @@ const AccountPage = () => {
                         <div className="flex space-x-4">
                           {week.canEdit && !week.isSkipped && (
                             <Button 
-                              onClick={() => navigate(`/menu/${week.weekId}?edit=true&fromAccount=true`)}
+                              onClick={() => {
+                                // Scroll to the meal selection section instead of navigating
+                                document.getElementById(`meal-selection-${week.weekId}`)?.scrollIntoView({ 
+                                  behavior: 'smooth',
+                                  block: 'center' 
+                                });
+                              }}
                               className="flex items-center"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -488,7 +494,10 @@ const AccountPage = () => {
 
                         {/* Meal selection directly on account page */}
                         {!week.isSkipped && (
-                          <div className="border rounded-lg p-6 mt-4">
+                          <div 
+                            id={`meal-selection-${week.weekId}`} 
+                            className="border rounded-lg p-6 mt-4"
+                          >
                             <FixedMealSelector
                               weekId={week.weekId}
                               orderId={week.orderId}
