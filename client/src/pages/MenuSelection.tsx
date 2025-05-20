@@ -167,19 +167,30 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
         <div className="mb-8 mt-6">
           {/* Title and navigation when coming from account page */}
           {params.get("fromAccount") && (
-            <div className="flex justify-between items-center mb-4">
-              <Button 
-                variant="ghost" 
-                className="flex items-center text-gray-600"
-                onClick={() => setLocation('/account')}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <div className="flex flex-col mb-4">
+              <div className="flex justify-between items-center mb-2">
+                <Button 
+                  variant="ghost" 
+                  className="flex items-center text-gray-600"
+                  onClick={() => setLocation('/account')}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Back to Account
+                </Button>
+                <div></div>
+              </div>
+              <h1 className="text-2xl font-bold text-primary mb-4">Select Your Meals</h1>
+              <div className="bg-red-100 p-4 rounded-lg mb-6 flex items-center">
+                <svg className="w-5 h-5 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Back to Account
-              </Button>
-              <h1 className="text-2xl font-bold text-primary">Select Your Meals</h1>
-              <div className="w-24"></div> {/* Empty div for balanced spacing */}
+                <div>
+                  <p className="font-medium text-red-800">Order can be changed until the deadline</p>
+                  <p className="text-sm text-red-700">Make your meal selections before the order deadline</p>
+                </div>
+              </div>
             </div>
           )}
         </div>
