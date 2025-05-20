@@ -18,12 +18,12 @@ const AccountPage = () => {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  
+
   // User profile
   const { data: user } = useQuery<User>({
     queryKey: ['/api/auth/me'],
   });
-  
+
   const { data: profile } = useQuery<{
     name: string;
     email: string;
@@ -33,13 +33,13 @@ const AccountPage = () => {
     queryKey: ['/api/user/profile'],
     enabled: !!user,
   });
-  
+
   // Orders
   const { data: orderData } = useQuery<{ orders: Order[] }>({
     queryKey: ['/api/orders'],
     enabled: !!user,
   });
-  
+
   // Upcoming meals
   const { data: upcomingMealsData } = useQuery<{ 
     upcomingMeals: Array<{
@@ -73,10 +73,10 @@ const AccountPage = () => {
     queryKey: ['/api/user/upcoming-meals'],
     enabled: !!user,
   });
-  
+
   // State for tracking selected week in upcoming meals view
   const [selectedWeekId, setSelectedWeekId] = useState<number | null>(null);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     name: "",
@@ -88,7 +88,7 @@ const AccountPage = () => {
     area: "",
     landmark: ""
   });
-  
+
   // Update form data when profile data is loaded
   useEffect(() => {
     if (profile) {
@@ -102,7 +102,7 @@ const AccountPage = () => {
         area: "",
         landmark: ""
       });
-      
+
       // Parse address if available
       if (profile.address) {
         try {
@@ -121,7 +121,7 @@ const AccountPage = () => {
       }
     }
   }, [profile]);
-  
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -129,10 +129,10 @@ const AccountPage = () => {
       [name]: value
     }));
   };
-  
+
   const handleSaveProfile = async () => {
     setIsUpdating(true);
-    
+
     try {
       // Format address object
       const address = JSON.stringify({
@@ -142,22 +142,22 @@ const AccountPage = () => {
         area: formData.area,
         landmark: formData.landmark
       });
-      
+
       await apiRequest('PATCH', '/api/user/profile', {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
         address
       });
-      
+
       // Invalidate profile query to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/user/profile'] });
-      
+
       toast({
         title: "Profile updated",
         description: "Your profile information has been updated successfully."
       });
-      
+
       setIsEditing(false);
     } catch (error) {
       toast({
@@ -169,7 +169,7 @@ const AccountPage = () => {
       setIsUpdating(false);
     }
   };
-  
+
   const handleLogout = async () => {
     try {
       await apiRequest('POST', '/api/auth/logout', {});
@@ -183,15 +183,15 @@ const AccountPage = () => {
       });
     }
   };
-  
+
   // Handle skipping/unskipping a delivery
   const handleSkipDelivery = async (orderId: number, skip: boolean) => {
     try {
       await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
-      
+
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
-      
+
       toast({
         title: skip ? "Delivery Skipped" : "Delivery Restored",
         description: skip 
@@ -206,7 +206,7 @@ const AccountPage = () => {
       });
     }
   };
-  
+
   // Handle meal selection
   const handleAddMeal = async (meal: Meal) => {
     // Check if maximum meals already selected
@@ -218,19 +218,19 @@ const AccountPage = () => {
       });
       return;
     }
-    
+
     const currentWeek = upcomingMealsData?.upcomingMeals.find(week => week.weekId === selectedWeekId);
     if (!currentWeek) return;
-    
+
     // Default to standard portion
     const newMeal: OrderItem = {
       mealId: meal.id,
       portionSize: "standard"
     };
-    
+
     // Update local state
     setSelectedMeals([...selectedMeals, newMeal]);
-    
+
     try {
       // If order exists, add to it
       if (currentWeek.orderId) {
@@ -244,10 +244,10 @@ const AccountPage = () => {
           items: [newMeal]
         });
       }
-      
+
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
-      
+
       toast({
         title: "Meal added",
         description: `${meal.title} has been added to your selections.`
@@ -255,7 +255,7 @@ const AccountPage = () => {
     } catch (error) {
       // Revert local state
       setSelectedMeals(selectedMeals);
-      
+
       toast({
         title: "Error",
         description: "There was an error updating your meal selections. Please try again.",
@@ -263,32 +263,32 @@ const AccountPage = () => {
       });
     }
   };
-  
+
   const handleRemoveMeal = async (meal: Meal) => {
     const currentWeek = upcomingMealsData?.upcomingMeals.find(week => week.weekId === selectedWeekId);
     if (!currentWeek || !currentWeek.orderId) return;
-    
+
     // Find the meal in selections (get the first one if there are duplicates)
     const mealIndex = selectedMeals.findIndex(item => item.mealId === meal.id);
     if (mealIndex === -1) return;
-    
+
     // Update local state
     const updatedMeals = [...selectedMeals];
     updatedMeals.splice(mealIndex, 1);
     setSelectedMeals(updatedMeals);
-    
+
     try {
       // Find the actual order item ID from the week data
       const orderItemIndex = currentWeek.items.findIndex(item => item.mealId === meal.id);
       if (orderItemIndex !== -1) {
         const orderItemId = currentWeek.items[orderItemIndex].id;
-        
+
         // Remove from order
         await apiRequest('DELETE', `/api/orders/${currentWeek.orderId}/items/${orderItemId}`);
-        
+
         // Invalidate queries to refresh data
         queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
-        
+
         toast({
           title: "Meal removed",
           description: `${meal.title} has been removed from your selections.`
@@ -297,7 +297,7 @@ const AccountPage = () => {
     } catch (error) {
       // Revert local state
       setSelectedMeals(selectedMeals);
-      
+
       toast({
         title: "Error",
         description: "There was an error updating your meal selections. Please try again.",
@@ -305,46 +305,46 @@ const AccountPage = () => {
       });
     }
   };
-  
+
   // Check if a meal is already selected
   const getMealCount = (mealId: number): number => {
     return selectedMeals.filter(item => item.mealId === mealId).length;
   };
-  
+
   // State for meals of the selected week
   const [availableMeals, setAvailableMeals] = useState<Meal[]>([]);
   const [selectedMeals, setSelectedMeals] = useState<OrderItem[]>([]);
   const [isLoadingMeals, setIsLoadingMeals] = useState(false);
   const [mealCount, setMealCount] = useState(0);
-  
+
   // Set initial selected week when data is loaded
   useEffect(() => {
     if (upcomingMealsData?.upcomingMeals && upcomingMealsData.upcomingMeals.length > 0 && !selectedWeekId) {
       setSelectedWeekId(upcomingMealsData.upcomingMeals[0].weekId);
     }
   }, [upcomingMealsData, selectedWeekId]);
-  
+
   // Fetch meals for the selected week
   useEffect(() => {
     const fetchMealsForWeek = async () => {
       if (!selectedWeekId) return;
-      
+
       setIsLoadingMeals(true);
       try {
         const response: any = await apiRequest('GET', `/api/menu/${selectedWeekId}`);
         setAvailableMeals(response.meals || []);
-        
+
         // Get current meal selections for this week from upcoming meals data
         const currentWeek = upcomingMealsData?.upcomingMeals.find(week => week.weekId === selectedWeekId);
         if (currentWeek) {
           setMealCount(currentWeek.mealCount);
-          
+
           // Convert week items to OrderItems
           const orderItems: OrderItem[] = currentWeek.items.map(item => ({
             mealId: item.mealId,
             portionSize: item.portionSize as PortionSize
           }));
-          
+
           setSelectedMeals(orderItems);
         }
       } catch (error) {
@@ -357,10 +357,10 @@ const AccountPage = () => {
         setIsLoadingMeals(false);
       }
     };
-    
+
     fetchMealsForWeek();
   }, [selectedWeekId, upcomingMealsData, toast]);
-  
+
   if (!user || !profile) {
     return (
       <div className="container mx-auto px-4 py-16">
@@ -372,7 +372,7 @@ const AccountPage = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="container mx-auto px-4 py-16">
       <div className="max-w-6xl mx-auto">
@@ -382,11 +382,11 @@ const AccountPage = () => {
             <TabsTrigger value="orders">Order History</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="upcoming" className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold text-primary mb-6">Upcoming Deliveries</h2>
-              
+
               {upcomingMealsData?.upcomingMeals && upcomingMealsData.upcomingMeals.length > 0 ? (
                 <div className="space-y-6">
                   {/* Week selector */}
@@ -410,18 +410,18 @@ const AccountPage = () => {
                       </button>
                     ))}
                   </div>
-                  
+
                   {/* Selected week details */}
                   {selectedWeekId && upcomingMealsData.upcomingMeals.map(week => {
                     if (week.weekId !== selectedWeekId) return null;
-                    
+
                     const deadline = new Date(week.orderDeadline);
                     const deadlineFormatted = deadline.toLocaleDateString('en-US', {
                       weekday: 'long',
                       month: 'long',
                       day: 'numeric'
                     });
-                    
+
                     return (
                       <div key={week.weekId} className="space-y-6">
                         {/* Order deadline notice */}
@@ -444,7 +444,7 @@ const AccountPage = () => {
                             </div>
                           </div>
                         </div>
-                        
+
                         {/* Action buttons */}
                         <div className="flex space-x-4">
                           {week.canEdit && !week.isSkipped && (
@@ -458,7 +458,7 @@ const AccountPage = () => {
                               Edit Delivery
                             </Button>
                           )}
-                          
+
                           {week.orderId && week.canSkip && !week.isSkipped && (
                             <Button 
                               variant="outline" 
@@ -471,7 +471,7 @@ const AccountPage = () => {
                               Skip Delivery
                             </Button>
                           )}
-                          
+
                           {week.orderId && week.canUnskip && week.isSkipped && (
                             <Button 
                               variant="outline" 
@@ -485,7 +485,7 @@ const AccountPage = () => {
                             </Button>
                           )}
                         </div>
-                        
+
                         {/* Meal selection directly on account page */}
                         {!week.isSkipped && (
                           <div className="border rounded-lg p-6">
@@ -495,20 +495,20 @@ const AccountPage = () => {
                                 {selectedMeals.length} of {week.mealCount} selected
                               </span>
                             </div>
-                            
+
                             {isLoadingMeals ? (
                               <div className="py-8 flex justify-center">
                                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
                               </div>
                             ) : (
                               <>
-                                {availableMeals.length > 0 ? (
+                                {Array.isArray(availableMeals) && availableMeals.length > 0 ? (
                                   <div className="space-y-4">
                                     {availableMeals.map((meal) => {
                                       const count = getMealCount(meal.id);
                                       const isSelected = count > 0;
                                       const isMaxReached = selectedMeals.length >= week.mealCount;
-                                      
+
                                       return (
                                         <div key={meal.id} className="border rounded-lg overflow-hidden">
                                           <div className="flex items-center p-4">
@@ -521,7 +521,7 @@ const AccountPage = () => {
                                                 />
                                               )}
                                             </div>
-                                            
+
                                             <div className="flex-1">
                                               <h4 className="font-medium text-lg">{meal.title}</h4>
                                               <div className="flex items-center mt-1 text-sm text-gray-600">
@@ -530,7 +530,7 @@ const AccountPage = () => {
                                                 <span>{meal.protein || "0"}g protein</span>
                                               </div>
                                             </div>
-                                            
+
                                             <div className="flex items-center">
                                               <button
                                                 onClick={() => handleRemoveMeal(meal)}
@@ -539,11 +539,11 @@ const AccountPage = () => {
                                               >
                                                 <MinusCircle size={24} />
                                               </button>
-                                              
+
                                               <span className="w-8 text-center font-medium">
                                                 {count}
                                               </span>
-                                              
+
                                               <button
                                                 onClick={() => handleAddMeal(meal)}
                                                 className={`p-2 rounded-full ${(!isMaxReached || isSelected) ? 'text-green-500 hover:bg-green-50' : 'text-gray-300 cursor-not-allowed'}`}
@@ -584,7 +584,7 @@ const AccountPage = () => {
               )}
             </div>
           </TabsContent>
-          
+
           <TabsContent value="orders" className="space-y-6">
             <Card>
               <CardHeader>
@@ -640,7 +640,7 @@ const AccountPage = () => {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="profile" className="space-y-6">
             <Card>
               <CardHeader>
@@ -671,7 +671,7 @@ const AccountPage = () => {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number</Label>
                       <Input
@@ -681,7 +681,7 @@ const AccountPage = () => {
                         onChange={handleInputChange}
                       />
                     </div>
-                    
+
                     <div className="pt-4 border-t">
                       <h3 className="text-lg font-medium mb-4">Delivery Address</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -704,7 +704,7 @@ const AccountPage = () => {
                           />
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                         <div className="space-y-2">
                           <Label htmlFor="apartment">Apartment (Optional)</Label>
@@ -725,7 +725,7 @@ const AccountPage = () => {
                           />
                         </div>
                       </div>
-                      
+
                       <div className="mt-4 space-y-2">
                         <Label htmlFor="landmark">Landmark (Optional)</Label>
                         <Input
@@ -736,7 +736,7 @@ const AccountPage = () => {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="flex gap-4 mt-4">
                       <Button 
                         onClick={handleSaveProfile}
@@ -764,12 +764,12 @@ const AccountPage = () => {
                         <p>{profile.email}</p>
                       </div>
                     </div>
-                    
+
                     <div>
                       <h3 className="text-sm font-medium text-gray-500">Phone</h3>
                       <p>{profile.phone || "Not provided"}</p>
                     </div>
-                    
+
                     <div className="pt-4 border-t">
                       <h3 className="text-lg font-medium mb-2">Delivery Address</h3>
                       {profile.address ? (
@@ -796,7 +796,7 @@ const AccountPage = () => {
                         <p className="text-gray-500">No address saved</p>
                       )}
                     </div>
-                    
+
                     <div className="flex gap-4 mt-4">
                       <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
                       <Button variant="outline" onClick={handleLogout}>Logout</Button>
