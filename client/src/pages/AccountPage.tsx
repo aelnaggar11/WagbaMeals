@@ -184,37 +184,10 @@ const AccountPage = () => {
     }
   };
 
-  // Handle skipping/unskipping a delivery
+  // Handle skipping/unskipping a delivery - simplified direct approach
   const handleSkipDelivery = async (orderId: number, skip: boolean) => {
     try {
-      // Create a copy of the current state for optimistic updates
-      const cachedData = queryClient.getQueryData(['/api/user/upcoming-meals']) as any;
-      
-      if (cachedData && cachedData.upcomingMeals) {
-        // Find the week to update
-        const updatedMeals = [...cachedData.upcomingMeals];
-        const weekIndex = updatedMeals.findIndex(w => w.orderId === orderId);
-        
-        if (weekIndex >= 0) {
-          // Update the status locally for immediate UI feedback
-          const updatedWeek = {
-            ...updatedMeals[weekIndex],
-            isSkipped: skip,
-            canSkip: skip ? false : true,
-            canUnskip: skip ? true : false
-          };
-          
-          updatedMeals[weekIndex] = updatedWeek;
-          
-          // Update the cache immediately
-          queryClient.setQueryData(['/api/user/upcoming-meals'], {
-            ...cachedData,
-            upcomingMeals: updatedMeals
-          });
-        }
-      }
-      
-      // Make the actual API call
+      // Make the API call first
       const response = await fetch(`/api/orders/${orderId}/skip`, {
         method: 'PATCH',
         headers: {
@@ -227,9 +200,7 @@ const AccountPage = () => {
         throw new Error('Failed to update delivery status');
       }
       
-      // Force a refetch to ensure UI is in sync with server
-      await queryClient.refetchQueries({ queryKey: ['/api/user/upcoming-meals'] });
-      
+      // Show toast notification
       toast({
         title: skip ? "Delivery Skipped" : "Delivery Restored",
         description: skip 
@@ -237,21 +208,11 @@ const AccountPage = () => {
           : "Your delivery has been restored. You can now edit your meal selections."
       });
       
-      // If we unskipped, scroll to the meal selection
-      if (!skip) {
-        setTimeout(() => {
-          // Give UI time to update before scrolling
-          document.getElementById(`meal-selection-${cachedData.upcomingMeals.find((w: any) => w.orderId === orderId)?.weekId}`)?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
-          });
-        }, 300);
-      }
+      // Force a window reload to ensure the UI is completely refreshed
+      window.location.reload();
+      
     } catch (error) {
       console.error('Error updating delivery status:', error);
-      
-      // Force a refetch to restore correct state
-      queryClient.refetchQueries({ queryKey: ['/api/user/upcoming-meals'] });
       
       toast({
         title: "Error",
