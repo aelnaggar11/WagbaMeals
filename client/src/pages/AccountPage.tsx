@@ -187,43 +187,43 @@ const AccountPage = () => {
   // Handle skipping/unskipping a delivery with client-side state management
   const handleSkipDelivery = async (orderId: number, skip: boolean) => {
     try {
-      // Optimistically update the UI first (local state change)
-      if (upcomingMealsData && upcomingMealsData.upcomingMeals) {
-        // Create a deep clone of the data
-        const newData = {
-          upcomingMeals: upcomingMealsData.upcomingMeals.map(week => {
+      // Store the previous data for rollback
+      const previousData = queryClient.getQueryData(['/api/user/upcoming-meals']);
+      
+      // Optimistically update the UI
+      queryClient.setQueryData(['/api/user/upcoming-meals'], (old: any) => {
+        if (!old?.upcomingMeals) return old;
+        
+        return {
+          upcomingMeals: old.upcomingMeals.map((week: any) => {
             if (week.orderId === orderId) {
-              // Update this week's skip status
               return {
                 ...week,
                 isSkipped: skip,
-                canSkip: !skip,  // Can only skip if not already skipped
-                canUnskip: skip  // Can only unskip if currently skipped
+                canSkip: !skip,
+                canUnskip: skip,
+                items: week.items // Preserve existing items
               };
             }
             return week;
           })
         };
-        
-        // Update the query client cache immediately
-        queryClient.setQueryData(['/api/user/upcoming-meals'], newData);
-      }
-      
-      // Make the API call in the background
-      const response = await fetch(`/api/orders/${orderId}/skip`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ skip }),
       });
       
-      if (!response.ok) {
+      // Make the API call
+      const response = await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
+      
+      if (!response) {
+        // Revert to previous state if API call fails
+        queryClient.setQueryData(['/api/user/upcoming-meals'], previousData);
         throw new Error('Failed to update delivery status');
       }
       
-      // Silent refresh in the background to ensure data consistency
-      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      // Refresh data in background
+      await queryClient.invalidateQueries({ 
+        queryKey: ['/api/user/upcoming-meals'],
+        refetchType: 'all'
+      });
       
       // Show toast notification
       toast({
