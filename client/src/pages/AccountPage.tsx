@@ -89,17 +89,18 @@ const AccountPage = () => {
   // Single state variable to track which week is being processed
   const [processingWeekId, setProcessingWeekId] = useState<number | null>(null);
   
-  // Function to handle skipping/unskipping deliveries with smart reload
+  // Function to handle skipping/unskipping deliveries WITHOUT page reload
   const handleSkipToggle = async (orderId: number, weekId: number, skip: boolean) => {
     try {
       // Set loading state
       setProcessingWeekId(weekId);
       
-      // Call API
+      // Call API with credentials to maintain session
       const response = await fetch(`/api/orders/${orderId}/skip`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ skip }),
+        credentials: 'same-origin'
       });
       
       if (!response.ok) {
@@ -114,13 +115,12 @@ const AccountPage = () => {
           : "Your delivery has been restored. You can now edit your meal selections."
       });
       
-      // Store the fact that we were on the account page with upcoming meals tab
-      // This will be used after reload to ensure we stay on the same page
-      localStorage.setItem('wagba_current_tab', 'upcoming');
-      localStorage.setItem('wagba_last_action', 'skip_toggle');
+      // Force refetch data without page reload
+      await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       
-      // Refresh the page while preserving state
-      window.location.href = '/account';
+      // Update local processing state
+      setProcessingWeekId(null);
       
     } catch (error) {
       console.error(`Error ${skip ? 'skipping' : 'unskipping'} delivery:`, error);
