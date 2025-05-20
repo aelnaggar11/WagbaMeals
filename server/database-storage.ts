@@ -1,10 +1,68 @@
 import { db } from "./db";
 import { and, eq, inArray } from "drizzle-orm";
 import * as schema from "@shared/schema";
-import { users, meals, weeks, weekMeals, orders, orderItems } from "@shared/schema";
-import type { User, InsertUser, Meal, InsertMeal, Week, InsertWeek, WeekMeal, InsertWeekMeal, Order, InsertOrder, OrderItemFull, InsertOrderItem, IStorage } from "@shared/schema";
+import { users, meals, weeks, weekMeals, orders, orderItems, userWeekStatuses } from "@shared/schema";
+import type { 
+  User, InsertUser, 
+  Meal, InsertMeal, 
+  Week, InsertWeek, 
+  WeekMeal, InsertWeekMeal, 
+  Order, InsertOrder, 
+  OrderItemFull, InsertOrderItem, 
+  UserWeekStatus, InsertUserWeekStatus,
+  IStorage 
+} from "@shared/schema";
 
 export class DatabaseStorage implements IStorage {
+  // UserWeekStatus methods
+  async getUserWeekStatus(userId: number, weekId: number): Promise<UserWeekStatus | undefined> {
+    const [status] = await db
+      .select()
+      .from(userWeekStatuses)
+      .where(and(
+        eq(userWeekStatuses.userId, userId),
+        eq(userWeekStatuses.weekId, weekId)
+      ));
+    return status;
+  }
+  
+  async getUserWeekStatuses(userId: number): Promise<UserWeekStatus[]> {
+    return await db
+      .select()
+      .from(userWeekStatuses)
+      .where(eq(userWeekStatuses.userId, userId));
+  }
+  
+  async setUserWeekStatus(insertUserWeekStatus: InsertUserWeekStatus): Promise<UserWeekStatus> {
+    // Check if a status already exists for this user and week
+    const existingStatus = await this.getUserWeekStatus(
+      insertUserWeekStatus.userId,
+      insertUserWeekStatus.weekId
+    );
+    
+    if (existingStatus) {
+      // Update the existing record
+      const now = new Date();
+      const [updatedStatus] = await db
+        .update(userWeekStatuses)
+        .set({
+          isSkipped: insertUserWeekStatus.isSkipped,
+          updatedAt: now
+        })
+        .where(eq(userWeekStatuses.id, existingStatus.id))
+        .returning();
+        
+      return updatedStatus;
+    } else {
+      // Insert a new record
+      const [newStatus] = await db
+        .insert(userWeekStatuses)
+        .values(insertUserWeekStatus)
+        .returning();
+        
+      return newStatus;
+    }
+  }
   // User methods
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
