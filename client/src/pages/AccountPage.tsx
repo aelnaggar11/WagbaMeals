@@ -311,47 +311,24 @@ const AccountPage = () => {
   // Handle skipping/unskipping a delivery with client-side state management
   const handleSkipDelivery = async (orderId: number, skip: boolean) => {
     try {
-      // Store the previous data for rollback
-      const previousData = queryClient.getQueryData(['/api/user/upcoming-meals']);
-      
-      // Optimistically update the UI
-      queryClient.setQueryData(['/api/user/upcoming-meals'], (old: any) => {
-        if (!old?.upcomingMeals) return old;
-        
-        return {
-          upcomingMeals: old.upcomingMeals.map((week: any) => {
-            if (week.orderId === orderId) {
-              return {
-                ...week,
-                isSkipped: skip,
-                canSkip: !skip,
-                canUnskip: skip,
-                items: week.items // Preserve existing items
-              };
-            }
-            return week;
-          })
-        };
-      });
-      
-      // Make the API call using fetch directly
-      const response = await fetch(`/api/orders/${orderId}/skip`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ skip }),
-      });
+      const response = await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
       
       if (!response.ok) {
-        // Revert to previous state if API call fails
-        queryClient.setQueryData(['/api/user/upcoming-meals'], previousData);
         throw new Error('Failed to update delivery status');
       }
-      
-      // Refresh data in background
-      await queryClient.invalidateQueries({ 
+
+      // Force immediate refetch
+      await queryClient.refetchQueries({ 
         queryKey: ['/api/user/upcoming-meals'],
+        exact: true 
+      });
+
+      toast({
+        title: skip ? "Delivery Skipped" : "Delivery Restored",
+        description: skip 
+          ? "Your delivery has been skipped." 
+          : "Your delivery has been restored."
+      });
         refetchType: 'all'
       });
       
