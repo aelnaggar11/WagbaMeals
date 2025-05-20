@@ -11,7 +11,7 @@ import { Order, User } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatDate, getStatusClass } from "@/lib/utils";
 import { useLocation } from "wouter";
-import SimpleInlineMealSelector from "@/components/SimpleInlineMealSelector";
+import AccountPageMealSelector from "@/components/AccountPageMealSelector";
 
 const AccountPage = () => {
   const [, navigate] = useLocation();
@@ -488,6 +488,18 @@ const AccountPage = () => {
 
                         {/* Meal selection directly on account page */}
                         {!week.isSkipped && (
+                          <div className="border rounded-lg p-6 mt-4">
+                            <AccountPageMealSelector
+                              weekId={week.weekId}
+                              orderId={week.orderId}
+                              mealCount={week.mealCount}
+                              items={week.items}
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Old meal selection UI - now removed */}
+                        {false && (
                           <div className="border rounded-lg p-6">
                             <div className="flex justify-between items-center mb-6">
                               <h3 className="text-lg font-semibold">Select Your Meals</h3>
