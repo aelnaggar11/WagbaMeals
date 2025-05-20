@@ -89,7 +89,7 @@ const AccountPage = () => {
   // Single state variable to track which week is being processed
   const [processingWeekId, setProcessingWeekId] = useState<number | null>(null);
   
-  // Simple function to handle skipping/unskipping deliveries with page reload
+  // Function to handle skipping/unskipping deliveries with smart reload
   const handleSkipToggle = async (orderId: number, weekId: number, skip: boolean) => {
     try {
       // Set loading state
@@ -114,9 +114,13 @@ const AccountPage = () => {
           : "Your delivery has been restored. You can now edit your meal selections."
       });
       
-      // This is the most reliable solution - simply refresh the page
-      // This ensures all data is properly synchronized with the server
-      window.location.reload();
+      // Store the fact that we were on the account page with upcoming meals tab
+      // This will be used after reload to ensure we stay on the same page
+      localStorage.setItem('wagba_current_tab', 'upcoming');
+      localStorage.setItem('wagba_last_action', 'skip_toggle');
+      
+      // Refresh the page while preserving state
+      window.location.href = '/account';
       
     } catch (error) {
       console.error(`Error ${skip ? 'skipping' : 'unskipping'} delivery:`, error);
@@ -554,7 +558,7 @@ const AccountPage = () => {
   return (
     <div className="container mx-auto px-4 py-16">
       <div className="max-w-6xl mx-auto">
-        <Tabs defaultValue="upcoming" className="space-y-8">
+        <Tabs defaultValue="upcoming" value="upcoming" className="space-y-8">
           <TabsList>
             <TabsTrigger value="upcoming">Upcoming Meals</TabsTrigger>
             <TabsTrigger value="orders">Order History</TabsTrigger>
