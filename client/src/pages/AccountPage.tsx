@@ -527,7 +527,7 @@ const AccountPage = () => {
                                               <div className="flex items-center mt-1 text-sm text-gray-600">
                                                 <span>{meal.calories || "0"} cal</span>
                                                 <span className="mx-2">•</span>
-                                                <span>{meal.proteins || "0"}g protein</span>
+                                                <span>{meal.protein || "0"}g protein</span>
                                               </div>
                                             </div>
                                             
