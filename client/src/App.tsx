@@ -1,4 +1,5 @@
-import { Route, Switch, useLocation } from "wouter";
+import { Route, Switch } from "wouter";
+import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import Home from "@/pages/Home";
 import MealPlans from "@/pages/MealPlans";
@@ -13,34 +14,47 @@ import OrdersManagement from "@/pages/admin/OrdersManagement";
 import { useQuery } from "@tanstack/react-query";
 import { User } from "@shared/schema";
 import { Loader2 } from "lucide-react";
-import { useEffect } from "react";
-
 
 function App() {
-  const [location, setLocation] = useLocation();
+  // Get current location for protected route handling
+  const [location, setLocation] = useState(window.location.pathname);
   
-  // Enhanced authentication query with better error handling and loading state
-  const { data: user, isLoading, isError } = useQuery<User | null>({
+  // Listen for location changes
+  useEffect(() => {
+    const handleRouteChange = () => {
+      setLocation(window.location.pathname);
+    };
+    
+    window.addEventListener('popstate', handleRouteChange);
+    return () => window.removeEventListener('popstate', handleRouteChange);
+  }, []);
+  
+  // Simple authentication query
+  const { data: user, isLoading } = useQuery<User | null>({
     queryKey: ['/api/auth/me'],
     refetchOnWindowFocus: true,
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 1
   });
   
-  // Handle auth redirects with useEffect instead of onError
+  // Handle auth redirects
   useEffect(() => {
-    // If auth check is complete and user is not logged in on a protected route, redirect
-    if (!isLoading && !user && (
+    const isProtectedRoute = 
       location.startsWith('/account') || 
       location.startsWith('/checkout') || 
-      location.startsWith('/admin')
-    )) {
-      setLocation('/auth');
+      location.startsWith('/admin');
+      
+    if (!isLoading && !user && isProtectedRoute) {
+      window.location.href = '/auth';
     }
-  }, [user, isLoading, location, setLocation]);
+  }, [user, isLoading, location]);
   
-  // Show loading spinner only for protected routes
-  if (isLoading && (location.startsWith('/account') || location.startsWith('/checkout') || location.startsWith('/admin'))) {
+  // Show loading spinner for protected routes
+  if (isLoading && (
+    location.startsWith('/account') || 
+    location.startsWith('/checkout') || 
+    location.startsWith('/admin')
+  )) {
     return (
       <div className="h-screen w-full flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
