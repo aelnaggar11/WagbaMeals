@@ -210,10 +210,16 @@ const AccountPage = () => {
         };
       });
       
-      // Make the API call
-      const response = await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
+      // Make the API call using fetch directly
+      const response = await fetch(`/api/orders/${orderId}/skip`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ skip }),
+      });
       
-      if (!response) {
+      if (!response.ok) {
         // Revert to previous state if API call fails
         queryClient.setQueryData(['/api/user/upcoming-meals'], previousData);
         throw new Error('Failed to update delivery status');
@@ -520,7 +526,30 @@ const AccountPage = () => {
                           {week.orderId && week.canSkip && !week.isSkipped && (
                             <Button 
                               variant="outline" 
-                              onClick={() => handleSkipDelivery(week.orderId as number, true)}
+                              onClick={() => {
+                                // Use a direct approach for skip
+                                fetch(`/api/orders/${week.orderId}/skip`, {
+                                  method: 'PATCH',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                  },
+                                  body: JSON.stringify({ skip: true }),
+                                }).then(response => {
+                                  if (response.ok) {
+                                    toast({
+                                      title: "Delivery Skipped",
+                                      description: "Your delivery has been skipped. You can unskip it anytime before the order deadline."
+                                    });
+                                    window.location.reload();
+                                  } else {
+                                    toast({
+                                      title: "Error",
+                                      description: "There was an error skipping your delivery. Please try again.",
+                                      variant: "destructive"
+                                    });
+                                  }
+                                });
+                              }}
                               className="flex items-center"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -533,7 +562,30 @@ const AccountPage = () => {
                           {week.orderId && week.canUnskip && week.isSkipped && (
                             <Button 
                               variant="outline" 
-                              onClick={() => handleSkipDelivery(week.orderId as number, false)}
+                              onClick={() => {
+                                // Use a direct approach for unskip
+                                fetch(`/api/orders/${week.orderId}/skip`, {
+                                  method: 'PATCH',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                  },
+                                  body: JSON.stringify({ skip: false }),
+                                }).then(response => {
+                                  if (response.ok) {
+                                    toast({
+                                      title: "Delivery Restored",
+                                      description: "Your delivery has been restored. You can now edit your meal selections."
+                                    });
+                                    window.location.reload();
+                                  } else {
+                                    toast({
+                                      title: "Error",
+                                      description: "There was an error restoring your delivery. Please try again.",
+                                      variant: "destructive"
+                                    });
+                                  }
+                                });
+                              }}
                               className="flex items-center"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
