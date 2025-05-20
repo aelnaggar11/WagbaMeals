@@ -67,6 +67,30 @@ const Navigation = () => {
         </div>
         
         <nav className="hidden md:flex space-x-8">
+          <NavLink 
+            href="/#how-it-works"
+            className={`text-gray-700 hover:text-primary font-medium ${isActive("/#how-it-works") ? "text-primary" : ""}`}
+          >
+            How It Works
+          </NavLink>
+          <NavLink 
+            href="/meal-plans"
+            className={`text-gray-700 hover:text-primary font-medium ${isActive("/meal-plans") ? "text-primary" : ""}`}
+          >
+            Pricing
+          </NavLink>
+          <NavLink 
+            href="/menu/current"
+            className={`text-gray-700 hover:text-primary font-medium ${location.startsWith("/menu") ? "text-primary" : ""}`}
+          >
+            Menu
+          </NavLink>
+          <NavLink 
+            href="/about"
+            className={`text-gray-700 hover:text-primary font-medium ${isActive("/about") ? "text-primary" : ""}`}
+          >
+            About Us
+          </NavLink>
         </nav>
         
         <div className="flex items-center space-x-4">
