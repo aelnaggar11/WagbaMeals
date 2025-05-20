@@ -89,7 +89,7 @@ const AccountPage = () => {
   // Single state variable to track which week is being processed
   const [processingWeekId, setProcessingWeekId] = useState<number | null>(null);
   
-  // Enhanced function to handle skipping/unskipping deliveries with forced refetch
+  // Simple function to handle skipping/unskipping deliveries with page reload
   const handleSkipToggle = async (orderId: number, weekId: number, skip: boolean) => {
     try {
       // Set loading state
@@ -106,9 +106,6 @@ const AccountPage = () => {
         throw new Error(skip ? 'Failed to skip delivery' : 'Failed to restore delivery');
       }
       
-      // Get the updated order data to ensure we have fresh data
-      await fetch(`/api/orders/${orderId}`, { method: 'GET' });
-      
       // Success message
       toast({
         title: skip ? "Delivery Skipped" : "Delivery Restored",
@@ -117,35 +114,9 @@ const AccountPage = () => {
           : "Your delivery has been restored. You can now edit your meal selections."
       });
       
-      // Force reset the query cache to ensure we get fresh data
-      queryClient.removeQueries({ queryKey: ['/api/user/upcoming-meals'] });
-      await queryClient.prefetchQuery({ 
-        queryKey: ['/api/user/upcoming-meals'],
-        refetchOnWindowFocus: false,
-        staleTime: 0 
-      });
-      
-      // Also force refresh the orders list
-      queryClient.removeQueries({ queryKey: ['/api/orders'] });
-      await queryClient.prefetchQuery({ 
-        queryKey: ['/api/orders']
-      });
-      
-      // Force a re-render of the component
-      setIsUpdating(true);
-      setTimeout(() => {
-        setIsUpdating(false);
-        
-        // If unskipping, scroll to meal selection
-        if (!skip) {
-          setTimeout(() => {
-            document.getElementById(`meal-selection-${weekId}`)?.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center'
-            });
-          }, 300);
-        }
-      }, 100);
+      // This is the most reliable solution - simply refresh the page
+      // This ensures all data is properly synchronized with the server
+      window.location.reload();
       
     } catch (error) {
       console.error(`Error ${skip ? 'skipping' : 'unskipping'} delivery:`, error);
@@ -154,7 +125,6 @@ const AccountPage = () => {
         description: `Failed to ${skip ? 'skip' : 'restore'} delivery. Please try again.`,
         variant: "destructive"
       });
-    } finally {
       setProcessingWeekId(null);
     }
   };
