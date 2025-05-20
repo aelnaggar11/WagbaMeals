@@ -7,10 +7,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Order, User } from "@shared/schema";
+import { Meal, Order, User, PortionSize, OrderItem } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatDate, getStatusClass } from "@/lib/utils";
 import { useLocation } from "wouter";
+import { MinusCircle, PlusCircle } from "lucide-react";
 
 const AccountPage = () => {
   const [, navigate] = useLocation();
@@ -206,12 +207,159 @@ const AccountPage = () => {
     }
   };
   
+  // Handle meal selection
+  const handleAddMeal = async (meal: Meal) => {
+    // Check if maximum meals already selected
+    if (selectedMeals.length >= mealCount) {
+      toast({
+        title: "Maximum meals reached",
+        description: `You can only select ${mealCount} meals for this week.`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const currentWeek = upcomingMealsData?.upcomingMeals.find(week => week.weekId === selectedWeekId);
+    if (!currentWeek) return;
+    
+    // Default to standard portion
+    const newMeal: OrderItem = {
+      mealId: meal.id,
+      portionSize: "standard"
+    };
+    
+    // Update local state
+    setSelectedMeals([...selectedMeals, newMeal]);
+    
+    try {
+      // If order exists, add to it
+      if (currentWeek.orderId) {
+        await apiRequest('POST', `/api/orders/${currentWeek.orderId}/items`, newMeal);
+      } else {
+        // Create new order with this meal
+        await apiRequest('POST', '/api/orders', {
+          weekId: selectedWeekId,
+          mealCount,
+          defaultPortionSize: "standard",
+          items: [newMeal]
+        });
+      }
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      
+      toast({
+        title: "Meal added",
+        description: `${meal.title} has been added to your selections.`
+      });
+    } catch (error) {
+      // Revert local state
+      setSelectedMeals(selectedMeals);
+      
+      toast({
+        title: "Error",
+        description: "There was an error updating your meal selections. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleRemoveMeal = async (meal: Meal) => {
+    const currentWeek = upcomingMealsData?.upcomingMeals.find(week => week.weekId === selectedWeekId);
+    if (!currentWeek || !currentWeek.orderId) return;
+    
+    // Find the meal in selections (get the first one if there are duplicates)
+    const mealIndex = selectedMeals.findIndex(item => item.mealId === meal.id);
+    if (mealIndex === -1) return;
+    
+    // Update local state
+    const updatedMeals = [...selectedMeals];
+    updatedMeals.splice(mealIndex, 1);
+    setSelectedMeals(updatedMeals);
+    
+    try {
+      // Find the actual order item ID from the week data
+      const orderItemIndex = currentWeek.items.findIndex(item => item.mealId === meal.id);
+      if (orderItemIndex !== -1) {
+        const orderItemId = currentWeek.items[orderItemIndex].id;
+        
+        // Remove from order
+        await apiRequest('DELETE', `/api/orders/${currentWeek.orderId}/items/${orderItemId}`);
+        
+        // Invalidate queries to refresh data
+        queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+        
+        toast({
+          title: "Meal removed",
+          description: `${meal.title} has been removed from your selections.`
+        });
+      }
+    } catch (error) {
+      // Revert local state
+      setSelectedMeals(selectedMeals);
+      
+      toast({
+        title: "Error",
+        description: "There was an error updating your meal selections. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Check if a meal is already selected
+  const getMealCount = (mealId: number): number => {
+    return selectedMeals.filter(item => item.mealId === mealId).length;
+  };
+  
+  // State for meals of the selected week
+  const [availableMeals, setAvailableMeals] = useState<Meal[]>([]);
+  const [selectedMeals, setSelectedMeals] = useState<OrderItem[]>([]);
+  const [isLoadingMeals, setIsLoadingMeals] = useState(false);
+  const [mealCount, setMealCount] = useState(0);
+  
   // Set initial selected week when data is loaded
   useEffect(() => {
     if (upcomingMealsData?.upcomingMeals && upcomingMealsData.upcomingMeals.length > 0 && !selectedWeekId) {
       setSelectedWeekId(upcomingMealsData.upcomingMeals[0].weekId);
     }
   }, [upcomingMealsData, selectedWeekId]);
+  
+  // Fetch meals for the selected week
+  useEffect(() => {
+    const fetchMealsForWeek = async () => {
+      if (!selectedWeekId) return;
+      
+      setIsLoadingMeals(true);
+      try {
+        const response: any = await apiRequest('GET', `/api/menu/${selectedWeekId}`);
+        setAvailableMeals(response.meals || []);
+        
+        // Get current meal selections for this week from upcoming meals data
+        const currentWeek = upcomingMealsData?.upcomingMeals.find(week => week.weekId === selectedWeekId);
+        if (currentWeek) {
+          setMealCount(currentWeek.mealCount);
+          
+          // Convert week items to OrderItems
+          const orderItems: OrderItem[] = currentWeek.items.map(item => ({
+            mealId: item.mealId,
+            portionSize: item.portionSize as PortionSize
+          }));
+          
+          setSelectedMeals(orderItems);
+        }
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to load meals for this week.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoadingMeals(false);
+      }
+    };
+    
+    fetchMealsForWeek();
+  }, [selectedWeekId, upcomingMealsData, toast]);
   
   if (!user || !profile) {
     return (
@@ -338,57 +486,83 @@ const AccountPage = () => {
                           )}
                         </div>
                         
-                        {/* Meal selection status */}
+                        {/* Meal selection directly on account page */}
                         {!week.isSkipped && (
                           <div className="border rounded-lg p-6">
-                            <h3 className="text-lg font-semibold mb-4">Select Your Meals</h3>
+                            <div className="flex justify-between items-center mb-6">
+                              <h3 className="text-lg font-semibold">Select Your Meals</h3>
+                              <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-medium">
+                                {selectedMeals.length} of {week.mealCount} selected
+                              </span>
+                            </div>
                             
-                            {week.items.length > 0 ? (
+                            {isLoadingMeals ? (
+                              <div className="py-8 flex justify-center">
+                                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                              </div>
+                            ) : (
                               <>
-                                <div className="text-right mb-4">
-                                  <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-medium">
-                                    {week.items.length} of {week.mealCount} selected
-                                  </span>
-                                </div>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  {week.items.map((item) => (
-                                    <div key={item.id} className="flex border rounded-md overflow-hidden">
-                                      <div className="w-24 h-24 bg-gray-100">
-                                        {item.meal.imageUrl && (
-                                          <img 
-                                            src={item.meal.imageUrl} 
-                                            alt={item.meal.title} 
-                                            className="w-full h-full object-cover"
-                                          />
-                                        )}
-                                      </div>
-                                      <div className="flex-1 p-3 flex flex-col justify-between">
-                                        <div>
-                                          <h4 className="font-medium">{item.meal.title}</h4>
-                                          <div className="flex items-center mt-1 text-sm text-gray-500">
-                                            <span>{item.meal.calories} cal</span>
-                                            <span className="mx-2">•</span>
-                                            <span>{item.meal.proteins}g protein</span>
+                                {availableMeals.length > 0 ? (
+                                  <div className="space-y-4">
+                                    {availableMeals.map((meal) => {
+                                      const count = getMealCount(meal.id);
+                                      const isSelected = count > 0;
+                                      const isMaxReached = selectedMeals.length >= week.mealCount;
+                                      
+                                      return (
+                                        <div key={meal.id} className="border rounded-lg overflow-hidden">
+                                          <div className="flex items-center p-4">
+                                            <div className="w-20 h-20 bg-gray-100 rounded-md overflow-hidden mr-4">
+                                              {meal.imageUrl && (
+                                                <img 
+                                                  src={meal.imageUrl} 
+                                                  alt={meal.title} 
+                                                  className="w-full h-full object-cover"
+                                                />
+                                              )}
+                                            </div>
+                                            
+                                            <div className="flex-1">
+                                              <h4 className="font-medium text-lg">{meal.title}</h4>
+                                              <div className="flex items-center mt-1 text-sm text-gray-600">
+                                                <span>{meal.calories || "0"} cal</span>
+                                                <span className="mx-2">•</span>
+                                                <span>{meal.proteins || "0"}g protein</span>
+                                              </div>
+                                            </div>
+                                            
+                                            <div className="flex items-center">
+                                              <button
+                                                onClick={() => handleRemoveMeal(meal)}
+                                                className={`p-2 rounded-full ${isSelected ? 'text-red-500 hover:bg-red-50' : 'text-gray-300 cursor-not-allowed'}`}
+                                                disabled={!isSelected}
+                                              >
+                                                <MinusCircle size={24} />
+                                              </button>
+                                              
+                                              <span className="w-8 text-center font-medium">
+                                                {count}
+                                              </span>
+                                              
+                                              <button
+                                                onClick={() => handleAddMeal(meal)}
+                                                className={`p-2 rounded-full ${(!isMaxReached || isSelected) ? 'text-green-500 hover:bg-green-50' : 'text-gray-300 cursor-not-allowed'}`}
+                                                disabled={isMaxReached && !isSelected}
+                                              >
+                                                <PlusCircle size={24} />
+                                              </button>
+                                            </div>
                                           </div>
                                         </div>
-                                        <div className="text-sm text-gray-600">
-                                          {item.portionSize === 'large' ? 'Large portion' : 'Standard portion'}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </>
-                            ) : (
-                              <div className="text-center py-6">
-                                <p className="text-gray-500 mb-4">You haven't selected any meals for this delivery yet.</p>
-                                {week.canEdit && (
-                                  <Button onClick={() => navigate(`/menu/${week.weekId}?fromAccount=true`)}>
-                                    Select Meals
-                                  </Button>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <div className="text-center py-8">
+                                    <p className="text-gray-500">No meals available for this week.</p>
+                                  </div>
                                 )}
-                              </div>
+                              </>
                             )}
                           </div>
                         )}
@@ -435,15 +609,15 @@ const AccountPage = () => {
                       {orderData.orders.map((order) => (
                         <TableRow key={order.id}>
                           <TableCell className="font-medium">#{order.id}</TableCell>
-                          <TableCell>{formatDate(order.createdAt)}</TableCell>
-                          <TableCell>{order.mealCount} meals</TableCell>
-                          <TableCell>{`EGP ${order.total.toFixed(0)}`}</TableCell>
+                          <TableCell>{formatDate(order.createdAt || new Date())}</TableCell>
+                          <TableCell>{order.mealCount || 0} meals</TableCell>
+                          <TableCell>{`EGP ${(order.total || 0).toFixed(0)}`}</TableCell>
                           <TableCell>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(order.status)}`}>
-                              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(order.status || '')}`}>
+                              {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Unknown'}
                             </span>
                           </TableCell>
-                          <TableCell>{order.deliveryDate}</TableCell>
+                          <TableCell>{order.deliveryDate ? formatDate(order.deliveryDate) : 'Not scheduled'}</TableCell>
                           <TableCell>
                             <Button 
                               variant="outline" 
