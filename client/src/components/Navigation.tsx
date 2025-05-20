@@ -28,8 +28,22 @@ const Navigation = () => {
   const handleLogout = async () => {
     try {
       await apiRequest('POST', '/api/auth/logout', {});
-      queryClient.invalidateQueries();
+      // Clear all queries to ensure proper logout
+      queryClient.clear();
+      // Force invalidate the authentication query
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      
+      // Show success message
+      toast({
+        title: "Logged Out",
+        description: "You have successfully logged out."
+      });
+      
+      // Navigate home
       navigate('/');
+      
+      // Force a page reload to clear any auth state in memory
+      window.location.href = '/';
     } catch (error) {
       toast({
         title: "Error",
