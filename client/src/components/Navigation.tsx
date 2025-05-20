@@ -70,7 +70,7 @@ const Navigation = () => {
         </nav>
         
         <div className="flex items-center space-x-4">
-          {user && location !== '/account' ? (
+          {user ? (
             <>
               <NavLink 
                 href="/account"
@@ -86,15 +86,14 @@ const Navigation = () => {
                   Admin
                 </NavLink>
               )}
+              <Button 
+                variant="ghost" 
+                className="text-accent-foreground hover:text-primary font-medium"
+                onClick={handleLogout}
+              >
+                Logout
+              </Button>
             </>
-          ) : user && location === '/account' ? (
-            <Button 
-              variant="ghost" 
-              className="text-accent-foreground hover:text-primary font-medium"
-              onClick={handleLogout}
-            >
-              Logout
-            </Button>
           ) : (
             <>
               <NavLink
