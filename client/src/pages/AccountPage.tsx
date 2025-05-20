@@ -18,6 +18,7 @@ const AccountPage = () => {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isSkipLoading, setSkipLoading] = useState(false);
 
   // User profile
   const { data: user } = useQuery<User>({
@@ -526,72 +527,154 @@ const AccountPage = () => {
                           {week.orderId && week.canSkip && !week.isSkipped && (
                             <Button 
                               variant="outline" 
-                              onClick={() => {
-                                // Use a direct approach for skip
-                                fetch(`/api/orders/${week.orderId}/skip`, {
-                                  method: 'PATCH',
-                                  headers: {
-                                    'Content-Type': 'application/json',
-                                  },
-                                  body: JSON.stringify({ skip: true }),
-                                }).then(response => {
+                              disabled={isSkipLoading}
+                              onClick={async () => {
+                                try {
+                                  setSkipLoading(true);
+                                  
+                                  // Update UI immediately for responsive feeling
+                                  const updatedMeals = upcomingMealsData?.upcomingMeals.map(w => {
+                                    if (w.weekId === week.weekId) {
+                                      return { ...w, isSkipped: true, canSkip: false, canUnskip: true };
+                                    }
+                                    return w;
+                                  });
+                                  
+                                  if (updatedMeals) {
+                                    queryClient.setQueryData(['/api/user/upcoming-meals'], { upcomingMeals: updatedMeals });
+                                  }
+                                  
+                                  // Make API call
+                                  const response = await fetch(`/api/orders/${week.orderId}/skip`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ skip: true }),
+                                  });
+                                  
                                   if (response.ok) {
                                     toast({
                                       title: "Delivery Skipped",
                                       description: "Your delivery has been skipped. You can unskip it anytime before the order deadline."
                                     });
-                                    window.location.reload();
+                                    
+                                    // Refresh data from server without page reload
+                                    await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
                                   } else {
-                                    toast({
-                                      title: "Error",
-                                      description: "There was an error skipping your delivery. Please try again.",
-                                      variant: "destructive"
-                                    });
+                                    throw new Error('Failed to skip delivery');
                                   }
-                                });
+                                } catch (error) {
+                                  console.error('Error skipping delivery:', error);
+                                  toast({
+                                    title: "Error",
+                                    description: "There was an error skipping your delivery. Please try again.",
+                                    variant: "destructive"
+                                  });
+                                  
+                                  // Refresh data to ensure we're in sync with server
+                                  await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+                                } finally {
+                                  setSkipLoading(false);
+                                }
                               }}
                               className="flex items-center"
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                              Skip Delivery
+                              {isSkipLoading ? (
+                                <>
+                                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  Processing...
+                                </>
+                              ) : (
+                                <>
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                  Skip Delivery
+                                </>
+                              )}
                             </Button>
                           )}
 
                           {week.orderId && week.canUnskip && week.isSkipped && (
                             <Button 
-                              variant="outline" 
-                              onClick={() => {
-                                // Use a direct approach for unskip
-                                fetch(`/api/orders/${week.orderId}/skip`, {
-                                  method: 'PATCH',
-                                  headers: {
-                                    'Content-Type': 'application/json',
-                                  },
-                                  body: JSON.stringify({ skip: false }),
-                                }).then(response => {
+                              variant="outline"
+                              disabled={isSkipLoading}
+                              onClick={async () => {
+                                try {
+                                  setSkipLoading(true);
+                                  
+                                  // Update UI immediately for responsive feeling
+                                  const updatedMeals = upcomingMealsData?.upcomingMeals.map(w => {
+                                    if (w.weekId === week.weekId) {
+                                      return { ...w, isSkipped: false, canSkip: true, canUnskip: false };
+                                    }
+                                    return w;
+                                  });
+                                  
+                                  if (updatedMeals) {
+                                    queryClient.setQueryData(['/api/user/upcoming-meals'], { upcomingMeals: updatedMeals });
+                                  }
+                                  
+                                  // Make API call
+                                  const response = await fetch(`/api/orders/${week.orderId}/skip`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ skip: false }),
+                                  });
+                                  
                                   if (response.ok) {
                                     toast({
                                       title: "Delivery Restored",
                                       description: "Your delivery has been restored. You can now edit your meal selections."
                                     });
-                                    window.location.reload();
+                                    
+                                    // Refresh data from server without page reload
+                                    await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+                                    
+                                    // Scroll to meal selection section
+                                    setTimeout(() => {
+                                      document.getElementById(`meal-selection-${week.weekId}`)?.scrollIntoView({
+                                        behavior: 'smooth',
+                                        block: 'center'
+                                      });
+                                    }, 500);
                                   } else {
-                                    toast({
-                                      title: "Error",
-                                      description: "There was an error restoring your delivery. Please try again.",
-                                      variant: "destructive"
-                                    });
+                                    throw new Error('Failed to unskip delivery');
                                   }
-                                });
+                                } catch (error) {
+                                  console.error('Error unskipping delivery:', error);
+                                  toast({
+                                    title: "Error",
+                                    description: "There was an error restoring your delivery. Please try again.",
+                                    variant: "destructive"
+                                  });
+                                  
+                                  // Refresh data to ensure we're in sync with server
+                                  await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+                                } finally {
+                                  setSkipLoading(false);
+                                }
                               }}
                               className="flex items-center"
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                              </svg>
-                              Unskip Delivery
+                              {isSkipLoading ? (
+                                <>
+                                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  Processing...
+                                </>
+                              ) : (
+                                <>
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                  </svg>
+                                  Unskip Delivery
+                                </>
+                              )}
                             </Button>
                           )}
                         </div>
