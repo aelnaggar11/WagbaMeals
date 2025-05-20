@@ -274,6 +274,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Menu Routes
+  
+  // Get all meals
+  app.get('/api/meals', async (req, res) => {
+    try {
+      const meals = await storage.getAllMeals();
+      res.json({ meals });
+    } catch (error) {
+      console.error("Error fetching all meals:", error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
   app.get('/api/menu/:weekId', async (req, res) => {
     try {
       const weekId = req.params.weekId;
@@ -292,6 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ meals });
     } catch (error) {
+      console.error("Error fetching meals for week:", error);
       res.status(500).json({ message: 'Server error' });
     }
   });
