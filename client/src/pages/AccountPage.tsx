@@ -7,11 +7,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Meal, Order, User, PortionSize, OrderItem } from "@shared/schema";
+import { Order, User } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatDate, getStatusClass } from "@/lib/utils";
 import { useLocation } from "wouter";
-import { MinusCircle, PlusCircle } from "lucide-react";
+import MealSelectionPanel from "@/components/MealSelectionPanel";
 
 const AccountPage = () => {
   const [, navigate] = useLocation();
