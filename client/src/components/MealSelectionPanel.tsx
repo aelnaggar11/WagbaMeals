@@ -115,7 +115,7 @@ const MealSelectionPanel = ({
     } catch (error) {
       // Revert local state
       setSelectedMeals(selectedMeals);
-      
+
       toast({
         title: "Error",
         description: "There was an error updating your meal selections. Please try again.",
@@ -140,13 +140,13 @@ const MealSelectionPanel = ({
       const orderItemIndex = selectedItems.findIndex(item => item.mealId === meal.id);
       if (orderItemIndex !== -1) {
         const orderItemId = selectedItems[orderItemIndex].id;
-        
+
         // Remove from order
         await apiRequest('DELETE', `/api/orders/${orderId}/items/${orderItemId}`);
-        
+
         // Invalidate queries to refresh data
         queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
-        
+
         toast({
           title: "Meal removed",
           description: `${meal.title} has been removed from your selections.`
@@ -155,10 +155,39 @@ const MealSelectionPanel = ({
     } catch (error) {
       // Revert local state
       setSelectedMeals(selectedMeals);
-      
+
       toast({
         title: "Error",
         description: "There was an error updating your meal selections. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Skip or unskip a delivery
+  const handleSkipDelivery = async () => {
+    try {
+      if (!orderId) return;
+
+      await apiRequest('PATCH', `/api/orders/${orderId}/skip`, {
+        skip: !isSkipped
+      });
+
+      // Force immediate refetch of upcoming meals
+      await queryClient.refetchQueries({ 
+        queryKey: ['/api/user/upcoming-meals'],
+        exact: true 
+      });
+
+      toast({
+        title: isSkipped ? "Delivery unskipped" : "Delivery skipped",
+        description: isSkipped ? "Your meals have been restored." : "Your delivery has been skipped for this week."
+      });
+    } catch (error) {
+      console.error('Error skipping/unskipping delivery:', error);
+      toast({
+        title: "Error",
+        description: "There was an error updating your delivery status. Please try again.",
         variant: "destructive"
       });
     }
@@ -189,7 +218,7 @@ const MealSelectionPanel = ({
                 const count = getMealCount(meal.id);
                 const isSelected = count > 0;
                 const isMaxReached = selectedMeals.length >= mealCount;
-                
+
                 return (
                   <div key={meal.id} className="border rounded-lg overflow-hidden">
                     <div className="flex items-center p-4">
@@ -202,7 +231,7 @@ const MealSelectionPanel = ({
                           />
                         )}
                       </div>
-                      
+
                       <div className="flex-1">
                         <h4 className="font-medium text-lg">{meal.title}</h4>
                         <div className="flex items-center mt-1 text-sm text-gray-600">
@@ -211,7 +240,7 @@ const MealSelectionPanel = ({
                           <span>{meal.protein || "0"}g protein</span>
                         </div>
                       </div>
-                      
+
                       {canEdit && (
                         <div className="flex items-center">
                           <button
@@ -221,11 +250,11 @@ const MealSelectionPanel = ({
                           >
                             <MinusCircle size={24} />
                           </button>
-                          
+
                           <span className="w-8 text-center font-medium">
                             {count}
                           </span>
-                          
+
                           <button
                             onClick={() => handleAddMeal(meal)}
                             className={`p-2 rounded-full ${(!isMaxReached || isSelected) ? 'text-green-500 hover:bg-green-50' : 'text-gray-300 cursor-not-allowed'}`}
