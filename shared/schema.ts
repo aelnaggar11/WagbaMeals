@@ -87,12 +87,28 @@ export const weekMeals = pgTable("week_meals", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// UserWeekStatus Model (Tracks if a user has skipped a week)
+export const userWeekStatuses = pgTable("user_week_statuses", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  weekId: integer("week_id").notNull(),
+  isSkipped: boolean("is_skipped").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const insertWeekMealSchema = createInsertSchema(weekMeals).pick({
   weekId: true,
   mealId: true,
   isAvailable: true,
   isFeatured: true,
   sortOrder: true,
+});
+
+export const insertUserWeekStatusSchema = createInsertSchema(userWeekStatuses).pick({
+  userId: true,
+  weekId: true,
+  isSkipped: true,
 });
 
 // Order Model
@@ -170,6 +186,9 @@ export type OrderItem = {
 export type OrderItemFull = typeof orderItems.$inferSelect;
 export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 
+export type UserWeekStatus = typeof userWeekStatuses.$inferSelect;
+export type InsertUserWeekStatus = z.infer<typeof insertUserWeekStatusSchema>;
+
 export type PortionSize = "standard" | "large";
 
 // Storage interface
@@ -215,6 +234,11 @@ export interface IStorage {
   // OrderItem methods
   getOrderItems(orderId: number): Promise<OrderItemFull[]>;
   addOrderItem(orderItem: InsertOrderItem): Promise<OrderItemFull>;
+  
+  // UserWeekStatus methods
+  getUserWeekStatus(userId: number, weekId: number): Promise<UserWeekStatus | undefined>;
+  setUserWeekStatus(userWeekStatus: InsertUserWeekStatus): Promise<UserWeekStatus>;
+  getUserWeekStatuses(userId: number): Promise<UserWeekStatus[]>;
 }
 
 // Helper functions for pricing

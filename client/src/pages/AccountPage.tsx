@@ -308,12 +308,16 @@ const AccountPage = () => {
     }
   };
 
-  // Handle skipping/unskipping a delivery with client-side state management
-  const handleSkipDelivery = async (orderId: number, skip: boolean) => {
+  // Handle skipping/unskipping a delivery with week-based status
+  const handleSkipDelivery = async (weekId: number, skip: boolean) => {
     try {
-      const response = await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
+      // Set loading state for this week
+      setProcessingWeekId(weekId);
+
+      // Make API call to update the week status
+      const response = await apiRequest('PATCH', `/api/weeks/${weekId}/skip`, { skip });
       
-      if (!response.ok) {
+      if (!response.status || response.status >= 400) {
         throw new Error('Failed to update delivery status');
       }
 
@@ -326,22 +330,26 @@ const AccountPage = () => {
       toast({
         title: skip ? "Delivery Skipped" : "Delivery Restored",
         description: skip 
-          ? "Your delivery has been skipped." 
-          : "Your delivery has been restored."
-      });
-        refetchType: 'all'
-      });
-      
-      // Show toast notification
-      toast({
-        title: skip ? "Delivery Skipped" : "Delivery Restored",
-        description: skip 
           ? "Your delivery has been skipped. You can unskip it anytime before the order deadline." 
           : "Your delivery has been restored. You can now edit your meal selections."
       });
       
-      // If we unskipped, scroll to the meal selection
-      if (!skip) {
+      // Reset loading state
+      setProcessingWeekId(null);
+    } catch (error) {
+      console.error('Error updating delivery status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update your delivery status. Please try again.",
+        variant: "destructive"
+      });
+      // Reset loading state
+      setProcessingWeekId(null);
+    }
+  };
+  
+  // Function to scroll to meal selection section if we unskipped
+  const scrollToMealSelection = (weekId: number) => {
         const weekId = upcomingMealsData?.upcomingMeals.find(week => week.orderId === orderId)?.weekId;
         if (weekId) {
           setTimeout(() => {
