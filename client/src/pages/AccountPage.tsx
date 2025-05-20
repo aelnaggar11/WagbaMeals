@@ -187,9 +187,38 @@ const AccountPage = () => {
   // Handle skipping/unskipping a delivery
   const handleSkipDelivery = async (orderId: number, skip: boolean) => {
     try {
-      await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
+      // Apply optimistic update to UI
+      if (upcomingMealsData && upcomingMealsData.upcomingMeals) {
+        // Create a deep copy of the data
+        const updatedMeals = JSON.parse(JSON.stringify(upcomingMealsData));
+        
+        // Find and update the relevant order
+        for (let i = 0; i < updatedMeals.upcomingMeals.length; i++) {
+          if (updatedMeals.upcomingMeals[i].orderId === orderId) {
+            // Update skipped status
+            updatedMeals.upcomingMeals[i].isSkipped = skip;
+            break;
+          }
+        }
+        
+        // Update the local cache immediately for a responsive UI
+        queryClient.setQueryData(['/api/user/upcoming-meals'], updatedMeals);
+      }
+      
+      // Make API call to update the server
+      const response = await fetch(`/api/orders/${orderId}/skip`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ skip }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update order');
+      }
 
-      // Invalidate queries to refresh data
+      // Invalidate queries to refresh data with actual server state
       queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
 
       toast({
@@ -199,6 +228,9 @@ const AccountPage = () => {
           : "Your delivery has been restored. You can now edit your meal selections."
       });
     } catch (error) {
+      // If there's an error, invalidate to refresh from server
+      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      
       toast({
         title: "Error",
         description: "There was an error updating your delivery. Please try again.",
