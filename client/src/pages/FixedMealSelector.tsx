@@ -1,78 +1,82 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { MinusCircle, PlusCircle, Check, Save } from "lucide-react";
+import { MinusCircle, PlusCircle, Save } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+
+interface Meal {
+  id: number;
+  title: string;
+  imageUrl: string;
+  calories: number;
+  protein: number;
+}
+
+interface WeekItem {
+  id: number;
+  mealId: number;
+  portionSize: string;
+  meal: Meal;
+}
 
 interface FixedMealSelectorProps {
   weekId: number;
   orderId: number | null;
   mealCount: number;
-  initialItems: any[];
+  items: WeekItem[];
 }
 
-// Simple meal selector component that works correctly with API data
 export default function FixedMealSelector({
   weekId,
   orderId,
   mealCount = 3,
-  initialItems = []
+  items = []
 }: FixedMealSelectorProps) {
   const { toast } = useToast();
-  const [selectedItems, setSelectedItems] = useState(initialItems);
+  const [selectedItems, setSelectedItems] = useState<WeekItem[]>([]);
   const [savedItems, setSavedItems] = useState<any[]>([]);
   const [isSaved, setIsSaved] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Fetch all available meals
-  const { data: meals, isLoading } = useQuery({
-    queryKey: ['/api/meals'],
-    queryFn: async () => {
-      try {
-        // Direct API call that just returns exactly what we get from the server
-        const response = await fetch(`/api/meals`);
-        const data = await response.json();
-        console.log("Fetched meals data:", data);
-        return data.meals || [];
-      } catch (error) {
-        console.error("Error fetching meals:", error);
-        return [];
-      }
-    }
+  // Fetch meals for this week
+  const { data, isLoading } = useQuery({
+    queryKey: [`/api/menu/${weekId}`],
+    enabled: !!weekId,
   });
 
-  // Update selected items when initialItems changes
+  // Initialize once with props
   useEffect(() => {
-    setSelectedItems(initialItems);
-    
-    // If there are initial items, consider them as saved
-    if (initialItems.length > 0) {
-      groupAndSaveMeals(initialItems);
-    }
-  }, [initialItems]);
-  
-  // Group meals by ID and save them
-  const groupAndSaveMeals = (items: any[]) => {
-    // Count occurrences of each meal
-    const mealGroups = items.reduce((groups: any, item: any) => {
-      const mealId = item.mealId;
+    if (!isInitialized && items.length > 0) {
+      setSelectedItems(items);
       
-      if (!groups[mealId]) {
-        groups[mealId] = {
+      // Group the items by meal ID for display
+      const grouped = groupMealsByCount(items);
+      setSavedItems(grouped);
+      
+      // If we have items, consider the selection as saved
+      setIsSaved(items.length > 0);
+      setIsInitialized(true);
+    }
+  }, [items, isInitialized]);
+
+  // Group meals by ID and count them
+  const groupMealsByCount = (items: WeekItem[]) => {
+    const groups: Record<number, { meal: Meal, count: number }> = {};
+    
+    items.forEach(item => {
+      if (!groups[item.mealId]) {
+        groups[item.mealId] = {
           meal: item.meal,
           count: 1
         };
       } else {
-        groups[mealId].count++;
+        groups[item.mealId].count++;
       }
-      
-      return groups;
-    }, {});
+    });
     
-    // Convert to array
-    const groupedMeals = Object.values(mealGroups);
-    setSavedItems(groupedMeals);
+    return Object.values(groups);
   };
 
   // Get the count of a particular meal in selections
@@ -80,9 +84,8 @@ export default function FixedMealSelector({
     return selectedItems.filter(item => item.mealId === mealId).length;
   };
 
-  // Add a meal to the order
-  const handleAddMeal = async (meal: any) => {
-    // Check if maximum meals already selected
+  // Add a meal to the selection
+  const handleAddMeal = async (meal: Meal) => {
     if (selectedItems.length >= mealCount) {
       toast({
         title: "Maximum meals reached",
@@ -92,19 +95,19 @@ export default function FixedMealSelector({
     }
 
     try {
-      console.log("Adding meal:", meal.id, "to order:", orderId);
-      
-      // Optimistically update UI
-      const updatedItems = [...selectedItems, {
+      // Create a new item
+      const newItem: WeekItem = {
         id: Date.now(), // Temporary ID for UI
         mealId: meal.id,
         portionSize: "standard",
         meal: meal
-      }];
-      setSelectedItems(updatedItems);
+      };
+      
+      // Update local state
+      setSelectedItems(prev => [...prev, newItem]);
 
+      // Save to server if we have an order
       if (orderId) {
-        // Add to existing order
         const response = await fetch(`/api/orders/${orderId}/items`, {
           method: 'POST',
           headers: {
@@ -119,41 +122,8 @@ export default function FixedMealSelector({
         if (!response.ok) {
           throw new Error('Failed to add meal');
         }
-      } else {
-        // Create new order
-        const response = await fetch('/api/orders', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            weekId,
-            mealCount,
-            defaultPortionSize: "standard",
-            items: [{
-              mealId: meal.id,
-              portionSize: "standard"
-            }]
-          }),
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to create order');
-        }
       }
-
-      // Refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
-      
-      toast({
-        title: "Meal added",
-        description: `${meal.title} has been added to your selections.`
-      });
     } catch (error) {
-      console.error("Error adding meal:", error);
-      // Revert the optimistic update
-      setSelectedItems(selectedItems);
-      
       toast({
         title: "Error",
         description: "Failed to add meal. Please try again."
@@ -161,45 +131,31 @@ export default function FixedMealSelector({
     }
   };
 
-  // Remove a meal from the order
-  const handleRemoveMeal = async (meal: any) => {
-    // Find the item to remove
-    const itemToRemove = selectedItems.find(item => item.mealId === meal.id);
-    if (!itemToRemove || !orderId) return;
+  // Remove a meal from the selection
+  const handleRemoveMeal = async (meal: Meal) => {
+    // Find the first occurrence of this meal in our selection
+    const itemIndex = selectedItems.findIndex(item => item.mealId === meal.id);
+    if (itemIndex === -1) return;
+    
+    const itemToRemove = selectedItems[itemIndex];
 
     try {
-      console.log("Removing meal:", meal.id, "item:", itemToRemove.id, "from order:", orderId);
-      
-      // Optimistically update UI
-      const updatedItems = selectedItems.filter(item => 
-        !(item.mealId === meal.id && item.id === itemToRemove.id)
-      );
-      setSelectedItems(updatedItems);
+      // Update local state (remove just one instance)
+      const newItems = [...selectedItems];
+      newItems.splice(itemIndex, 1);
+      setSelectedItems(newItems);
 
-      // Remove from order using direct fetch for more control
-      const response = await fetch(`/api/orders/${orderId}/items/${itemToRemove.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
+      // Delete from server if we have an order ID and item ID
+      if (orderId && itemToRemove.id) {
+        const response = await fetch(`/api/orders/${orderId}/items/${itemToRemove.id}`, {
+          method: 'DELETE',
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to remove meal');
         }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to remove meal');
       }
-      
-      // Refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
-      
-      toast({
-        title: "Meal removed",
-        description: `${meal.title} has been removed from your selections.`
-      });
     } catch (error) {
-      console.error("Error removing meal:", error);
-      // Revert the optimistic update
-      setSelectedItems(selectedItems);
-      
       toast({
         title: "Error",
         description: "Failed to remove meal. Please try again."
@@ -207,9 +163,8 @@ export default function FixedMealSelector({
     }
   };
   
-  // Save the current selection
+  // Save the current meal selection
   const handleSave = () => {
-    // Check if we have the correct number of meals
     if (selectedItems.length !== mealCount) {
       toast({
         title: "Wrong number of meals",
@@ -219,16 +174,17 @@ export default function FixedMealSelector({
       return;
     }
     
-    // Group the meals
-    groupAndSaveMeals(selectedItems);
-    
-    // Mark as saved
+    // Group the meals for display
+    const grouped = groupMealsByCount(selectedItems);
+    setSavedItems(grouped);
     setIsSaved(true);
+    
+    // Update the upcoming meals data
+    queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
     
     toast({
       title: "Selection saved",
       description: "Your meal selection has been saved.",
-      variant: "default"
     });
   };
   
@@ -237,6 +193,7 @@ export default function FixedMealSelector({
     setIsSaved(false);
   };
 
+  // Show loading state
   if (isLoading) {
     return (
       <div className="py-8 flex justify-center">
@@ -245,10 +202,12 @@ export default function FixedMealSelector({
     );
   }
 
+  const meals = data?.meals || [];
+
   return (
     <div>
-      {/* Saved mode with grouped meals */}
       {isSaved ? (
+        // Saved view with grouped meals
         <>
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-semibold">Your Selected Meals</h3>
@@ -304,13 +263,13 @@ export default function FixedMealSelector({
           )}
         </>
       ) : (
+        // Edit mode with meal selector
         <>
-          {/* Edit mode with meal selector */}
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-semibold">Select Your Meals</h3>
             <div className="flex items-center gap-3">
               <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-medium">
-                {selectedItems.length || 0} of {mealCount} selected
+                {selectedItems.length} of {mealCount} selected
               </span>
               <Button 
                 onClick={handleSave}
@@ -324,9 +283,9 @@ export default function FixedMealSelector({
             </div>
           </div>
 
-          {meals && meals.length > 0 ? (
+          {meals.length > 0 ? (
             <div className="space-y-4">
-              {meals.map((meal: any) => {
+              {meals.map((meal: Meal) => {
                 const count = getMealCount(meal.id);
                 const isSelected = count > 0;
                 const isMaxReached = selectedItems.length >= mealCount;
