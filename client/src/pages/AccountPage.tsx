@@ -174,17 +174,8 @@ const AccountPage = () => {
       // Set loading state
       setProcessingWeekId(weekId);
       
-      // Call API
-      const response = await fetch(`/api/orders/${orderId}/skip`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ skip }),
-        credentials: 'same-origin'
-      });
-      
-      if (!response.ok) {
-        throw new Error(skip ? 'Failed to skip delivery' : 'Failed to restore delivery');
-      }
+      // Call API using apiRequest for better error handling
+      await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
       
       // Success message
       toast({
@@ -194,8 +185,11 @@ const AccountPage = () => {
           : "Your delivery has been restored. You can now edit your meal selections."
       });
       
-      // Gracefully refresh data
-      await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      // Force refresh of upcoming meals data
+      await queryClient.refetchQueries({ 
+        queryKey: ['/api/user/upcoming-meals'],
+        exact: true 
+      });
       
       // Reset loading state
       setProcessingWeekId(null);
@@ -207,7 +201,7 @@ const AccountPage = () => {
             behavior: 'smooth',
             block: 'center'
           });
-        }, 100);
+        }, 500);
       }
     } catch (error) {
       console.error(`Error ${skip ? 'skipping' : 'unskipping'} delivery:`, error);
