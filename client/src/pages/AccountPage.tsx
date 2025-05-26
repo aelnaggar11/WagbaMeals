@@ -168,20 +168,17 @@ const AccountPage = () => {
     }
   };
 
-  // Simple and reliable implementation of skip/unskip with immediate UI updates
+  // Skip/unskip implementation with immediate UI updates
   const handleSkipToggle = async (orderId: number, weekId: number, skip: boolean) => {
     try {
       // Set loading state
       setProcessingWeekId(weekId);
       
-      // Call API first
+      // Make API call
       await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
       
-      // Force immediate refresh of the data
-      await queryClient.refetchQueries({ 
-        queryKey: ['/api/user/upcoming-meals'],
-        exact: true 
-      });
+      // Immediately invalidate and refetch the data to show changes
+      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
       
       // Success message
       toast({
@@ -194,14 +191,14 @@ const AccountPage = () => {
       // Reset loading state
       setProcessingWeekId(null);
       
-      // If we unskipped, scroll to the meal selection 
+      // If we unskipped, scroll to the meal selection after a brief delay
       if (!skip) {
         setTimeout(() => {
           document.getElementById(`meal-selection-${weekId}`)?.scrollIntoView({
             behavior: 'smooth',
             block: 'center'
           });
-        }, 200);
+        }, 300);
       }
     } catch (error) {
       console.error(`Error ${skip ? 'skipping' : 'unskipping'} delivery:`, error);

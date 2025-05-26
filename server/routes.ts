@@ -494,14 +494,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get current date
       const now = new Date();
       
-      // Filter weeks that are upcoming (order deadline is in the future or delivery date is in the future)
-      // This ensures we show weeks even if deadline passed but delivery hasn't happened yet
+      // Filter weeks that are upcoming (delivery date is today or in the future)
       const upcomingWeeks = weeks.filter(week => {
         const deliveryDate = new Date(week.deliveryDate);
-        return deliveryDate >= now;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Start of today
+        deliveryDate.setHours(0, 0, 0, 0); // Start of delivery day
+        return deliveryDate >= today;
       }).sort((a, b) => {
         return new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime();
-      }).slice(0, 4); // Only show next 4 weeks for users
+      }).slice(0, 4); // Show exactly 4 weeks for users
       
       // For each upcoming week, get or create the user's order
       const upcomingMeals = [];
@@ -510,13 +512,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let order = await storage.getOrderByUserAndWeek(req.session.userId, week.id);
         const orderDeadlinePassed = new Date(week.orderDeadline) <= now;
         
-        // If no order exists, create one with default settings
+        // If no order exists, create one with user's default meal count
         if (!order) {
+          // Get user's default meal count from their most recent order
+          const userOrders = await storage.getOrdersByUser(req.session.userId);
+          const defaultMealCount = userOrders.length > 0 ? userOrders[userOrders.length - 1].mealCount : 4;
+          
           order = await storage.createOrder({
             userId: req.session.userId,
             weekId: week.id,
             status: 'pending',
-            mealCount: 5, // Default meal count - should come from user profile
+            mealCount: defaultMealCount,
             defaultPortionSize: 'standard',
             subtotal: 0,
             discount: 0,
