@@ -174,28 +174,14 @@ const AccountPage = () => {
       // Set loading state
       setProcessingWeekId(weekId);
       
-      // Optimistically update the UI immediately
-      queryClient.setQueryData(['/api/user/upcoming-meals'], (oldData: any) => {
-        if (!oldData?.upcomingMeals) return oldData;
-        
-        return {
-          ...oldData,
-          upcomingMeals: oldData.upcomingMeals.map((week: any) => {
-            if (week.weekId === weekId) {
-              return {
-                ...week,
-                isSkipped: skip,
-                canSkip: !skip,
-                canUnskip: skip
-              };
-            }
-            return week;
-          })
-        };
-      });
-      
-      // Call API using apiRequest for better error handling
+      // Call API first
       await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
+      
+      // Force immediate refresh of the data
+      await queryClient.refetchQueries({ 
+        queryKey: ['/api/user/upcoming-meals'],
+        exact: true 
+      });
       
       // Success message
       toast({
@@ -208,11 +194,6 @@ const AccountPage = () => {
       // Reset loading state
       setProcessingWeekId(null);
       
-      // Background refresh to ensure data consistency
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
-      }, 1000);
-      
       // If we unskipped, scroll to the meal selection 
       if (!skip) {
         setTimeout(() => {
@@ -220,13 +201,10 @@ const AccountPage = () => {
             behavior: 'smooth',
             block: 'center'
           });
-        }, 100);
+        }, 200);
       }
     } catch (error) {
       console.error(`Error ${skip ? 'skipping' : 'unskipping'} delivery:`, error);
-      
-      // Revert the optimistic update on error
-      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
       
       toast({
         title: "Error",
