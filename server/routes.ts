@@ -285,12 +285,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       weekNumber++;
     }
     
-    // Insert the new weeks
+    // Insert the new weeks and assign meals to them
     for (const weekData of weeksToGenerate) {
       try {
-        await storage.createWeek(weekData);
+        const newWeek = await storage.createWeek(weekData);
+        
+        // Get meals from week 1 (template week) and assign them to the new week
+        const templateWeekMeals = await storage.getWeekMeals(1);
+        for (const templateMeal of templateWeekMeals) {
+          await storage.addMealToWeek({
+            weekId: newWeek.id,
+            mealId: templateMeal.mealId,
+            isAvailable: templateMeal.isAvailable,
+            isFeatured: templateMeal.isFeatured,
+            sortOrder: templateMeal.sortOrder
+          });
+        }
       } catch (error) {
-        console.error('Error creating week:', error);
+        console.error('Error creating week or assigning meals:', error);
       }
     }
   };
@@ -473,72 +485,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get upcoming meal selections for a user
   app.get('/api/user/upcoming-meals', authMiddleware, async (req, res) => {
     try {
+      // Generate future weeks if needed
+      await generateFutureWeeks();
+      
       // Get all available weeks
       const weeks = await storage.getWeeks();
       
       // Get current date
       const now = new Date();
       
-      // Filter weeks that are upcoming (delivery date is in the future)
+      // Filter weeks that are upcoming (order deadline is in the future or delivery date is in the future)
+      // This ensures we show weeks even if deadline passed but delivery hasn't happened yet
       const upcomingWeeks = weeks.filter(week => {
         const deliveryDate = new Date(week.deliveryDate);
-        return deliveryDate > now;
+        return deliveryDate >= now;
       }).sort((a, b) => {
         return new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime();
-      });
+      }).slice(0, 4); // Only show next 4 weeks for users
       
-      // For each upcoming week, get the user's order if it exists
+      // For each upcoming week, get or create the user's order
       const upcomingMeals = [];
       
       for (const week of upcomingWeeks) {
-        const order = await storage.getOrderByUserAndWeek(req.session.userId, week.id);
+        let order = await storage.getOrderByUserAndWeek(req.session.userId, week.id);
         const orderDeadlinePassed = new Date(week.orderDeadline) <= now;
         
-        // Check if there's an existing order
-        if (order) {
-          // Get the detailed meal information for each order item
-          const orderItems = await storage.getOrderItems(order.id);
-          const itemsWithMeals = [];
-          
-          for (const item of orderItems) {
-            const meal = await storage.getMeal(item.mealId);
-            if (meal) {
-              itemsWithMeals.push({
-                ...item,
-                meal
-              });
-            }
-          }
-          
-          upcomingMeals.push({
-            orderId: order.id,
+        // If no order exists, create one with default settings
+        if (!order) {
+          order = await storage.createOrder({
+            userId: req.session.userId,
             weekId: week.id,
-            weekLabel: week.label,
+            status: 'pending',
+            mealCount: 5, // Default meal count - should come from user profile
+            defaultPortionSize: 'standard',
+            subtotal: 0,
+            discount: 0,
+            total: 0,
             deliveryDate: week.deliveryDate,
-            orderDeadline: week.orderDeadline,
-            items: itemsWithMeals,
-            isSkipped: order.status === 'skipped',
-            canEdit: !orderDeadlinePassed,
-            canSkip: !orderDeadlinePassed && order.status !== 'skipped',
-            canUnskip: !orderDeadlinePassed && order.status === 'skipped',
-            mealCount: order.mealCount
-          });
-        } else {
-          // No order yet for this week
-          upcomingMeals.push({
-            orderId: null,
-            weekId: week.id,
-            weekLabel: week.label,
-            deliveryDate: week.deliveryDate,
-            orderDeadline: week.orderDeadline,
-            items: [],
-            isSkipped: false,
-            canEdit: !orderDeadlinePassed,
-            canSkip: false, // Can't skip an order that doesn't exist yet
-            canUnskip: false,
-            mealCount: 0
+            deliveryAddress: null,
+            deliveryNotes: null,
+            paymentMethod: null
           });
         }
+        
+        // Get the detailed meal information for each order item
+        const orderItems = await storage.getOrderItems(order.id);
+        const itemsWithMeals = [];
+        
+        for (const item of orderItems) {
+          const meal = await storage.getMeal(item.mealId);
+          if (meal) {
+            itemsWithMeals.push({
+              ...item,
+              meal
+            });
+          }
+        }
+        
+        upcomingMeals.push({
+          orderId: order.id,
+          weekId: week.id,
+          weekLabel: week.label,
+          deliveryDate: week.deliveryDate,
+          orderDeadline: week.orderDeadline,
+          items: itemsWithMeals,
+          isSkipped: order.status === 'skipped',
+          canEdit: !orderDeadlinePassed,
+          canSkip: !orderDeadlinePassed && order.status !== 'skipped',
+          canUnskip: !orderDeadlinePassed && order.status === 'skipped',
+          mealCount: order.mealCount
+        });
       }
       
       res.json({ upcomingMeals });
