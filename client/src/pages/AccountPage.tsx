@@ -12,6 +12,9 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatDate, getStatusClass } from "@/lib/utils";
 import { useLocation } from "wouter";
 import FixedMealSelector from "@/pages/FixedMealSelector";
+import WeekSelectorSkeleton from "@/components/loading/WeekSelectorSkeleton";
+import WeekDetailSkeleton from "@/components/loading/WeekDetailSkeleton";
+import OrderHistorySkeleton from "@/components/loading/OrderHistorySkeleton";
 
 const AccountPage = () => {
   const [, navigate] = useLocation();
@@ -275,7 +278,9 @@ const AccountPage = () => {
             <div>
               <h2 className="text-2xl font-bold text-primary mb-6">Upcoming Deliveries</h2>
 
-              {upcomingMealsData?.upcomingMeals && upcomingMealsData.upcomingMeals.length > 0 ? (
+              {isLoadingUpcomingMeals ? (
+                <WeekSelectorSkeleton />
+              ) : upcomingMealsData?.upcomingMeals && upcomingMealsData.upcomingMeals.length > 0 ? (
                 <div className="space-y-6">
                   {/* Week selector */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-8">
@@ -435,7 +440,9 @@ const AccountPage = () => {
             <div>
               <h2 className="text-2xl font-bold text-primary mb-6">Order History</h2>
               
-              {ordersData?.orders && ordersData.orders.length > 0 ? (
+              {!ordersData ? (
+                <OrderHistorySkeleton />
+              ) : ordersData?.orders && ordersData.orders.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
