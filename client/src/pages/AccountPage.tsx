@@ -168,11 +168,31 @@ const AccountPage = () => {
     }
   };
 
-  // Simple and reliable implementation of skip/unskip that works with page reloads
+  // Simple and reliable implementation of skip/unskip with immediate UI updates
   const handleSkipToggle = async (orderId: number, weekId: number, skip: boolean) => {
     try {
       // Set loading state
       setProcessingWeekId(weekId);
+      
+      // Optimistically update the UI immediately
+      queryClient.setQueryData(['/api/user/upcoming-meals'], (oldData: any) => {
+        if (!oldData?.upcomingMeals) return oldData;
+        
+        return {
+          ...oldData,
+          upcomingMeals: oldData.upcomingMeals.map((week: any) => {
+            if (week.weekId === weekId) {
+              return {
+                ...week,
+                isSkipped: skip,
+                canSkip: !skip,
+                canUnskip: skip
+              };
+            }
+            return week;
+          })
+        };
+      });
       
       // Call API using apiRequest for better error handling
       await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
@@ -185,14 +205,13 @@ const AccountPage = () => {
           : "Your delivery has been restored. You can now edit your meal selections."
       });
       
-      // Force refresh of upcoming meals data
-      await queryClient.refetchQueries({ 
-        queryKey: ['/api/user/upcoming-meals'],
-        exact: true 
-      });
-      
       // Reset loading state
       setProcessingWeekId(null);
+      
+      // Background refresh to ensure data consistency
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      }, 1000);
       
       // If we unskipped, scroll to the meal selection 
       if (!skip) {
@@ -201,10 +220,14 @@ const AccountPage = () => {
             behavior: 'smooth',
             block: 'center'
           });
-        }, 500);
+        }, 100);
       }
     } catch (error) {
       console.error(`Error ${skip ? 'skipping' : 'unskipping'} delivery:`, error);
+      
+      // Revert the optimistic update on error
+      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      
       toast({
         title: "Error",
         description: `Failed to ${skip ? 'skip' : 'restore'} delivery. Please try again.`,

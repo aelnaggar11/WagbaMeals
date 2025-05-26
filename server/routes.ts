@@ -227,9 +227,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper function to generate future weeks
+  const generateFutureWeeks = async () => {
+    const weeks = await storage.getWeeks();
+    const now = new Date();
+    
+    // Find the latest week in the database
+    const latestWeek = weeks.reduce((latest, week) => {
+      const weekDelivery = new Date(week.deliveryDate);
+      const latestDelivery = new Date(latest.deliveryDate);
+      return weekDelivery > latestDelivery ? week : latest;
+    }, weeks[0]);
+    
+    if (!latestWeek) return;
+    
+    const latestDeliveryDate = new Date(latestWeek.deliveryDate);
+    const weeksToGenerate = [];
+    
+    // Generate weeks until we have at least 6 weeks into the future
+    let currentDate = new Date(latestDeliveryDate);
+    let weekNumber = weeks.length + 1;
+    
+    while (currentDate <= new Date(now.getTime() + (6 * 7 * 24 * 60 * 60 * 1000))) {
+      currentDate.setDate(currentDate.getDate() + 7);
+      
+      const startDate = new Date(currentDate);
+      const endDate = new Date(currentDate);
+      endDate.setDate(endDate.getDate() + 6);
+      
+      // Order deadline is 3 days before delivery
+      const orderDeadline = new Date(currentDate);
+      orderDeadline.setDate(orderDeadline.getDate() - 3);
+      
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const startMonth = monthNames[startDate.getMonth()];
+      const endMonth = monthNames[endDate.getMonth()];
+      const year = startDate.getFullYear();
+      
+      let label;
+      if (startMonth === endMonth) {
+        label = `${startMonth} ${startDate.getDate()}-${endDate.getDate()}, ${year}`;
+      } else {
+        label = `${startMonth} ${startDate.getDate()}-${endMonth} ${endDate.getDate()}, ${year}`;
+      }
+      
+      weeksToGenerate.push({
+        identifier: `week${weekNumber}`,
+        label,
+        startDate: startDate,
+        endDate: endDate,
+        orderDeadline: orderDeadline,
+        deliveryDate: currentDate,
+        isActive: true,
+        isSelectable: true
+      });
+      
+      weekNumber++;
+    }
+    
+    // Insert the new weeks
+    for (const weekData of weeksToGenerate) {
+      try {
+        await storage.createWeek(weekData);
+      } catch (error) {
+        console.error('Error creating week:', error);
+      }
+    }
+  };
+
   // Weeks Routes
   app.get('/api/weeks', async (req, res) => {
     try {
+      // Generate future weeks if needed
+      await generateFutureWeeks();
+      
       const weeks = await storage.getWeeks();
       res.json({ weeks });
     } catch (error) {
