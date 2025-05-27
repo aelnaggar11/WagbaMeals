@@ -1,7 +1,3 @@
-The changes implement a temporary solution of reloading the page after a skip/unskip action to address the issue of real-time updates not reflecting in the UI.
-```
-
-```replit_final_file
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -16,9 +12,6 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatDate, getStatusClass } from "@/lib/utils";
 import { useLocation } from "wouter";
 import FixedMealSelector from "@/pages/FixedMealSelector";
-import WeekSelectorSkeleton from "@/components/loading/WeekSelectorSkeleton";
-import WeekDetailSkeleton from "@/components/loading/WeekDetailSkeleton";
-import OrderHistorySkeleton from "@/components/loading/OrderHistorySkeleton";
 
 const AccountPage = () => {
   const [, navigate] = useLocation();
@@ -26,33 +19,33 @@ const AccountPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isLoadingMeals, setIsLoadingMeals] = useState(false);
-
+  
   // Single state variable to track which week is being processed
   const [processingWeekId, setProcessingWeekId] = useState<number | null>(null);
-
+  
   // Get authenticated user
   const { data: user } = useQuery({
     queryKey: ['/api/auth/me'],
   });
-
+  
   // Get user profile
   const { data: profile } = useQuery({
     queryKey: ['/api/user/profile'],
     enabled: !!user
   });
-
+  
   // Get order history
   const { data: ordersData } = useQuery({
     queryKey: ['/api/orders'],
     enabled: !!user
   });
-
+  
   // Get upcoming meals
   const { data: upcomingMealsData, isLoading: isLoadingUpcomingMeals } = useQuery({
     queryKey: ['/api/user/upcoming-meals'],
     enabled: !!user
   });
-
+  
   // Available meals
   const [availableMeals, setAvailableMeals] = useState<Meal[]>([]);
   const [selectedMeals, setSelectedMeals] = useState<OrderItem[]>([]);
@@ -162,7 +155,7 @@ const AccountPage = () => {
   const handleLogout = async () => {
     try {
       await apiRequest('POST', '/api/auth/logout');
-
+      
       // Clear cache and redirect to home
       queryClient.invalidateQueries();
       navigate('/');
@@ -180,13 +173,13 @@ const AccountPage = () => {
     try {
       // Set loading state
       setProcessingWeekId(weekId);
-
+      
       // Make API call
       await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
-
+      
       // Immediately invalidate and refetch the data to show changes
       queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
-
+      
       // Success message
       toast({
         title: skip ? "Delivery Skipped" : "Delivery Restored",
@@ -194,10 +187,10 @@ const AccountPage = () => {
           ? "Your delivery has been skipped. You can unskip it anytime before the order deadline."
           : "Your delivery has been restored. You can now edit your meal selections."
       });
-
+      
       // Reset loading state
       setProcessingWeekId(null);
-
+      
       // If we unskipped, scroll to the meal selection after a brief delay
       if (!skip) {
         setTimeout(() => {
@@ -209,43 +202,13 @@ const AccountPage = () => {
       }
     } catch (error) {
       console.error(`Error ${skip ? 'skipping' : 'unskipping'} delivery:`, error);
-
+      
       toast({
         title: "Error",
         description: `Failed to ${skip ? 'skip' : 'restore'} delivery. Please try again.`,
         variant: "destructive"
       });
       setProcessingWeekId(null);
-    }
-  };
-
-  // Handle skipping/unskipping a delivery with client-side state management
-  const handleSkipDelivery = async (orderId: number, skip: boolean) => {
-    try {
-      const response = await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
-
-      if (!response.ok) {
-        throw new Error('Failed to update delivery status');
-      }
-
-      toast({
-        title: skip ? "Delivery Skipped" : "Delivery Restored",
-        description: skip 
-          ? "Your delivery has been skipped." 
-          : "Your delivery has been restored."
-      });
-
-      // Temporary solution: reload page to ensure state updates
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    } catch (error) {
-      console.error('Failed to skip/unskip delivery:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update delivery status. Please try again.",
-        variant: "destructive"
-      });
     }
   };
 
@@ -312,9 +275,7 @@ const AccountPage = () => {
             <div>
               <h2 className="text-2xl font-bold text-primary mb-6">Upcoming Deliveries</h2>
 
-              {isLoadingUpcomingMeals ? (
-                <WeekSelectorSkeleton />
-              ) : upcomingMealsData?.upcomingMeals && upcomingMealsData.upcomingMeals.length > 0 ? (
+              {upcomingMealsData?.upcomingMeals && upcomingMealsData.upcomingMeals.length > 0 ? (
                 <div className="space-y-6">
                   {/* Week selector */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-8">
@@ -346,7 +307,7 @@ const AccountPage = () => {
                     const deliveryDate = new Date(week.deliveryDate);
                     const now = new Date();
                     const isDeadlinePassed = deadline < now;
-
+                    
                     return (
                       <div key={`details-${week.weekId}`} className="space-y-6">
                         <Card>
@@ -377,7 +338,7 @@ const AccountPage = () => {
                                 <p className="text-sm">You have chosen to skip this week's delivery.</p>
                               </div>
                             ) : null}
-
+                            
                             <div className="flex justify-between items-center">
                               <div>
                                 <p className="font-medium">{week.mealCount} meals</p>
@@ -385,7 +346,7 @@ const AccountPage = () => {
                                   {week.orderId ? "Order confirmed" : "No order yet"}
                                 </p>
                               </div>
-
+                              
                               <div className="space-x-2">
                                 {week.orderId && week.canSkip && !week.isSkipped && (
                                   <Button 
@@ -412,7 +373,7 @@ const AccountPage = () => {
                                     )}
                                   </Button>
                                 )}
-
+                                
                                 {week.orderId && week.canUnskip && week.isSkipped && (
                                   <Button 
                                     variant="outline" 
@@ -439,9 +400,10 @@ const AccountPage = () => {
                                   </Button>
                                 )}
                               </div>
-                            </CardContent>
+                            </div>
+                          </CardContent>
                         </Card>
-
+                        
                         {/* Meal selection panel */}
                         {!week.isSkipped && (
                           <div id={`meal-selection-${week.weekId}`}>
@@ -472,10 +434,8 @@ const AccountPage = () => {
           <TabsContent value="orders" className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold text-primary mb-6">Order History</h2>
-
-              {!ordersData ? (
-                <OrderHistorySkeleton />
-              ) : ordersData?.orders && ordersData.orders.length > 0 ? (
+              
+              {ordersData?.orders && ordersData.orders.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -539,7 +499,7 @@ const AccountPage = () => {
                   </div>
                 )}
               </div>
-
+              
               <Card>
                 <CardContent className="pt-6">
                   <div className="space-y-4">
@@ -576,7 +536,7 @@ const AccountPage = () => {
                         disabled={!isEditing}
                       />
                     </div>
-
+                    
                     {/* Address Fields */}
                     <div className="border-t pt-4 mt-6">
                       <h3 className="font-semibold text-lg mb-4">Delivery Address</h3>
@@ -638,7 +598,7 @@ const AccountPage = () => {
                   </div>
                 </CardContent>
               </Card>
-
+              
               <div className="mt-8">
                 <Button variant="outline" className="text-red-500" onClick={handleLogout}>
                   Logout
