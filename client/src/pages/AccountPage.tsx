@@ -40,11 +40,14 @@ const AccountPage = () => {
     enabled: !!user
   });
   
-  // Get upcoming meals
+  // Get upcoming meals with local state for immediate updates
   const { data: upcomingMealsData, isLoading: isLoadingUpcomingMeals } = useQuery({
     queryKey: ['/api/user/upcoming-meals'],
     enabled: !!user
   });
+  
+  // Local state to override server data for immediate UI updates
+  const [localUpcomingMeals, setLocalUpcomingMeals] = useState<any>(null);
   
   // Available meals
   const [availableMeals, setAvailableMeals] = useState<Meal[]>([]);
@@ -52,12 +55,23 @@ const AccountPage = () => {
   const [selectedWeekId, setSelectedWeekId] = useState<number | null>(null);
   const [mealCount, setMealCount] = useState(0);
 
-  // Set initial selected week when data is loaded
+  // Set initial selected week when data is loaded and sync local state
   useEffect(() => {
-    if (upcomingMealsData?.upcomingMeals && upcomingMealsData.upcomingMeals.length > 0 && !selectedWeekId) {
-      setSelectedWeekId(upcomingMealsData.upcomingMeals[0].weekId);
+    if (upcomingMealsData?.upcomingMeals && upcomingMealsData.upcomingMeals.length > 0) {
+      // Initialize local state with server data if not already set
+      if (!localUpcomingMeals) {
+        setLocalUpcomingMeals(upcomingMealsData);
+      }
+      
+      // Set initial selected week
+      if (!selectedWeekId) {
+        setSelectedWeekId(upcomingMealsData.upcomingMeals[0].weekId);
+      }
     }
-  }, [upcomingMealsData, selectedWeekId]);
+  }, [upcomingMealsData, selectedWeekId, localUpcomingMeals]);
+
+  // Use local state if available, otherwise fall back to server data
+  const displayUpcomingMeals = localUpcomingMeals || upcomingMealsData;
 
   // Form state
   const [formData, setFormData] = useState({
@@ -174,16 +188,13 @@ const AccountPage = () => {
       // Set loading state
       setProcessingWeekId(weekId);
       
-      // Make API call
-      await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
-      
-      // Manually update the query cache data
-      queryClient.setQueryData(['/api/user/upcoming-meals'], (oldData: any) => {
-        if (!oldData || !oldData.upcomingMeals) return oldData;
+      // Immediately update local state for instant UI feedback
+      setLocalUpcomingMeals((prev: any) => {
+        if (!prev || !prev.upcomingMeals) return prev;
         
         return {
-          ...oldData,
-          upcomingMeals: oldData.upcomingMeals.map((week: any) => {
+          ...prev,
+          upcomingMeals: prev.upcomingMeals.map((week: any) => {
             if (week.orderId === orderId) {
               return {
                 ...week,
@@ -196,6 +207,9 @@ const AccountPage = () => {
           })
         };
       });
+      
+      // Make API call
+      await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
       
       // Success message
       toast({
@@ -220,8 +234,25 @@ const AccountPage = () => {
     } catch (error) {
       console.error(`Error ${skip ? 'skipping' : 'unskipping'} delivery:`, error);
       
-      // Revert the cache update on error
-      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      // Revert local state on error
+      setLocalUpcomingMeals((prev: any) => {
+        if (!prev || !prev.upcomingMeals) return prev;
+        
+        return {
+          ...prev,
+          upcomingMeals: prev.upcomingMeals.map((week: any) => {
+            if (week.orderId === orderId) {
+              return {
+                ...week,
+                isSkipped: !skip,
+                canSkip: skip,
+                canUnskip: !skip
+              };
+            }
+            return week;
+          })
+        };
+      });
       
       toast({
         title: "Error",
@@ -243,7 +274,7 @@ const AccountPage = () => {
         setAvailableMeals(response.meals || []);
 
         // Get current meal selections for this week from upcoming meals data
-        const currentWeek = upcomingMealsData?.upcomingMeals.find(week => week.weekId === selectedWeekId);
+        const currentWeek = displayUpcomingMeals?.upcomingMeals.find(week => week.weekId === selectedWeekId);
         if (currentWeek) {
           setMealCount(currentWeek.mealCount);
 
@@ -295,11 +326,11 @@ const AccountPage = () => {
             <div>
               <h2 className="text-2xl font-bold text-primary mb-6">Upcoming Deliveries</h2>
 
-              {upcomingMealsData?.upcomingMeals && upcomingMealsData.upcomingMeals.length > 0 ? (
+              {displayUpcomingMeals?.upcomingMeals && displayUpcomingMeals.upcomingMeals.length > 0 ? (
                 <div className="space-y-6">
                   {/* Week selector */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-8">
-                    {upcomingMealsData.upcomingMeals.map((week) => (
+                    {displayUpcomingMeals.upcomingMeals.map((week) => (
                       <button
                         key={week.weekId}
                         onClick={() => setSelectedWeekId(week.weekId)}
@@ -320,7 +351,7 @@ const AccountPage = () => {
                   </div>
 
                   {/* Selected week details */}
-                  {selectedWeekId && upcomingMealsData.upcomingMeals.map(week => {
+                  {selectedWeekId && displayUpcomingMeals.upcomingMeals.map(week => {
                     if (week.weekId !== selectedWeekId) return null;
 
                     const deadline = new Date(week.orderDeadline);
