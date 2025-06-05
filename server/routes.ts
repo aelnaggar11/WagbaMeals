@@ -191,7 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin Auth Routes
-  app.post('/api/admin/login', async (req, res) => {
+  app.post('/api/admin/auth/login', async (req, res) => {
     try {
       const { username, password } = req.body;
       
@@ -223,7 +223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/me', async (req, res) => {
+  app.get('/api/admin/auth/me', async (req, res) => {
     try {
       if (!req.session.adminId) {
         return res.status(401).json(null);
@@ -246,7 +246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/logout', (req, res) => {
+  app.post('/api/admin/auth/logout', (req, res) => {
     req.session.destroy((err) => {
       if (err) {
         return res.status(500).json({ message: 'Error logging out' });
