@@ -98,32 +98,14 @@ const Navigation = () => {
           {admin ? (
             <>
               <span className="text-sm text-gray-600 font-medium">
-                Admin: {admin.name || admin.username}
+                Admin
               </span>
-              <NavLink
-                href="/admin/dashboard"
-                className="text-accent-foreground hover:text-primary font-medium"
-              >
-                Dashboard
-              </NavLink>
-              <NavLink
-                href="/admin/menu"
-                className="text-accent-foreground hover:text-primary font-medium"
-              >
-                Menu
-              </NavLink>
-              <NavLink
-                href="/admin/orders"
-                className="text-accent-foreground hover:text-primary font-medium"
-              >
-                Orders
-              </NavLink>
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 className="text-accent-foreground hover:text-primary font-medium"
                 onClick={handleLogout}
               >
-                Logout
+                Log Out
               </Button>
             </>
           ) : user ? (
