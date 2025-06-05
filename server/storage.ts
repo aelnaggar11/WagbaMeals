@@ -92,13 +92,14 @@ export class MemStorage implements IStorage {
 
   // Helper method to initialize demo data
   private async initializeDemoData() {
-    // Create admin user
-    const adminUser = await this.createUser({
+    // Create admin
+    const admin = await this.createAdmin({
       username: "admin",
       password: "$2a$10$yQb5/ROTsUSD8X.7J2iG0OTxU.UDdoirnxzTXNJY7Gs1QoXQrRdZ6", // "admin123"
       email: "admin@wagba.com",
       name: "Admin User",
-      isAdmin: true
+      role: "super_admin",
+      permissions: ["all"]
     });
 
     // Create regular user
@@ -106,8 +107,7 @@ export class MemStorage implements IStorage {
       username: "user",
       password: "$2a$10$YPE8VB46d.NBrbTUHg/Ay.Q28a0FEXucfsCZ8rSs8XyTwUg4EiIDq", // "user123"
       email: "user@wagba.com",
-      name: "Regular User",
-      isAdmin: false
+      name: "Regular User"
     });
 
     // Create weeks

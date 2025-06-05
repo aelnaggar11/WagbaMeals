@@ -378,15 +378,14 @@ export class DatabaseStorage implements IStorage {
 
     console.log("Seeding initial data...");
 
-    // Create admin user
-    const admin = await this.createUser({
+    // Create admin
+    const admin = await this.createAdmin({
       username: "admin",
       password: "$2a$10$h.dl5J86rGH7I8bD9bZeZe68djXiTFjj4krTUe.fNbjQsP9vdhnda", // 'password'
       email: "admin@example.com",
       name: "Admin User",
-      isAdmin: true,
-      phone: null,
-      address: null
+      role: "super_admin",
+      permissions: ["all"]
     });
 
     // Create regular user
@@ -395,7 +394,6 @@ export class DatabaseStorage implements IStorage {
       password: "$2a$10$h.dl5J86rGH7I8bD9bZeZe68djXiTFjj4krTUe.fNbjQsP9vdhnda", // 'password'
       email: "user@example.com",
       name: "Regular User",
-      isAdmin: false,
       phone: "+201234567890",
       address: JSON.stringify({
         street: "Cairo Street",
