@@ -63,9 +63,19 @@ const AccountPage = () => {
         setLocalUpcomingMeals(upcomingMealsData);
       }
       
-      // Set initial selected week
+      // Set initial selected week to the first week with a confirmed order (first delivery)
       if (!selectedWeekId) {
-        setSelectedWeekId(upcomingMealsData.upcomingMeals[0].weekId);
+        // Find the first week that has an order and is not skipped
+        const firstDeliveryWeek = upcomingMealsData.upcomingMeals.find(week => 
+          week.orderId && !week.isSkipped
+        );
+        
+        // If we found a week with a delivery, use that; otherwise use the first available week
+        const weekToSelect = firstDeliveryWeek 
+          ? firstDeliveryWeek.weekId 
+          : upcomingMealsData.upcomingMeals[0].weekId;
+          
+        setSelectedWeekId(weekToSelect);
       }
     }
   }, [upcomingMealsData, selectedWeekId, localUpcomingMeals]);
