@@ -86,6 +86,11 @@ const Footer = () => {
                   Privacy Policy
                 </Link>
               </li>
+              <li>
+                <Link href="/admin/login" className="text-gray-400 hover:text-white transition duration-300">
+                  Admin Login
+                </Link>
+              </li>
             </ul>
           </div>
           

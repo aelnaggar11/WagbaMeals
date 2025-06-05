@@ -7,12 +7,13 @@ import MenuSelection from "@/pages/MenuSelection";
 import CheckoutPage from "@/pages/CheckoutPage";
 import AccountPage from "@/pages/AccountPage";
 import AuthPage from "@/pages/AuthPage";
+import AdminAuthPage from "@/pages/AdminAuthPage";
 import NotFound from "@/pages/not-found";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import MenuManagement from "@/pages/admin/MenuManagement";
 import OrdersManagement from "@/pages/admin/OrdersManagement";
 import { useQuery } from "@tanstack/react-query";
-import { User } from "@shared/schema";
+import { User, Admin } from "@shared/schema";
 import { Loader2 } from "lucide-react";
 
 function App() {
@@ -29,9 +30,17 @@ function App() {
     return () => window.removeEventListener('popstate', handleRouteChange);
   }, []);
   
-  // Simple authentication query
-  const { data: user, isLoading } = useQuery<User | null>({
+  // User authentication query
+  const { data: user, isLoading: userLoading } = useQuery<User | null>({
     queryKey: ['/api/auth/me'],
+    refetchOnWindowFocus: true,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1
+  });
+
+  // Admin authentication query
+  const { data: admin, isLoading: adminLoading } = useQuery<Admin | null>({
+    queryKey: ['/api/admin/auth/me'],
     refetchOnWindowFocus: true,
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 1
@@ -39,30 +48,29 @@ function App() {
   
   // Handle auth redirects
   useEffect(() => {
-    const isProtectedRoute = 
+    const isUserRoute = 
       location.startsWith('/account') || 
-      location.startsWith('/checkout') || 
-      location.startsWith('/admin');
+      location.startsWith('/checkout');
+    const isAdminRoute = location.startsWith('/admin');
       
-    if (!isLoading && !user && isProtectedRoute) {
+    if (!userLoading && !user && isUserRoute) {
       window.location.href = '/auth';
     }
-  }, [user, isLoading, location]);
+    
+    if (!adminLoading && !admin && isAdminRoute && location !== '/admin/login') {
+      window.location.href = '/admin/login';
+    }
+  }, [user, admin, userLoading, adminLoading, location]);
   
   // Show loading spinner for protected routes
-  if (isLoading && (
-    location.startsWith('/account') || 
-    location.startsWith('/checkout') || 
-    location.startsWith('/admin')
-  )) {
+  if ((userLoading && (location.startsWith('/account') || location.startsWith('/checkout'))) ||
+      (adminLoading && location.startsWith('/admin') && location !== '/admin/login')) {
     return (
       <div className="h-screen w-full flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
-  
-  const isAdmin = user?.isAdmin;
 
   return (
     <Switch>
@@ -102,9 +110,25 @@ function App() {
         </Layout>
       </Route>
       
+      {/* Admin authentication */}
+      <Route path="/admin/login">
+        <AdminAuthPage />
+      </Route>
+      
       {/* Admin routes */}
       <Route path="/admin">
-        {isAdmin ? (
+        {admin ? (
+          <Layout>
+            <AdminDashboard />
+          </Layout>
+        ) : (
+          <Layout>
+            <NotFound />
+          </Layout>
+        )}
+      </Route>
+      <Route path="/admin/dashboard">
+        {admin ? (
           <Layout>
             <AdminDashboard />
           </Layout>
@@ -115,7 +139,7 @@ function App() {
         )}
       </Route>
       <Route path="/admin/menu">
-        {isAdmin ? (
+        {admin ? (
           <Layout>
             <MenuManagement />
           </Layout>
@@ -126,7 +150,7 @@ function App() {
         )}
       </Route>
       <Route path="/admin/orders">
-        {isAdmin ? (
+        {admin ? (
           <Layout>
             <OrdersManagement />
           </Layout>
