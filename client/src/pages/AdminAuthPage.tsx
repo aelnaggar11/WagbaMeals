@@ -59,14 +59,19 @@ const AdminAuthPage = () => {
         throw new Error(error.message || "Login failed");
       }
 
+      // Invalidate and refetch the admin auth query
       await queryClient.invalidateQueries({ queryKey: ['/api/admin/auth/me'] });
+      await queryClient.refetchQueries({ queryKey: ['/api/admin/auth/me'] });
       
       toast({
         title: "Success",
         description: "Admin login successful"
       });
       
-      navigate("/admin/dashboard");
+      // Small delay to ensure state updates before navigation
+      setTimeout(() => {
+        navigate("/admin/dashboard");
+      }, 100);
     } catch (error: any) {
       toast({
         title: "Login Failed",
