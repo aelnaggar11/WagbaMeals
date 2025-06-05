@@ -447,7 +447,7 @@ export class MemStorage implements IStorage {
   }
 
   async removeMealFromWeek(weekId: number, mealId: number): Promise<void> {
-    for (const [id, wm] of this.weekMeals.entries()) {
+    for (const [id, wm] of [...this.weekMeals.entries()]) {
       if (wm.weekId === weekId && wm.mealId === mealId) {
         this.weekMeals.delete(id);
         return;
@@ -517,7 +517,7 @@ export class MemStorage implements IStorage {
       status: insertOrder.status || null,
       deliveryDate: insertOrder.deliveryDate || null,
       deliveryAddress: insertOrder.deliveryAddress || null,
-      specialInstructions: insertOrder.specialInstructions || null
+      deliveryNotes: insertOrder.deliveryNotes || null
     };
     this.orders.set(id, order);
     return order;
