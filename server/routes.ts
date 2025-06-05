@@ -172,7 +172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json(null);
       }
       
-      const user = await storage.getUser(req.session.userId);
+      const user = await storage.getUser(req.session.userId!);
       if (!user) {
         return res.status(401).json(null);
       }
@@ -258,7 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User Routes
   app.get('/api/user/profile', authMiddleware, async (req, res) => {
     try {
-      const user = await storage.getUser(req.session.userId);
+      const user = await storage.getUser(req.session.userId!);
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
@@ -578,13 +578,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const upcomingMeals = [];
       
       for (const week of upcomingWeeks) {
-        let order = await storage.getOrderByUserAndWeek(req.session.userId, week.id);
+        let order = await storage.getOrderByUserAndWeek(req.session.userId!, week.id);
         const orderDeadlinePassed = new Date(week.orderDeadline) <= now;
         
         // If no order exists, create one with user's default meal count
         if (!order) {
           // Get user's default meal count from their most recent order
-          const userOrders = await storage.getOrdersByUser(req.session.userId);
+          const userOrders = await storage.getOrdersByUser(req.session.userId!);
           const defaultMealCount = userOrders.length > 0 ? userOrders[userOrders.length - 1].mealCount : 4;
           
           order = await storage.createOrder({
@@ -679,7 +679,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/orders/pending', authMiddleware, async (req, res) => {
     try {
-      const pendingOrder = await storage.getPendingOrderByUser(req.session.userId);
+      const pendingOrder = await storage.getPendingOrderByUser(req.session.userId!);
       if (!pendingOrder) {
         return res.status(404).json(null);
       }
@@ -703,7 +703,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         weekId = parseInt(req.params.weekId);
       }
       
-      const order = await storage.getOrderByUserAndWeek(req.session.userId, weekId);
+      const order = await storage.getOrderByUserAndWeek(req.session.userId!, weekId);
       if (!order) {
         return res.status(404).json(null);
       }
@@ -795,7 +795,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Auto-skip preceding weeks for first-time users
-      await autoSkipPrecedingWeeks(req.session.userId, week.id);
+      await autoSkipPrecedingWeeks(req.session.userId!, week.id);
       
       // Calculate prices
       const pricePerMeal = getPriceForMealCount(mealCount);
