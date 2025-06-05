@@ -177,10 +177,10 @@ const AccountPage = () => {
       // Make API call
       await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
       
-      // Immediately invalidate and refetch to update UI
-      await queryClient.invalidateQueries({ 
+      // Force immediate refetch to update UI
+      await queryClient.refetchQueries({ 
         queryKey: ['/api/user/upcoming-meals'],
-        refetchType: 'active'
+        exact: true
       });
       
       // Success message
