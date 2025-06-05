@@ -115,8 +115,8 @@ function App() {
         <AdminAuthPage />
       </Route>
       
-      {/* Admin routes */}
-      <Route path="/admin">
+      {/* Admin routes - more specific routes first */}
+      <Route path="/admin/dashboard">
         {admin ? (
           <Layout>
             <AdminDashboard />
@@ -127,7 +127,8 @@ function App() {
           </Layout>
         )}
       </Route>
-      <Route path="/admin/dashboard">
+      
+      <Route path="/admin">
         {admin ? (
           <Layout>
             <AdminDashboard />
