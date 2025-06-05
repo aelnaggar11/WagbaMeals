@@ -66,7 +66,7 @@ const AdminAuthPage = () => {
         description: "Admin login successful"
       });
       
-      navigate("/admin/dashboard");
+      navigate("/admin");
     } catch (error: any) {
       toast({
         title: "Login Failed",

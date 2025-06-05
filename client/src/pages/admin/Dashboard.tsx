@@ -18,7 +18,7 @@ import {
   Pie,
   Cell
 } from "recharts";
-import { User, Order, Week } from "@shared/schema";
+import { Admin, User, Order, Week } from "@shared/schema";
 import { Calendar, DollarSign, ShoppingBag, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import UserList from "@/components/admin/UserList";
@@ -29,20 +29,18 @@ const COLORS = ['#A80906', '#25632d', '#6ac66b', '#ff9045', '#f2ecde'];
 const Dashboard = () => {
   const [, navigate] = useLocation();
   
-  // Check if user is admin
-  const { data: user } = useQuery<User>({
-    queryKey: ['/api/auth/me'],
+  // Check if admin is authenticated
+  const { data: admin } = useQuery<Admin>({
+    queryKey: ['/api/admin/auth/me'],
   });
   
-  const isAdmin = user?.isAdmin;
-  
-  if (!isAdmin) {
+  if (!admin) {
     return (
       <div className="container mx-auto px-4 py-16">
         <div className="flex flex-col items-center justify-center py-12">
           <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
           <p className="text-gray-600 mb-6">You don't have permission to access the admin dashboard.</p>
-          <Button onClick={() => navigate('/')}>Return to Home</Button>
+          <Button onClick={() => navigate('/admin/login')}>Admin Login</Button>
         </div>
       </div>
     );
