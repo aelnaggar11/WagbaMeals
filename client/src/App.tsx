@@ -117,27 +117,15 @@ function App() {
       
       {/* Admin routes - more specific routes first */}
       <Route path="/admin/dashboard">
-        {admin ? (
-          <Layout>
-            <AdminDashboard />
-          </Layout>
-        ) : (
-          <Layout>
-            <NotFound />
-          </Layout>
-        )}
+        <Layout>
+          <AdminDashboard />
+        </Layout>
       </Route>
       
       <Route path="/admin">
-        {admin ? (
-          <Layout>
-            <AdminDashboard />
-          </Layout>
-        ) : (
-          <Layout>
-            <NotFound />
-          </Layout>
-        )}
+        <Layout>
+          <AdminDashboard />
+        </Layout>
       </Route>
       <Route path="/admin/menu">
         {admin ? (
