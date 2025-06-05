@@ -332,6 +332,10 @@ export class DatabaseStorage implements IStorage {
     return orderItem;
   }
 
+  async removeOrderItem(itemId: number): Promise<void> {
+    await db.delete(orderItems).where(eq(orderItems.id, itemId));
+  }
+
   // Seed data method - call this to initialize the database with sample data
   async seedInitialData(): Promise<void> {
     // Check if we already have data

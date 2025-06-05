@@ -644,6 +644,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper function to auto-skip preceding weeks for first-time users
+  const autoSkipPrecedingWeeks = async (userId: number, selectedWeekId: number) => {
+    try {
+      // Check if user has any confirmed orders (meaning they're not a first-time user)
+      const userOrders = await storage.getOrdersByUser(userId);
+      const hasConfirmedOrders = userOrders.some(order => order.status === 'confirmed');
+      
+      if (hasConfirmedOrders) {
+        // User already has confirmed orders, no need to auto-skip
+        return;
+      }
+      
+      // Get all weeks up to the selected week
+      const allWeeks = await storage.getWeeks();
+      const sortedWeeks = allWeeks.sort((a, b) => 
+        new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime()
+      );
+      
+      // Find the selected week index
+      const selectedWeekIndex = sortedWeeks.findIndex(week => week.id === selectedWeekId);
+      if (selectedWeekIndex === -1) return;
+      
+      // Get all weeks before the selected week that are still upcoming
+      const now = new Date();
+      const precedingWeeks = sortedWeeks.slice(0, selectedWeekIndex).filter(week => {
+        const deliveryDate = new Date(week.deliveryDate);
+        const orderDeadline = new Date(week.orderDeadline);
+        // Only skip weeks where the deadline hasn't passed yet
+        return orderDeadline > now;
+      });
+      
+      // Skip all preceding weeks
+      for (const week of precedingWeeks) {
+        // Check if user already has an order for this week
+        let existingOrder = await storage.getOrderByUserAndWeek(userId, week.id);
+        
+        if (!existingOrder) {
+          // Create a skipped order for this week
+          existingOrder = await storage.createOrder({
+            userId,
+            weekId: week.id,
+            status: 'skipped',
+            mealCount: 4, // Default meal count
+            defaultPortionSize: 'standard',
+            subtotal: 0,
+            discount: 0,
+            total: 0,
+            deliveryDate: week.deliveryDate
+          });
+        } else if (existingOrder.status === 'pending') {
+          // Update existing pending order to skipped
+          await storage.updateOrder(existingOrder.id, {
+            status: 'skipped'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error auto-skipping preceding weeks:', error);
+      // Don't throw error as this is a background operation
+    }
+  };
+
   app.post('/api/orders', authMiddleware, async (req, res) => {
     try {
       const { weekId, mealCount, defaultPortionSize, items } = req.body;
@@ -662,6 +724,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: 'Week not found' });
         }
       }
+      
+      // Auto-skip preceding weeks for first-time users
+      await autoSkipPrecedingWeeks(req.session.userId, week.id);
       
       // Calculate prices
       const pricePerMeal = getPriceForMealCount(mealCount);
@@ -714,6 +779,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(order);
     } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Add item to existing order
+  app.post('/api/orders/:orderId/items', authMiddleware, async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const { mealId, portionSize } = req.body;
+      
+      // Get the order to verify ownership and get week info
+      const order = await storage.getOrder(orderId);
+      if (!order || order.userId !== req.session.userId) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      
+      // Auto-skip preceding weeks for first-time users
+      await autoSkipPrecedingWeeks(req.session.userId, order.weekId);
+      
+      // Calculate price
+      const pricePerMeal = getPriceForMealCount(order.mealCount);
+      const largePortionAdditional = 99;
+      const itemPrice = portionSize === 'large' 
+        ? pricePerMeal + largePortionAdditional 
+        : pricePerMeal;
+      
+      // Add the order item
+      const orderItem = await storage.addOrderItem({
+        orderId,
+        mealId,
+        portionSize,
+        price: itemPrice
+      });
+      
+      // Update order totals
+      const orderItems = await storage.getOrderItems(orderId);
+      const newSubtotal = orderItems.reduce((sum, item) => sum + item.price, 0);
+      const fullPriceTotal = order.mealCount * 249;
+      const discount = fullPriceTotal - newSubtotal;
+      
+      await storage.updateOrder(orderId, {
+        subtotal: newSubtotal,
+        discount,
+        total: newSubtotal
+      });
+      
+      res.status(201).json(orderItem);
+    } catch (error) {
+      console.error('Error adding order item:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Remove item from existing order
+  app.delete('/api/orders/:orderId/items/:itemId', authMiddleware, async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const itemId = parseInt(req.params.itemId);
+      
+      // Get the order to verify ownership
+      const order = await storage.getOrder(orderId);
+      if (!order || order.userId !== req.session.userId) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      
+      // Get the order item to verify it belongs to this order
+      const orderItems = await storage.getOrderItems(orderId);
+      const itemToRemove = orderItems.find(item => item.id === itemId);
+      if (!itemToRemove) {
+        return res.status(404).json({ message: 'Order item not found' });
+      }
+      
+      // Remove the item (we'll need to add this method to storage)
+      await storage.removeOrderItem(itemId);
+      
+      // Update order totals
+      const remainingItems = await storage.getOrderItems(orderId);
+      const newSubtotal = remainingItems.reduce((sum, item) => sum + item.price, 0);
+      const fullPriceTotal = order.mealCount * 249;
+      const discount = fullPriceTotal - newSubtotal;
+      
+      await storage.updateOrder(orderId, {
+        subtotal: newSubtotal,
+        discount,
+        total: newSubtotal
+      });
+      
+      res.json({ message: 'Order item removed successfully' });
+    } catch (error) {
+      console.error('Error removing order item:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });

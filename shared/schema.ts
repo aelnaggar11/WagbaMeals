@@ -234,6 +234,7 @@ export interface IStorage {
   // OrderItem methods
   getOrderItems(orderId: number): Promise<OrderItemFull[]>;
   addOrderItem(orderItem: InsertOrderItem): Promise<OrderItemFull>;
+  removeOrderItem(itemId: number): Promise<void>;
   
   // UserWeekStatus methods
   getUserWeekStatus(userId: number, weekId: number): Promise<UserWeekStatus | undefined>;
