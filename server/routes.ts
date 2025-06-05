@@ -10,7 +10,8 @@ import { getPriceForMealCount } from "@shared/schema";
 
 declare module 'express-session' {
   interface SessionData {
-    userId: number;
+    userId?: number;
+    adminId?: number;
   }
 }
 
@@ -84,7 +85,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: user.username,
         email: user.email,
         name: user.name,
-        isAdmin: user.isAdmin
+        phone: user.phone,
+        address: user.address
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
