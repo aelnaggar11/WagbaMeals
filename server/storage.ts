@@ -1,10 +1,12 @@
 import { 
   User, InsertUser, 
+  Admin, InsertAdmin,
   Meal, InsertMeal, 
   Week, InsertWeek, 
   WeekMeal, InsertWeekMeal,
   Order, InsertOrder,
-  OrderItemFull, InsertOrderItem
+  OrderItemFull, InsertOrderItem,
+  UserWeekStatus, InsertUserWeekStatus
 } from "@shared/schema";
 
 export interface IStorage {
@@ -53,6 +55,7 @@ export interface IStorage {
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
+  private admins: Map<number, Admin>;
   private meals: Map<number, Meal>;
   private weeks: Map<number, Week>;
   private weekMeals: Map<number, WeekMeal>;
@@ -60,6 +63,7 @@ export class MemStorage implements IStorage {
   private orderItems: Map<number, OrderItemFull>;
   
   private currentUserId: number;
+  private currentAdminId: number;
   private currentMealId: number;
   private currentWeekId: number;
   private currentWeekMealId: number;
@@ -68,6 +72,7 @@ export class MemStorage implements IStorage {
 
   constructor() {
     this.users = new Map();
+    this.admins = new Map();
     this.meals = new Map();
     this.weeks = new Map();
     this.weekMeals = new Map();
@@ -75,6 +80,7 @@ export class MemStorage implements IStorage {
     this.orderItems = new Map();
     
     this.currentUserId = 1;
+    this.currentAdminId = 1;
     this.currentMealId = 1;
     this.currentWeekId = 1;
     this.currentWeekMealId = 1;
@@ -260,6 +266,52 @@ export class MemStorage implements IStorage {
   
   async getAllUsers(): Promise<User[]> {
     return Array.from(this.users.values());
+  }
+
+  // Admin methods
+  async getAdmin(id: number): Promise<Admin | undefined> {
+    return this.admins.get(id);
+  }
+
+  async getAdminByUsername(username: string): Promise<Admin | undefined> {
+    for (const admin of this.admins.values()) {
+      if (admin.username === username) {
+        return admin;
+      }
+    }
+    return undefined;
+  }
+
+  async getAdminByEmail(email: string): Promise<Admin | undefined> {
+    for (const admin of this.admins.values()) {
+      if (admin.email === email) {
+        return admin;
+      }
+    }
+    return undefined;
+  }
+
+  async createAdmin(insertAdmin: InsertAdmin): Promise<Admin> {
+    const id = this.currentAdminId++;
+    const now = new Date();
+    const admin: Admin = { ...insertAdmin, id, createdAt: now };
+    this.admins.set(id, admin);
+    return admin;
+  }
+
+  async updateAdmin(id: number, adminData: Partial<Admin>): Promise<Admin> {
+    const existingAdmin = this.admins.get(id);
+    if (!existingAdmin) {
+      throw new Error(`Admin with id ${id} not found`);
+    }
+    
+    const updatedAdmin = { ...existingAdmin, ...adminData };
+    this.admins.set(id, updatedAdmin);
+    return updatedAdmin;
+  }
+
+  async getAllAdmins(): Promise<Admin[]> {
+    return Array.from(this.admins.values());
   }
 
   // Meal methods

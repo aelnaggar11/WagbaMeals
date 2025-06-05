@@ -37,13 +37,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Admin middleware
   const adminMiddleware = async (req: Request, res: Response, next: Function) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: 'Unauthorized' });
+    if (!req.session.adminId) {
+      return res.status(401).json({ message: 'Unauthorized - Admin access required' });
     }
     
-    const user = await storage.getUser(req.session.userId);
-    if (!user || !user.isAdmin) {
-      return res.status(403).json({ message: 'Forbidden' });
+    const admin = await storage.getAdmin(req.session.adminId);
+    if (!admin) {
+      return res.status(403).json({ message: 'Forbidden - Invalid admin session' });
     }
     
     next();

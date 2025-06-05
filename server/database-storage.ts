@@ -103,6 +103,36 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users);
   }
 
+  // Admin methods
+  async getAdmin(id: number): Promise<Admin | undefined> {
+    const [admin] = await db.select().from(admins).where(eq(admins.id, id));
+    return admin;
+  }
+
+  async getAdminByUsername(username: string): Promise<Admin | undefined> {
+    const [admin] = await db.select().from(admins).where(eq(admins.username, username));
+    return admin;
+  }
+
+  async getAdminByEmail(email: string): Promise<Admin | undefined> {
+    const [admin] = await db.select().from(admins).where(eq(admins.email, email));
+    return admin;
+  }
+
+  async createAdmin(insertAdmin: InsertAdmin): Promise<Admin> {
+    const [admin] = await db.insert(admins).values(insertAdmin).returning();
+    return admin;
+  }
+
+  async updateAdmin(id: number, adminData: Partial<Admin>): Promise<Admin> {
+    const [admin] = await db.update(admins).set(adminData).where(eq(admins.id, id)).returning();
+    return admin;
+  }
+
+  async getAllAdmins(): Promise<Admin[]> {
+    return await db.select().from(admins);
+  }
+
   // Meal methods
   async getMeal(id: number): Promise<Meal | undefined> {
     const [meal] = await db.select().from(meals).where(eq(meals.id, id));
