@@ -4,7 +4,7 @@ import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/Logo";
 import { useQuery } from "@tanstack/react-query";
-import { User } from "@shared/schema";
+import { User, Admin } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -17,6 +17,10 @@ const Navigation = () => {
     queryKey: ['/api/auth/me'],
   });
 
+  const { data: admin } = useQuery<Admin | null>({
+    queryKey: ['/api/admin/auth/me'],
+  });
+
   const isActive = (path: string) => {
     return location === path;
   };
@@ -27,11 +31,18 @@ const Navigation = () => {
 
   const handleLogout = async () => {
     try {
-      await apiRequest('POST', '/api/auth/logout', {});
+      if (admin) {
+        // Admin logout
+        await apiRequest('POST', '/api/admin/auth/logout', {});
+        queryClient.invalidateQueries({ queryKey: ['/api/admin/auth/me'] });
+      } else {
+        // User logout
+        await apiRequest('POST', '/api/auth/logout', {});
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      }
+      
       // Clear all queries to ensure proper logout
       queryClient.clear();
-      // Force invalidate the authentication query
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       
       // Show success message
       toast({
@@ -84,7 +95,38 @@ const Navigation = () => {
         </nav>
         
         <div className="flex items-center space-x-4">
-          {user ? (
+          {admin ? (
+            <>
+              <span className="text-sm text-gray-600 font-medium">
+                Admin: {admin.name || admin.username}
+              </span>
+              <NavLink
+                href="/admin/dashboard"
+                className="text-accent-foreground hover:text-primary font-medium"
+              >
+                Dashboard
+              </NavLink>
+              <NavLink
+                href="/admin/menu"
+                className="text-accent-foreground hover:text-primary font-medium"
+              >
+                Menu
+              </NavLink>
+              <NavLink
+                href="/admin/orders"
+                className="text-accent-foreground hover:text-primary font-medium"
+              >
+                Orders
+              </NavLink>
+              <Button 
+                variant="ghost" 
+                className="text-accent-foreground hover:text-primary font-medium"
+                onClick={handleLogout}
+              >
+                Logout
+              </Button>
+            </>
+          ) : user ? (
             <>
               <NavLink 
                 href="/account"
@@ -92,14 +134,6 @@ const Navigation = () => {
               >
                 My Account
               </NavLink>
-              {user.isAdmin && (
-                <NavLink
-                  href="/admin"
-                  className="text-accent-foreground hover:text-primary font-medium"
-                >
-                  Admin
-                </NavLink>
-              )}
               <Button 
                 variant="ghost" 
                 className="text-accent-foreground hover:text-primary font-medium"
