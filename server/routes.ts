@@ -195,10 +195,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json({
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        address: user.address
+        name: user?.name,
+        email: user?.email,
+        phone: user?.phone,
+        address: user?.address
       });
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
@@ -209,7 +209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { name, email, phone, address } = req.body;
       
-      const updatedUser = await storage.updateUser(req.session.userId, {
+      const updatedUser = await storage.updateUser(req.session.userId!, {
         name,
         email,
         phone,
@@ -475,7 +475,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Order Routes
   app.get('/api/orders', authMiddleware, async (req, res) => {
     try {
-      const orders = await storage.getOrdersByUser(req.session.userId);
+      const orders = await storage.getOrdersByUser(req.session.userId!);
       res.json({ orders });
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
@@ -752,7 +752,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create order
       const order = await storage.createOrder({
-        userId: req.session.userId,
+        userId: req.session.userId!,
         weekId: week.id,
         status: 'pending',
         mealCount,
@@ -760,7 +760,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subtotal,
         discount,
         total,
-        deliveryDate: week.deliveryDate
+        deliveryDate: week.deliveryDate.toISOString()
       });
       
       // Add order items
