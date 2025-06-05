@@ -519,7 +519,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const defaultMealCount = userOrders.length > 0 ? userOrders[userOrders.length - 1].mealCount : 4;
           
           order = await storage.createOrder({
-            userId: req.session.userId,
+            userId: req.session.userId!,
             weekId: week.id,
             status: 'pending',
             mealCount: defaultMealCount,
@@ -527,7 +527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             subtotal: 0,
             discount: 0,
             total: 0,
-            deliveryDate: week.deliveryDate,
+            deliveryDate: week.deliveryDate.toISOString(),
             deliveryAddress: null,
             deliveryNotes: null,
             paymentMethod: null
@@ -691,7 +691,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             subtotal: 0,
             discount: 0,
             total: 0,
-            deliveryDate: week.deliveryDate
+            deliveryDate: week.deliveryDate.toISOString()
           });
         } else if (existingOrder.status === 'pending') {
           // Update existing pending order to skipped
@@ -897,9 +897,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Update user address if not set
-      const user = await storage.getUser(req.session.userId);
-      if (!user.address) {
-        await storage.updateUser(req.session.userId, {
+      const user = await storage.getUser(req.session.userId!);
+      if (user && !user.address) {
+        await storage.updateUser(req.session.userId!, {
           address: JSON.stringify(address),
           phone: address.phone
         });

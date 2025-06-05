@@ -465,6 +465,10 @@ export class MemStorage implements IStorage {
     this.orderItems.set(id, orderItem);
     return orderItem;
   }
+
+  async removeOrderItem(itemId: number): Promise<void> {
+    this.orderItems.delete(itemId);
+  }
 }
 
 // Import database storage implementation
