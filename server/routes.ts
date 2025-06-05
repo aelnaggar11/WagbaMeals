@@ -125,7 +125,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: user.username,
         email: user.email,
         name: user.name,
-        isAdmin: user.isAdmin
+        phone: user.phone,
+        address: user.address
       });
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
@@ -181,11 +182,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: user.username,
         email: user.email,
         name: user.name,
-        isAdmin: user.isAdmin
+        phone: user.phone,
+        address: user.address
       });
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
     }
+  });
+
+  // Admin Auth Routes
+  app.post('/api/admin/login', async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: 'Username and password required' });
+      }
+      
+      const admin = await storage.getAdminByUsername(username);
+      if (!admin) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+      
+      const isPasswordValid = await bcrypt.compare(password, admin.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+      
+      req.session.adminId = admin.id;
+      
+      res.json({
+        id: admin.id,
+        username: admin.username,
+        email: admin.email,
+        name: admin.name,
+        role: admin.role
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.get('/api/admin/me', async (req, res) => {
+    try {
+      if (!req.session.adminId) {
+        return res.status(401).json(null);
+      }
+      
+      const admin = await storage.getAdmin(req.session.adminId);
+      if (!admin) {
+        return res.status(401).json(null);
+      }
+      
+      res.json({
+        id: admin.id,
+        username: admin.username,
+        email: admin.email,
+        name: admin.name,
+        role: admin.role
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.post('/api/admin/logout', (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: 'Error logging out' });
+      }
+      res.json({ message: 'Logged out successfully' });
+    });
   });
 
   // User Routes
