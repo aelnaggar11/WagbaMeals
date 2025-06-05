@@ -34,8 +34,8 @@ const MealPlans = () => {
   // Calculate total based on selection
   const calculateTotal = () => {
     if (selectedPortionSize === "mixed") {
-      return ((pricing[selectedMealCount as keyof typeof pricing].standard * 0.5) + 
-              (pricing[selectedMealCount as keyof typeof pricing].large * 0.5)) * selectedMealCount;
+      // For mixed, show the base standard price range
+      return pricing[selectedMealCount as keyof typeof pricing].standard * selectedMealCount;
     }
 
     return pricing[selectedMealCount as keyof typeof pricing][selectedPortionSize as keyof typeof pricing[4]] * selectedMealCount;
@@ -93,7 +93,14 @@ const MealPlans = () => {
 
             <div className="flex justify-between items-center pt-2 text-lg">
               <span className="font-bold">Weekly Total</span>
-              <span className="font-bold text-primary">EGP {calculateTotal().toFixed(0)}</span>
+              {selectedPortionSize === "mixed" ? (
+                <div className="text-right">
+                  <span className="font-bold text-primary">From EGP {calculateTotal().toFixed(0)}</span>
+                  <p className="text-xs text-gray-500 mt-1">Final total based on your meal selections</p>
+                </div>
+              ) : (
+                <span className="font-bold text-primary">EGP {calculateTotal().toFixed(0)}</span>
+              )}
             </div>
           </div>
 
