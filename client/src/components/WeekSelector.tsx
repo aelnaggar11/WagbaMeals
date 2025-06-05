@@ -31,19 +31,26 @@ const WeekSelector = ({ currentWeekId }: WeekSelectorProps) => {
   
   useEffect(() => {
     if (weeksData?.weeks) {
-      // Sort weeks by date and filter to selectable weeks where deadline hasn't passed
+      // Sort weeks by date and filter to selectable weeks where deadline hasn't passed and within 4 weeks from today
       const now = new Date();
+      const fourWeeksFromNow = new Date(now.getTime() + (4 * 7 * 24 * 60 * 60 * 1000));
+      
       const availableWeeks = weeksData.weeks
         .filter(week => {
-          // Include weeks where the deadline hasn't passed yet AND are selectable
+          // Include weeks where:
+          // 1. The deadline hasn't passed yet
+          // 2. Are selectable
+          // 3. Start date is within 4 weeks from today
           const deadline = new Date(week.orderDeadline);
-          return isAfter(deadline, now) && week.isSelectable;
+          const startDate = new Date(week.startDate);
+          return isAfter(deadline, now) && 
+                 week.isSelectable && 
+                 startDate <= fourWeeksFromNow;
         })
         .sort((a, b) => {
           // Sort by start date ascending
           return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
-        })
-        .slice(0, 4); // Limit to 4 weeks maximum
+        });
       
       setWeeks(availableWeeks);
       
