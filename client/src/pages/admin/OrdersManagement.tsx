@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import OrderList from "@/components/admin/OrderList";
-import { User, Order, Week } from "@shared/schema";
+import { Admin, Order, Week } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/utils";
 
@@ -15,12 +15,10 @@ const OrdersManagement = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   
-  // Check if user is admin
-  const { data: user } = useQuery<User>({
-    queryKey: ['/api/auth/me'],
+  // Check if admin is authenticated
+  const { data: admin } = useQuery<Admin>({
+    queryKey: ['/api/admin/auth/me'],
   });
-  
-  const isAdmin = user?.isAdmin;
   
   // State for filtering
   const [activeWeekId, setActiveWeekId] = useState<number | string>("all");
@@ -73,13 +71,13 @@ const OrdersManagement = () => {
     }
   };
   
-  if (!isAdmin) {
+  if (!admin) {
     return (
       <div className="container mx-auto px-4 py-16">
         <div className="flex flex-col items-center justify-center py-12">
           <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
           <p className="text-gray-600 mb-6">You don't have permission to access the orders management.</p>
-          <Button onClick={() => navigate('/')}>Return to Home</Button>
+          <Button onClick={() => navigate('/admin/login')}>Admin Login</Button>
         </div>
       </div>
     );

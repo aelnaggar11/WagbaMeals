@@ -6,19 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import MenuEditor from "@/components/admin/MenuEditor";
-import { User, Meal, Week } from "@shared/schema";
+import { Admin, Meal, Week } from "@shared/schema";
 import { Plus } from "lucide-react";
 
 const MenuManagement = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   
-  // Check if user is admin
-  const { data: user } = useQuery<User>({
-    queryKey: ['/api/auth/me'],
+  // Check if admin is authenticated
+  const { data: admin } = useQuery<Admin>({
+    queryKey: ['/api/admin/auth/me'],
   });
-  
-  const isAdmin = user?.isAdmin;
   
   // Active week for menu editing
   const [activeWeekId, setActiveWeekId] = useState<number | null>(null);
@@ -49,13 +47,13 @@ const MenuManagement = () => {
     }
   });
   
-  if (!isAdmin) {
+  if (!admin) {
     return (
       <div className="container mx-auto px-4 py-16">
         <div className="flex flex-col items-center justify-center py-12">
           <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
           <p className="text-gray-600 mb-6">You don't have permission to access the menu management.</p>
-          <Button onClick={() => navigate('/')}>Return to Home</Button>
+          <Button onClick={() => navigate('/admin/login')}>Admin Login</Button>
         </div>
       </div>
     );

@@ -128,26 +128,14 @@ function App() {
         </Layout>
       </Route>
       <Route path="/admin/menu">
-        {admin ? (
-          <Layout>
-            <MenuManagement />
-          </Layout>
-        ) : (
-          <Layout>
-            <NotFound />
-          </Layout>
-        )}
+        <Layout>
+          <MenuManagement />
+        </Layout>
       </Route>
       <Route path="/admin/orders">
-        {admin ? (
-          <Layout>
-            <OrdersManagement />
-          </Layout>
-        ) : (
-          <Layout>
-            <NotFound />
-          </Layout>
-        )}
+        <Layout>
+          <OrdersManagement />
+        </Layout>
       </Route>
       
       {/* Fallback */}

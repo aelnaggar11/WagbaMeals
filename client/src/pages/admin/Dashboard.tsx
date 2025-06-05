@@ -29,9 +29,25 @@ const COLORS = ['#A80906', '#25632d', '#6ac66b', '#ff9045', '#f2ecde'];
 const Dashboard = () => {
   const [, navigate] = useLocation();
   
-  // Check if admin is authenticated
+  // Check if admin is authenticated - must be before any conditional returns
   const { data: admin } = useQuery<Admin>({
     queryKey: ['/api/admin/auth/me'],
+  });
+  
+  // Fetch data for dashboard - must be called unconditionally
+  const { data: usersData } = useQuery<{ users: User[] }>({
+    queryKey: ['/api/admin/users'],
+    enabled: !!admin,
+  });
+  
+  const { data: weeksData } = useQuery<{ weeks: Week[] }>({
+    queryKey: ['/api/weeks'],
+    enabled: !!admin,
+  });
+  
+  const { data: ordersData } = useQuery<{ orders: Order[] }>({
+    queryKey: ['/api/admin/orders'],
+    enabled: !!admin,
   });
   
   if (!admin) {
@@ -45,19 +61,6 @@ const Dashboard = () => {
       </div>
     );
   }
-  
-  // Fetch data for dashboard
-  const { data: usersData } = useQuery<{ users: User[] }>({
-    queryKey: ['/api/admin/users'],
-  });
-  
-  const { data: weeksData } = useQuery<{ weeks: Week[] }>({
-    queryKey: ['/api/weeks'],
-  });
-  
-  const { data: ordersData } = useQuery<{ orders: Order[] }>({
-    queryKey: ['/api/admin/orders'],
-  });
   
   // Active week for orders
   const [activeWeekId, setActiveWeekId] = useState<number | undefined>(
