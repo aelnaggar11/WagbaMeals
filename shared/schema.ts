@@ -3,7 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { getPriceForMealCount } from "../client/src/lib/utils";
 
-// User Model
+// User Model (for customers only)
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -12,7 +12,6 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   phone: text("phone"),
   address: text("address"),
-  isAdmin: boolean("is_admin").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -23,7 +22,27 @@ export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   phone: true,
   address: true,
-  isAdmin: true,
+});
+
+// Admin Model (completely separate from users)
+export const admins = pgTable("admins", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  name: text("name"),
+  email: text("email").notNull().unique(),
+  role: text("role").default("admin"), // admin, super_admin, etc.
+  permissions: text("permissions").array().default(["orders", "meals", "users", "weeks"]),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertAdminSchema = createInsertSchema(admins).pick({
+  username: true,
+  password: true,
+  name: true,
+  email: true,
+  role: true,
+  permissions: true,
 });
 
 // Meal Model
@@ -166,6 +185,9 @@ export const insertOrderItemSchema = createInsertSchema(orderItems).pick({
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
+export type Admin = typeof admins.$inferSelect;
+export type InsertAdmin = z.infer<typeof insertAdminSchema>;
+
 export type Meal = typeof meals.$inferSelect;
 export type InsertMeal = z.infer<typeof insertMealSchema>;
 
@@ -200,6 +222,14 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, userData: Partial<User>): Promise<User>;
   getAllUsers(): Promise<User[]>;
+  
+  // Admin methods (completely separate from users)
+  getAdmin(id: number): Promise<Admin | undefined>;
+  getAdminByUsername(username: string): Promise<Admin | undefined>;
+  getAdminByEmail(email: string): Promise<Admin | undefined>;
+  createAdmin(admin: InsertAdmin): Promise<Admin>;
+  updateAdmin(id: number, adminData: Partial<Admin>): Promise<Admin>;
+  getAllAdmins(): Promise<Admin[]>;
   
   // Meal methods
   getMeal(id: number): Promise<Meal | undefined>;

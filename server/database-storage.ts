@@ -1,9 +1,10 @@
 import { db } from "./db";
 import { and, eq, inArray } from "drizzle-orm";
 import * as schema from "@shared/schema";
-import { users, meals, weeks, weekMeals, orders, orderItems, userWeekStatuses } from "@shared/schema";
+import { users, admins, meals, weeks, weekMeals, orders, orderItems, userWeekStatuses } from "@shared/schema";
 import type { 
   User, InsertUser, 
+  Admin, InsertAdmin,
   Meal, InsertMeal, 
   Week, InsertWeek, 
   WeekMeal, InsertWeekMeal, 
