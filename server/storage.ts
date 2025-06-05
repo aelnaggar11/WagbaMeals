@@ -248,7 +248,14 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
     const now = new Date();
-    const user: User = { ...insertUser, id, createdAt: now };
+    const user: User = { 
+      ...insertUser, 
+      id, 
+      createdAt: now,
+      name: insertUser.name || null,
+      phone: insertUser.phone || null,
+      address: insertUser.address || null
+    };
     this.users.set(id, user);
     return user;
   }
@@ -274,7 +281,7 @@ export class MemStorage implements IStorage {
   }
 
   async getAdminByUsername(username: string): Promise<Admin | undefined> {
-    for (const admin of this.admins.values()) {
+    for (const admin of [...this.admins.values()]) {
       if (admin.username === username) {
         return admin;
       }
@@ -283,7 +290,7 @@ export class MemStorage implements IStorage {
   }
 
   async getAdminByEmail(email: string): Promise<Admin | undefined> {
-    for (const admin of this.admins.values()) {
+    for (const admin of [...this.admins.values()]) {
       if (admin.email === email) {
         return admin;
       }
@@ -294,7 +301,14 @@ export class MemStorage implements IStorage {
   async createAdmin(insertAdmin: InsertAdmin): Promise<Admin> {
     const id = this.currentAdminId++;
     const now = new Date();
-    const admin: Admin = { ...insertAdmin, id, createdAt: now };
+    const admin: Admin = { 
+      ...insertAdmin, 
+      id, 
+      createdAt: now,
+      name: insertAdmin.name || null,
+      role: insertAdmin.role || null,
+      permissions: insertAdmin.permissions || null
+    };
     this.admins.set(id, admin);
     return admin;
   }
@@ -311,7 +325,7 @@ export class MemStorage implements IStorage {
   }
 
   async getAllAdmins(): Promise<Admin[]> {
-    return Array.from(this.admins.values());
+    return [...this.admins.values()];
   }
 
   // Meal methods
@@ -338,7 +352,13 @@ export class MemStorage implements IStorage {
   async createMeal(insertMeal: InsertMeal): Promise<Meal> {
     const id = this.currentMealId++;
     const now = new Date();
-    const meal: Meal = { ...insertMeal, id, createdAt: now };
+    const meal: Meal = { 
+      ...insertMeal, 
+      id, 
+      createdAt: now,
+      tags: insertMeal.tags || null,
+      category: insertMeal.category || null
+    };
     this.meals.set(id, meal);
     return meal;
   }
@@ -388,7 +408,13 @@ export class MemStorage implements IStorage {
   async createWeek(insertWeek: InsertWeek): Promise<Week> {
     const id = this.currentWeekId++;
     const now = new Date();
-    const week: Week = { ...insertWeek, id, createdAt: now };
+    const week: Week = { 
+      ...insertWeek, 
+      id, 
+      createdAt: now,
+      isActive: insertWeek.isActive || null,
+      isSelectable: insertWeek.isSelectable || null
+    };
     this.weeks.set(id, week);
     return week;
   }
@@ -408,7 +434,14 @@ export class MemStorage implements IStorage {
   async addMealToWeek(insertWeekMeal: InsertWeekMeal): Promise<WeekMeal> {
     const id = this.currentWeekMealId++;
     const now = new Date();
-    const weekMeal: WeekMeal = { ...insertWeekMeal, id, createdAt: now };
+    const weekMeal: WeekMeal = { 
+      ...insertWeekMeal, 
+      id, 
+      createdAt: now,
+      isAvailable: insertWeekMeal.isAvailable || null,
+      isFeatured: insertWeekMeal.isFeatured || null,
+      sortOrder: insertWeekMeal.sortOrder || null
+    };
     this.weekMeals.set(id, weekMeal);
     return weekMeal;
   }
@@ -476,7 +509,16 @@ export class MemStorage implements IStorage {
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
     const id = this.currentOrderId++;
     const now = new Date();
-    const order: Order = { ...insertOrder, id, createdAt: now, updatedAt: now };
+    const order: Order = { 
+      ...insertOrder, 
+      id, 
+      createdAt: now, 
+      updatedAt: now,
+      status: insertOrder.status || null,
+      deliveryDate: insertOrder.deliveryDate || null,
+      deliveryAddress: insertOrder.deliveryAddress || null,
+      specialInstructions: insertOrder.specialInstructions || null
+    };
     this.orders.set(id, order);
     return order;
   }
