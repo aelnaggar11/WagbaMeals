@@ -12,10 +12,8 @@ const PlanSelector = ({ selectedMealCount, onMealCountChange, pricing, selectedP
   const mealCounts = [4, 6, 8, 10, 12, 14];
   
   const getPrice = (count: number) => {
-    if (selectedPortionSize === "mixed") {
-      return ((pricing[count].standard + pricing[count].large) / 2).toFixed(0);
-    }
-    return pricing[count][selectedPortionSize as keyof typeof pricing[4]];
+    // Always show standard price in the buttons
+    return pricing[count].standard;
   };
   
   return (

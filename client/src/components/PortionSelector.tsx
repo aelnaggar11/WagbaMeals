@@ -36,7 +36,7 @@ const PortionSelector = ({ selectedPortionSize, onPortionSizeChange }: PortionSe
               onClick={() => onPortionSizeChange("large")}
             >
               <h4 className="font-bold mb-2">Large</h4>
-              
+              <p className="text-sm text-primary font-medium mb-1">+EGP 99 per meal</p>
               <p className="text-sm text-gray-600">750-850 Calories</p>
               <p className="text-sm text-gray-600">45-60g Protein</p>
             </button>
