@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,14 +65,14 @@ const Dashboard = () => {
   );
   
   // Update active week when weeks data is loaded
-  useState(() => {
+  useEffect(() => {
     if (weeksData?.weeks) {
       const currentWeek = weeksData.weeks.find(week => week.isActive);
       if (currentWeek) {
         setActiveWeekId(currentWeek.id);
       }
     }
-  });
+  }, [weeksData]);
   
   // Prepare data for charts
   const weeklyOrdersData = ordersData?.orders
