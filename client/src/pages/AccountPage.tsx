@@ -168,7 +168,7 @@ const AccountPage = () => {
     }
   };
 
-  // Skip/unskip implementation with immediate UI updates
+  // Skip/unskip implementation with immediate local state updates
   const handleSkipToggle = async (orderId: number, weekId: number, skip: boolean) => {
     try {
       // Set loading state
@@ -177,10 +177,24 @@ const AccountPage = () => {
       // Make API call
       await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
       
-      // Force immediate refetch to update UI
-      await queryClient.refetchQueries({ 
-        queryKey: ['/api/user/upcoming-meals'],
-        exact: true
+      // Manually update the query cache data
+      queryClient.setQueryData(['/api/user/upcoming-meals'], (oldData: any) => {
+        if (!oldData || !oldData.upcomingMeals) return oldData;
+        
+        return {
+          ...oldData,
+          upcomingMeals: oldData.upcomingMeals.map((week: any) => {
+            if (week.orderId === orderId) {
+              return {
+                ...week,
+                isSkipped: skip,
+                canSkip: !skip,
+                canUnskip: skip
+              };
+            }
+            return week;
+          })
+        };
       });
       
       // Success message
@@ -205,6 +219,9 @@ const AccountPage = () => {
       }
     } catch (error) {
       console.error(`Error ${skip ? 'skipping' : 'unskipping'} delivery:`, error);
+      
+      // Revert the cache update on error
+      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
       
       toast({
         title: "Error",
