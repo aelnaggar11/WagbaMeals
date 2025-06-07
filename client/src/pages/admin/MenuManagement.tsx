@@ -3,11 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { useToast } from "@/hooks/use-toast";
 import MenuEditor from "@/components/admin/MenuEditor";
 import { Admin, Meal, Week } from "@shared/schema";
-import { Plus } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 
 const MenuManagement = () => {
   const [, navigate] = useLocation();
@@ -46,6 +46,31 @@ const MenuManagement = () => {
       }
     }
   }, [weeksData, activeWeekId]);
+
+  // Filter to show only the next 8 weeks for admin editing
+  const editableWeeks = weeksData?.weeks
+    ? weeksData.weeks
+        .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+        .slice(0, 8)
+    : [];
+
+  const currentWeekIndex = editableWeeks.findIndex(week => week.id === activeWeekId);
+  const currentWeek = editableWeeks[currentWeekIndex];
+  
+  const canGoPrevious = currentWeekIndex > 0;
+  const canGoNext = currentWeekIndex < editableWeeks.length - 1;
+
+  const goToPreviousWeek = () => {
+    if (canGoPrevious) {
+      setActiveWeekId(editableWeeks[currentWeekIndex - 1].id);
+    }
+  };
+
+  const goToNextWeek = () => {
+    if (canGoNext) {
+      setActiveWeekId(editableWeeks[currentWeekIndex + 1].id);
+    }
+  };
   
   if (!admin) {
     return (
@@ -77,32 +102,51 @@ const MenuManagement = () => {
         </div>
       </div>
       
-      {/* Week Selection */}
-      {weeksData?.weeks && (
+      {/* Week Navigation */}
+      {editableWeeks.length > 0 && currentWeek && (
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Select Week to Edit</CardTitle>
-            <CardDescription>Choose a week to manage its menu</CardDescription>
+            <CardTitle>Week Editor</CardTitle>
+            <CardDescription>Navigate between weeks to manage menus (up to 8 weeks in advance)</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs 
-              value={activeWeekId?.toString() || ""}
-              onValueChange={(value) => setActiveWeekId(parseInt(value))}
-              className="w-full"
-            >
-              <TabsList className="w-full flex overflow-x-auto">
-                {weeksData.weeks.map((week) => (
-                  <TabsTrigger 
-                    key={week.id} 
-                    value={week.id.toString()}
-                    className="flex-1"
-                  >
-                    {week.label}
-                    {week.isActive && <span className="ml-2 text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-full">Active</span>}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
+            <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={goToPreviousWeek}
+                disabled={!canGoPrevious}
+                className="h-10 w-10"
+              >
+                <ChevronLeft size={16} />
+              </Button>
+              
+              <div className="flex flex-col items-center text-center min-w-0 flex-1 mx-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {currentWeek.label}
+                </h3>
+                <div className="flex items-center gap-2 mt-1">
+                  {currentWeek.isActive && (
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-medium">
+                      Current Week
+                    </span>
+                  )}
+                  <span className="text-sm text-gray-500">
+                    Week {currentWeekIndex + 1} of {editableWeeks.length}
+                  </span>
+                </div>
+              </div>
+              
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={goToNextWeek}
+                disabled={!canGoNext}
+                className="h-10 w-10"
+              >
+                <ChevronRight size={16} />
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
