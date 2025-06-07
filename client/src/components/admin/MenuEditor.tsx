@@ -161,10 +161,11 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
         processedTags = (newMealForm.tags as unknown as string).split(',').map(tag => tag.trim());
       }
       
-      const newMeal = await apiRequest('POST', '/api/meals', {
+      const response = await apiRequest('POST', '/api/meals', {
         ...newMealForm,
         tags: processedTags
       });
+      const newMeal = await response.json();
       
       // Add the new meal to the week
       await handleAddMealToWeek(newMeal.id);
@@ -218,7 +219,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
     });
   };
   
-  if (weekLoading || weekMealsLoading) {
+  if (weekLoading) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -354,7 +355,11 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
             </TabsList>
             
             <TabsContent value="current" className="mt-4">
-              {weekMealsData && weekMealsData.meals && weekMealsData.meals.length > 0 ? (
+              {weekMealsLoading ? (
+                <div className="flex justify-center items-center h-40">
+                  <p>Loading menu data...</p>
+                </div>
+              ) : weekMealsData && weekMealsData.meals && weekMealsData.meals.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -368,7 +373,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {weekMealsData.meals.map((meal) => (
+                    {weekMealsData?.meals?.map((meal) => (
                       <TableRow key={meal.id}>
                         <TableCell>
                           <img 
