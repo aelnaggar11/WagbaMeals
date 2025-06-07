@@ -48,7 +48,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
   });
   
   // Fetch week data
-  const { data: weekData } = useQuery<Week>({
+  const { data: weekData, isLoading: weekLoading } = useQuery<Week>({
     queryKey: [`/api/weeks/${weekId}`],
     queryFn: async () => {
       const res = await fetch(`/api/weeks/${weekId}`);
@@ -57,8 +57,12 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
   });
   
   // Fetch meals for the week
-  const { data: weekMealsData } = useQuery<{ meals: Meal[] }>({
+  const { data: weekMealsData, isLoading: weekMealsLoading } = useQuery<{ meals: Meal[] }>({
     queryKey: [`/api/menu/${weekId}`],
+    queryFn: async () => {
+      const res = await fetch(`/api/menu/${weekId}`);
+      return res.json();
+    }
   });
   
   // Fetch all meals for adding to the week
@@ -214,12 +218,24 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
     });
   };
   
-  if (!weekData || !weekMealsData) {
+  if (weekLoading || weekMealsLoading) {
     return (
       <Card>
         <CardContent className="p-6">
           <div className="flex justify-center items-center h-40">
             <p>Loading menu data...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!weekData) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex justify-center items-center h-40">
+            <p>Week not found</p>
           </div>
         </CardContent>
       </Card>
@@ -338,7 +354,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
             </TabsList>
             
             <TabsContent value="current" className="mt-4">
-              {weekMealsData.meals.length > 0 ? (
+              {weekMealsData && weekMealsData.meals && weekMealsData.meals.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
