@@ -112,7 +112,8 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
       await apiRequest('DELETE', `/api/weeks/${weekId}/meals/${mealId}`, {});
 
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: [`/api/menu/${weekId}`] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/menu', weekId] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/meals'] });
 
       toast({
         title: "Meal removed",
@@ -135,8 +136,8 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
       await apiRequest('PATCH', `/api/meals/${editingMeal.id}`, editingMeal);
 
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: [`/api/menu/${weekId}`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/meals'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/menu', weekId] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/meals'] });
 
       toast({
         title: "Meal updated",
@@ -172,8 +173,8 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
       await handleAddMealToWeek(newMeal.id);
 
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: [`/api/menu/${weekId}`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/meals'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/menu', weekId] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/meals'] });
 
       toast({
         title: "Meal created",
