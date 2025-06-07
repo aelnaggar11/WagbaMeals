@@ -49,7 +49,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
 
   // Fetch week data
   const { data: weekData, isLoading: weekLoading } = useQuery<Week>({
-    queryKey: [`/api/weeks/${weekId}`],
+    queryKey: ['/api/weeks', weekId],
     queryFn: async () => {
       const res = await fetch(`/api/weeks/${weekId}`);
       return res.json();
@@ -58,7 +58,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
 
   // Fetch meals for the week
   const { data: weekMealsData, isLoading: weekMealsLoading } = useQuery<{ meals: Meal[] }>({
-    queryKey: [`/api/menu/${weekId}`],
+    queryKey: ['/api/menu', weekId],
     queryFn: async () => {
       const res = await fetch(`/api/menu/${weekId}`);
       return res.json();
@@ -90,7 +90,8 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
       });
 
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: [`/api/menu/${weekId}`] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/menu', weekId] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/meals'] });
 
       toast({
         title: "Meal added",
