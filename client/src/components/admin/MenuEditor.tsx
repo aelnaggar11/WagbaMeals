@@ -34,7 +34,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingMeal, setEditingMeal] = useState<Meal | null>(null);
-  
+
   // New meal form
   const [newMealForm, setNewMealForm] = useState<NewMealForm>({
     title: "",
@@ -46,7 +46,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
     tags: [],
     category: "Main Dishes"
   });
-  
+
   // Fetch week data
   const { data: weekData, isLoading: weekLoading } = useQuery<Week>({
     queryKey: [`/api/weeks/${weekId}`],
@@ -55,7 +55,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
       return res.json();
     }
   });
-  
+
   // Fetch meals for the week
   const { data: weekMealsData, isLoading: weekMealsLoading } = useQuery<{ meals: Meal[] }>({
     queryKey: [`/api/menu/${weekId}`],
@@ -64,7 +64,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
       return res.json();
     }
   });
-  
+
   // Fetch all meals for adding to the week
   const { data: allMealsData } = useQuery<{ meals: Meal[] }>({
     queryKey: ['/api/meals'],
@@ -73,12 +73,12 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
       return res.json();
     }
   });
-  
+
   // Meals that are not yet added to the week
   const availableMeals = allMealsData?.meals.filter(meal => 
     !weekMealsData?.meals.some(weekMeal => weekMeal.id === meal.id)
   ) || [];
-  
+
   // Handle adding a meal to the week
   const handleAddMealToWeek = async (mealId: number) => {
     try {
@@ -88,10 +88,10 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
         isFeatured: false,
         sortOrder: (weekMealsData?.meals.length || 0) + 1
       });
-      
+
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: [`/api/menu/${weekId}`] });
-      
+
       toast({
         title: "Meal added",
         description: "The meal has been added to this week's menu."
@@ -104,15 +104,15 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
       });
     }
   };
-  
+
   // Handle removing a meal from the week
   const handleRemoveMealFromWeek = async (mealId: number) => {
     try {
       await apiRequest('DELETE', `/api/weeks/${weekId}/meals/${mealId}`, {});
-      
+
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: [`/api/menu/${weekId}`] });
-      
+
       toast({
         title: "Meal removed",
         description: "The meal has been removed from this week's menu."
@@ -125,23 +125,23 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
       });
     }
   };
-  
+
   // Handle updating a meal
   const handleUpdateMeal = async () => {
     if (!editingMeal) return;
-    
+
     try {
       await apiRequest('PATCH', `/api/meals/${editingMeal.id}`, editingMeal);
-      
+
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: [`/api/menu/${weekId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/meals'] });
-      
+
       toast({
         title: "Meal updated",
         description: "The meal has been updated successfully."
       });
-      
+
       setIsEditDialogOpen(false);
     } catch (error) {
       toast({
@@ -151,7 +151,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
       });
     }
   };
-  
+
   // Handle creating a new meal
   const handleCreateMeal = async () => {
     try {
@@ -160,25 +160,25 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
       if (typeof newMealForm.tags === 'string') {
         processedTags = (newMealForm.tags as unknown as string).split(',').map(tag => tag.trim());
       }
-      
+
       const response = await apiRequest('POST', '/api/meals', {
         ...newMealForm,
         tags: processedTags
       });
       const newMeal = await response.json();
-      
+
       // Add the new meal to the week
       await handleAddMealToWeek(newMeal.id);
-      
+
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: [`/api/menu/${weekId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/meals'] });
-      
+
       toast({
         title: "Meal created",
         description: "The new meal has been created and added to the menu."
       });
-      
+
       // Reset form
       setNewMealForm({
         title: "",
@@ -190,7 +190,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
         tags: [],
         category: "Main Dishes"
       });
-      
+
       setIsAddDialogOpen(false);
     } catch (error) {
       toast({
@@ -200,17 +200,17 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
       });
     }
   };
-  
+
   // Handle form field changes for editing
   const handleEditingMealChange = (field: string, value: any) => {
     if (!editingMeal) return;
-    
+
     setEditingMeal({
       ...editingMeal,
       [field]: value
     });
   };
-  
+
   // Handle form field changes for new meal
   const handleNewMealFormChange = (field: string, value: any) => {
     setNewMealForm({
@@ -218,7 +218,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
       [field]: value
     });
   };
-  
+
   if (weekLoading) {
     return (
       <Card>
@@ -242,110 +242,12 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
       </Card>
     );
   }
-  
+
   return (
     <div className="space-y-8">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Menu for {weekData.label}</CardTitle>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-primary hover:bg-primary/90 text-white">
-                <Plus size={16} className="mr-2" />
-                Create New Meal
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Create New Meal</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="new-title">Title</Label>
-                    <Input
-                      id="new-title"
-                      value={newMealForm.title}
-                      onChange={(e) => handleNewMealFormChange('title', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-category">Category</Label>
-                    <Input
-                      id="new-category"
-                      value={newMealForm.category}
-                      onChange={(e) => handleNewMealFormChange('category', e.target.value)}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="new-description">Description</Label>
-                  <Textarea
-                    id="new-description"
-                    value={newMealForm.description}
-                    onChange={(e) => handleNewMealFormChange('description', e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="new-image">Image URL</Label>
-                  <Input
-                    id="new-image"
-                    value={newMealForm.imageUrl}
-                    onChange={(e) => handleNewMealFormChange('imageUrl', e.target.value)}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="new-calories">Calories</Label>
-                    <Input
-                      id="new-calories"
-                      type="number"
-                      value={newMealForm.calories}
-                      onChange={(e) => handleNewMealFormChange('calories', parseInt(e.target.value))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-protein">Protein (g)</Label>
-                    <Input
-                      id="new-protein"
-                      type="number"
-                      value={newMealForm.protein}
-                      onChange={(e) => handleNewMealFormChange('protein', parseInt(e.target.value))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-price">Base Price (EGP)</Label>
-                    <Input
-                      id="new-price"
-                      type="number"
-                      value={newMealForm.price}
-                      onChange={(e) => handleNewMealFormChange('price', parseInt(e.target.value))}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="new-tags">Tags (comma separated)</Label>
-                  <Input
-                    id="new-tags"
-                    value={newMealForm.tags.join(', ')}
-                    onChange={(e) => handleNewMealFormChange('tags', e.target.value.split(',').map(tag => tag.trim()))}
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end space-x-4">
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateMeal} className="bg-primary hover:bg-primary/90 text-white">
-                  Create Meal
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="current">
@@ -353,7 +255,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
               <TabsTrigger value="current">Current Menu</TabsTrigger>
               <TabsTrigger value="available">Available Meals</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="current" className="mt-4">
               {weekMealsLoading ? (
                 <div className="flex justify-center items-center h-40">
@@ -389,113 +291,6 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
                         <TableCell>EGP {meal.price}</TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
-                            <Dialog open={isEditDialogOpen && editingMeal?.id === meal.id} onOpenChange={(open) => {
-                              setIsEditDialogOpen(open);
-                              if (!open) setEditingMeal(null);
-                            }}>
-                              <DialogTrigger asChild>
-                                <Button 
-                                  variant="outline" 
-                                  size="icon"
-                                  onClick={() => setEditingMeal(meal)}
-                                >
-                                  <Edit size={16} />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                  <DialogTitle>Edit Meal</DialogTitle>
-                                </DialogHeader>
-                                {editingMeal && (
-                                  <div className="grid gap-4 py-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div className="space-y-2">
-                                        <Label htmlFor="title">Title</Label>
-                                        <Input
-                                          id="title"
-                                          value={editingMeal.title}
-                                          onChange={(e) => handleEditingMealChange('title', e.target.value)}
-                                        />
-                                      </div>
-                                      <div className="space-y-2">
-                                        <Label htmlFor="category">Category</Label>
-                                        <Input
-                                          id="category"
-                                          value={editingMeal.category || ''}
-                                          onChange={(e) => handleEditingMealChange('category', e.target.value)}
-                                        />
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="space-y-2">
-                                      <Label htmlFor="description">Description</Label>
-                                      <Textarea
-                                        id="description"
-                                        value={editingMeal.description || ''}
-                                        onChange={(e) => handleEditingMealChange('description', e.target.value)}
-                                      />
-                                    </div>
-                                    
-                                    <div className="space-y-2">
-                                      <Label htmlFor="image">Image URL</Label>
-                                      <Input
-                                        id="image"
-                                        value={editingMeal.imageUrl}
-                                        onChange={(e) => handleEditingMealChange('imageUrl', e.target.value)}
-                                      />
-                                    </div>
-                                    
-                                    <div className="grid grid-cols-3 gap-4">
-                                      <div className="space-y-2">
-                                        <Label htmlFor="calories">Calories</Label>
-                                        <Input
-                                          id="calories"
-                                          type="number"
-                                          value={editingMeal.calories}
-                                          onChange={(e) => handleEditingMealChange('calories', parseInt(e.target.value))}
-                                        />
-                                      </div>
-                                      <div className="space-y-2">
-                                        <Label htmlFor="protein">Protein (g)</Label>
-                                        <Input
-                                          id="protein"
-                                          type="number"
-                                          value={editingMeal.protein}
-                                          onChange={(e) => handleEditingMealChange('protein', parseInt(e.target.value))}
-                                        />
-                                      </div>
-                                      <div className="space-y-2">
-                                        <Label htmlFor="price">Base Price (EGP)</Label>
-                                        <Input
-                                          id="price"
-                                          type="number"
-                                          value={editingMeal.price}
-                                          onChange={(e) => handleEditingMealChange('price', parseInt(e.target.value))}
-                                        />
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="space-y-2">
-                                      <Label htmlFor="tags">Tags (comma separated)</Label>
-                                      <Input
-                                        id="tags"
-                                        value={editingMeal.tags ? editingMeal.tags.join(', ') : ''}
-                                        onChange={(e) => handleEditingMealChange('tags', e.target.value.split(',').map(tag => tag.trim()))}
-                                      />
-                                    </div>
-                                  </div>
-                                )}
-                                <div className="flex justify-end space-x-4">
-                                  <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                                    Cancel
-                                  </Button>
-                                  <Button onClick={handleUpdateMeal} className="bg-primary hover:bg-primary/90 text-white">
-                                    Save Changes
-                                  </Button>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                            
                             <Button 
                               variant="outline" 
                               size="icon"
@@ -512,11 +307,11 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
               ) : (
                 <div className="text-center py-10">
                   <p className="text-gray-500 mb-4">No meals added to this week's menu yet.</p>
-                  <p className="text-sm text-gray-400">Add meals from the "Available Meals" tab or create new meals.</p>
+                  <p className="text-sm text-gray-400">Add meals from the "Available Meals" tab below.</p>
                 </div>
               )}
             </TabsContent>
-            
+
             <TabsContent value="available" className="mt-4">
               {availableMeals.length > 0 ? (
                 <Table>
@@ -563,7 +358,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
               ) : (
                 <div className="text-center py-10">
                   <p className="text-gray-500 mb-4">No additional meals available.</p>
-                  <p className="text-sm text-gray-400">All existing meals are already in this week's menu.</p>
+                  <p className="text-sm text-gray-400">All existing meals are already in this week's menu. Create new meals in the "Meals" tab.</p>
                 </div>
               )}
             </TabsContent>

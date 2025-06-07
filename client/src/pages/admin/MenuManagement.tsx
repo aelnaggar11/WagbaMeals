@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import MenuEditor from "@/components/admin/MenuEditor";
 import { Admin, Meal, Week } from "@shared/schema";
-import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const MenuManagement = () => {
   const [, navigate] = useLocation();
@@ -94,10 +94,6 @@ const MenuManagement = () => {
         <div className="flex gap-4">
           <Button variant="outline" onClick={() => navigate('/admin')}>
             Back to Dashboard
-          </Button>
-          <Button className="bg-primary hover:bg-primary/90 text-white">
-            <Plus size={16} className="mr-2" />
-            Add New Meal
           </Button>
         </div>
       </div>
