@@ -3,10 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { useToast } from "@/hooks/use-toast";
 import MenuEditor from "@/components/admin/MenuEditor";
-import MealsManager from "@/components/admin/MealsManager";
 import { Admin, Meal, Week } from "@shared/schema";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -99,72 +98,59 @@ const MenuManagement = () => {
         </div>
       </div>
       
-      <Tabs defaultValue="meals" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="meals">Meals</TabsTrigger>
-          <TabsTrigger value="weekly-menus">Weekly Menus</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="meals" className="mt-6">
-          <MealsManager />
-        </TabsContent>
-        
-        <TabsContent value="weekly-menus" className="mt-6">
-          {/* Week Navigation */}
-          {editableWeeks.length > 0 && currentWeek && (
-            <Card className="mb-8">
-              <CardHeader>
-                <CardTitle>Week Editor</CardTitle>
-                <CardDescription>Navigate between weeks to manage menus (up to 8 weeks in advance)</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={goToPreviousWeek}
-                    disabled={!canGoPrevious}
-                    className="h-10 w-10"
-                  >
-                    <ChevronLeft size={16} />
-                  </Button>
-                  
-                  <div className="flex flex-col items-center text-center min-w-0 flex-1 mx-4">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {currentWeek.label}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      {currentWeek.isActive && (
-                        <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-medium">
-                          Current Week
-                        </span>
-                      )}
-                      <span className="text-sm text-gray-500">
-                        Week {currentWeekIndex + 1} of {editableWeeks.length}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={goToNextWeek}
-                    disabled={!canGoNext}
-                    className="h-10 w-10"
-                  >
-                    <ChevronRight size={16} />
-                  </Button>
+      {/* Week Navigation */}
+      {editableWeeks.length > 0 && currentWeek && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Week Editor</CardTitle>
+            <CardDescription>Navigate between weeks to manage menus (up to 8 weeks in advance)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={goToPreviousWeek}
+                disabled={!canGoPrevious}
+                className="h-10 w-10"
+              >
+                <ChevronLeft size={16} />
+              </Button>
+              
+              <div className="flex flex-col items-center text-center min-w-0 flex-1 mx-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {currentWeek.label}
+                </h3>
+                <div className="flex items-center gap-2 mt-1">
+                  {currentWeek.isActive && (
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-medium">
+                      Current Week
+                    </span>
+                  )}
+                  <span className="text-sm text-gray-500">
+                    Week {currentWeekIndex + 1} of {editableWeeks.length}
+                  </span>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-          
-          {/* Menu Editor */}
-          {activeWeekId && (
-            <MenuEditor weekId={activeWeekId} />
-          )}
-        </TabsContent>
-      </Tabs>
+              </div>
+              
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={goToNextWeek}
+                disabled={!canGoNext}
+                className="h-10 w-10"
+              >
+                <ChevronRight size={16} />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Menu Editor */}
+      {activeWeekId && (
+        <MenuEditor weekId={activeWeekId} />
+      )}
     </div>
   );
 };
