@@ -421,7 +421,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
                                         <Label htmlFor="category">Category</Label>
                                         <Input
                                           id="category"
-                                          value={editingMeal.category}
+                                          value={editingMeal.category || ''}
                                           onChange={(e) => handleEditingMealChange('category', e.target.value)}
                                         />
                                       </div>
@@ -431,7 +431,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
                                       <Label htmlFor="description">Description</Label>
                                       <Textarea
                                         id="description"
-                                        value={editingMeal.description}
+                                        value={editingMeal.description || ''}
                                         onChange={(e) => handleEditingMealChange('description', e.target.value)}
                                       />
                                     </div>
