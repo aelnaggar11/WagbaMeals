@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,7 +36,7 @@ const MenuManagement = () => {
   });
   
   // Set active week to current week when data is loaded
-  useState(() => {
+  useEffect(() => {
     if (weeksData?.weeks && !activeWeekId) {
       const currentWeek = weeksData.weeks.find(week => week.isActive);
       if (currentWeek) {
@@ -45,7 +45,7 @@ const MenuManagement = () => {
         setActiveWeekId(weeksData.weeks[0].id);
       }
     }
-  });
+  }, [weeksData, activeWeekId]);
   
   if (!admin) {
     return (

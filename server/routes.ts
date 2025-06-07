@@ -401,6 +401,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/weeks/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid week ID' });
+      }
+      
+      const week = await storage.getWeek(id);
+      if (!week) {
+        return res.status(404).json({ message: 'Week not found' });
+      }
+      
+      res.json(week);
+    } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   app.post('/api/weeks', adminMiddleware, async (req, res) => {
     try {
       const weekData = insertWeekSchema.parse(req.body);
