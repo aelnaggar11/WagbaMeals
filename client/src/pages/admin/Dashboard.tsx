@@ -6,16 +6,17 @@ import { Admin } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import MenuManagement from "./MenuManagement";
 import OrdersManagement from "./OrdersManagement";
+import MealsManager from "@/components/admin/MealsManager";
 
 const Dashboard = () => {
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState("weekly-menus");
-  
+
   // Check if admin is authenticated
   const { data: admin } = useQuery<Admin>({
     queryKey: ['/api/admin/auth/me'],
   });
-  
+
   if (!admin) {
     return (
       <div className="container mx-auto px-4 py-16">
@@ -27,7 +28,7 @@ const Dashboard = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
@@ -36,7 +37,7 @@ const Dashboard = () => {
           <h1 className="text-4xl font-bold text-primary mb-2">Admin Dashboard</h1>
           <p className="text-gray-600">Manage your Wagba meal delivery service</p>
         </div>
-        
+
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-6 mb-8 bg-gray-200 rounded-lg p-1">
@@ -77,36 +78,33 @@ const Dashboard = () => {
               Neighborhoods
             </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="weekly-menus" className="mt-0">
             <MenuManagement />
           </TabsContent>
-          
+
           <TabsContent value="meals" className="mt-0">
-            <div className="bg-white rounded-lg border p-6">
-              <h3 className="text-xl font-semibold text-primary mb-4">Meal Management</h3>
-              <p className="text-gray-600">Individual meal management coming soon...</p>
-            </div>
+            <MealsManager />
           </TabsContent>
-          
+
           <TabsContent value="pricing" className="mt-0">
             <div className="bg-white rounded-lg border p-6">
               <h3 className="text-xl font-semibold text-primary mb-4">Pricing Management</h3>
               <p className="text-gray-600">Pricing management coming soon...</p>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="users" className="mt-0">
             <div className="bg-white rounded-lg border p-6">
               <h3 className="text-xl font-semibold text-primary mb-4">User Management</h3>
               <p className="text-gray-600">User management coming soon...</p>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="orders" className="mt-0">
             <OrdersManagement />
           </TabsContent>
-          
+
           <TabsContent value="neighborhoods" className="mt-0">
             <div className="bg-white rounded-lg border p-6">
               <h3 className="text-xl font-semibold text-primary mb-4">Neighborhood Management</h3>

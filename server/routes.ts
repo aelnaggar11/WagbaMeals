@@ -41,12 +41,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.session.adminId) {
       return res.status(401).json({ message: 'Unauthorized - Admin access required' });
     }
-    
+
     const admin = await storage.getAdmin(req.session.adminId);
     if (!admin) {
       return res.status(403).json({ message: 'Forbidden - Invalid admin session' });
     }
-    
+
     next();
   };
 
@@ -54,32 +54,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/register', async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
-      
+
       // Check if username already exists
       const existingUser = await storage.getUserByUsername(userData.username);
       if (existingUser) {
         return res.status(400).json({ message: 'Username already exists' });
       }
-      
+
       // Check if email already exists
       const existingEmail = await storage.getUserByEmail(userData.email);
       if (existingEmail) {
         return res.status(400).json({ message: 'Email already exists' });
       }
-      
+
       // Hash password
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(userData.password, salt);
-      
+
       // Create user
       const user = await storage.createUser({
         ...userData,
         password: hashedPassword
       });
-      
+
       // Set session
       req.session.userId = user.id;
-      
+
       res.status(201).json({
         id: user.id,
         username: user.username,
@@ -99,27 +99,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/login', async (req, res) => {
     try {
       const { email, password } = req.body;
-      
+
       // Validate input
       if (!email || !password) {
         return res.status(400).json({ message: 'Email and password are required' });
       }
-      
+
       // Get user
       const user = await storage.getUserByEmail(email);
       if (!user) {
         return res.status(400).json({ message: 'Invalid credentials' });
       }
-      
+
       // Compare password
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
         return res.status(400).json({ message: 'Invalid credentials' });
       }
-      
+
       // Set session
       req.session.userId = user.id;
-      
+
       res.json({
         id: user.id,
         username: user.username,
@@ -141,25 +141,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: 'Logged out successfully' });
     });
   });
-  
+
   app.post('/api/auth/forgot-password', async (req, res) => {
     try {
       const { email } = req.body;
-      
+
       if (!email) {
         return res.status(400).json({ message: 'Email is required' });
       }
-      
+
       // Check if user exists
       const user = await storage.getUserByEmail(email);
       if (!user) {
         // For security reasons, still return success even if email doesn't exist
         return res.json({ message: 'Password reset instructions sent if email exists' });
       }
-      
+
       // In a real application, we would generate a token and send an email with reset instructions
       // For this demo, we'll just return a success message
-      
+
       res.json({ message: 'Password reset instructions sent if email exists' });
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
@@ -171,12 +171,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.session.userId) {
         return res.status(401).json(null);
       }
-      
+
       const user = await storage.getUser(req.session.userId!);
       if (!user) {
         return res.status(401).json(null);
       }
-      
+
       res.json({
         id: user.id,
         username: user.username,
@@ -194,23 +194,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/auth/login', async (req, res) => {
     try {
       const { username, password } = req.body;
-      
+
       if (!username || !password) {
         return res.status(400).json({ message: 'Username and password required' });
       }
-      
+
       const admin = await storage.getAdminByUsername(username);
       if (!admin) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
-      
+
       const isPasswordValid = await bcrypt.compare(password, admin.password);
       if (!isPasswordValid) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
-      
+
       req.session.adminId = admin.id;
-      
+
       res.json({
         id: admin.id,
         username: admin.username,
@@ -228,12 +228,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.session.adminId) {
         return res.status(401).json(null);
       }
-      
+
       const admin = await storage.getAdmin(req.session.adminId);
       if (!admin) {
         return res.status(401).json(null);
       }
-      
+
       res.json({
         id: admin.id,
         username: admin.username,
@@ -262,7 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
-      
+
       res.json({
         name: user?.name,
         email: user?.email,
@@ -277,14 +277,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/user/profile', authMiddleware, async (req, res) => {
     try {
       const { name, email, phone, address } = req.body;
-      
+
       const updatedUser = await storage.updateUser(req.session.userId!, {
         name,
         email,
         phone,
         address
       });
-      
+
       res.json({
         name: updatedUser.name,
         email: updatedUser.email,
@@ -300,46 +300,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const generateFutureWeeks = async () => {
     const weeks = await storage.getWeeks();
     const now = new Date();
-    
+
     // Find the latest week in the database
     const latestWeek = weeks.reduce((latest, week) => {
       const weekDelivery = new Date(week.deliveryDate);
       const latestDelivery = new Date(latest.deliveryDate);
       return weekDelivery > latestDelivery ? week : latest;
     }, weeks[0]);
-    
+
     if (!latestWeek) return;
-    
+
     const latestDeliveryDate = new Date(latestWeek.deliveryDate);
     const weeksToGenerate = [];
-    
+
     // Generate weeks until we have at least 6 weeks into the future
     let currentDate = new Date(latestDeliveryDate);
     let weekNumber = weeks.length + 1;
-    
+
     while (currentDate <= new Date(now.getTime() + (6 * 7 * 24 * 60 * 60 * 1000))) {
       currentDate.setDate(currentDate.getDate() + 7);
-      
+
       const startDate = new Date(currentDate);
       const endDate = new Date(currentDate);
       endDate.setDate(endDate.getDate() + 6);
-      
+
       // Order deadline is 3 days before delivery
       const orderDeadline = new Date(currentDate);
       orderDeadline.setDate(orderDeadline.getDate() - 3);
-      
+
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const startMonth = monthNames[startDate.getMonth()];
       const endMonth = monthNames[endDate.getMonth()];
       const year = startDate.getFullYear();
-      
+
       let label;
       if (startMonth === endMonth) {
         label = `${startMonth} ${startDate.getDate()}-${endDate.getDate()}, ${year}`;
       } else {
         label = `${startMonth} ${startDate.getDate()}-${endMonth} ${endDate.getDate()}, ${year}`;
       }
-      
+
       weeksToGenerate.push({
         identifier: `week${weekNumber}`,
         label,
@@ -350,15 +350,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isActive: true,
         isSelectable: true
       });
-      
+
       weekNumber++;
     }
-    
+
     // Insert the new weeks and assign meals to them
     for (const weekData of weeksToGenerate) {
       try {
         const newWeek = await storage.createWeek(weekData);
-        
+
         // Get meals from week 1 (template week) and assign them to the new week
         const templateWeekMeals = await storage.getWeekMeals(1);
         for (const templateMeal of templateWeekMeals) {
@@ -381,7 +381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Generate future weeks if needed
       await generateFutureWeeks();
-      
+
       const weeks = await storage.getWeeks();
       res.json({ weeks });
     } catch (error) {
@@ -407,12 +407,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(id)) {
         return res.status(400).json({ message: 'Invalid week ID' });
       }
-      
+
       const week = await storage.getWeek(id);
       if (!week) {
         return res.status(404).json({ message: 'Week not found' });
       }
-      
+
       res.json(week);
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
@@ -444,7 +444,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Menu Routes
-  
+
   // Get all meals
   app.get('/api/meals', async (req, res) => {
     try {
@@ -455,12 +455,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Server error' });
     }
   });
-  
+
   app.get('/api/menu/:weekId', async (req, res) => {
     try {
       const weekId = req.params.weekId;
       let meals;
-      
+
       if (weekId === 'current') {
         const currentWeek = await storage.getCurrentWeek();
         if (!currentWeek) {
@@ -471,7 +471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const weekIdNum = parseInt(weekId);
         meals = await storage.getMealsByWeek(weekIdNum);
       }
-      
+
       res.json({ meals });
     } catch (error) {
       console.error("Error fetching meals for week:", error);
@@ -517,7 +517,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const weekId = parseInt(req.params.weekId);
       const { mealId, isAvailable, isFeatured, sortOrder } = req.body;
-      
+
       const weekMeal = await storage.addMealToWeek({
         weekId,
         mealId,
@@ -525,7 +525,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isFeatured,
         sortOrder
       });
-      
+
       res.status(201).json(weekMeal);
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
@@ -536,22 +536,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const weekId = parseInt(req.params.weekId);
       const mealId = parseInt(req.params.mealId);
-      
+
       await storage.removeMealFromWeek(weekId, mealId);
       res.json({ message: 'Meal removed from week successfully' });
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
     }
   });
-  
+
   // Get meals for a specific week
   app.get('/api/menu/:weekId', authMiddleware, async (req, res) => {
     try {
       const weekId = parseInt(req.params.weekId);
-      
+
       // Get meals for the specific week
       const meals = await storage.getMealsByWeek(weekId);
-      
+
       res.json({ meals });
     } catch (error) {
       console.error('Error fetching meals for week:', error);
@@ -568,19 +568,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Server error' });
     }
   });
-  
+
   // Get upcoming meal selections for a user
   app.get('/api/user/upcoming-meals', authMiddleware, async (req, res) => {
     try {
       // Generate future weeks if needed
       await generateFutureWeeks();
-      
+
       // Get all available weeks
       const weeks = await storage.getWeeks();
-      
+
       // Get current date
       const now = new Date();
-      
+
       // Filter weeks that are upcoming (delivery date is today or in the future)
       const upcomingWeeks = weeks.filter(week => {
         const deliveryDate = new Date(week.deliveryDate);
@@ -591,20 +591,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }).sort((a, b) => {
         return new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime();
       }).slice(0, 4); // Show exactly 4 weeks for users
-      
+
       // For each upcoming week, get or create the user's order
       const upcomingMeals = [];
-      
+
       for (const week of upcomingWeeks) {
         let order = await storage.getOrderByUserAndWeek(req.session.userId!, week.id);
         const orderDeadlinePassed = new Date(week.orderDeadline) <= now;
-        
+
         // If no order exists, create one with user's default meal count
         if (!order) {
           // Get user's default meal count from their most recent order
           const userOrders = await storage.getOrdersByUser(req.session.userId!);
           const defaultMealCount = userOrders.length > 0 ? userOrders[userOrders.length - 1].mealCount : 4;
-          
+
           order = await storage.createOrder({
             userId: req.session.userId!,
             weekId: week.id,
@@ -620,11 +620,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             paymentMethod: null
           });
         }
-        
+
         // Get the detailed meal information for each order item
         const orderItems = await storage.getOrderItems(order.id);
         const itemsWithMeals = [];
-        
+
         for (const item of orderItems) {
           const meal = await storage.getMeal(item.mealId);
           if (meal) {
@@ -634,7 +634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
         }
-        
+
         upcomingMeals.push({
           orderId: order.id,
           weekId: week.id,
@@ -649,45 +649,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
           mealCount: order.mealCount
         });
       }
-      
+
       res.json({ upcomingMeals });
     } catch (error) {
       console.error('Error fetching upcoming meals:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });
-  
+
   // Skip or unskip a delivery
   app.patch('/api/orders/:orderId/skip', authMiddleware, async (req, res) => {
     try {
       const orderId = parseInt(req.params.orderId);
       const { skip } = req.body;
-      
+
       // Get the order
       const order = await storage.getOrder(orderId);
-      
+
       // Check if order exists and belongs to user
       if (!order || order.userId !== req.session.userId) {
         return res.status(404).json({ message: 'Order not found' });
       }
-      
+
       // Get the order's week to check deadline
       const week = await storage.getWeek(order.weekId);
       if (!week) {
         return res.status(404).json({ message: 'Week not found' });
       }
-      
+
       // Check if deadline has passed
       const now = new Date();
       if (new Date(week.orderDeadline) <= now) {
         return res.status(400).json({ message: 'Order deadline has passed' });
       }
-      
+
       // Update order status
       const updatedOrder = await storage.updateOrder(orderId, {
         status: skip ? 'skipped' : 'pending'
       });
-      
+
       res.json(updatedOrder);
     } catch (error) {
       console.error('Error skipping/unskipping order:', error);
@@ -710,7 +710,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/orders/:weekId', authMiddleware, async (req, res) => {
     try {
       let weekId;
-      
+
       if (req.params.weekId === 'current') {
         const currentWeek = await storage.getCurrentWeek();
         if (!currentWeek) {
@@ -720,7 +720,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         weekId = parseInt(req.params.weekId);
       }
-      
+
       const order = await storage.getOrderByUserAndWeek(req.session.userId!, weekId);
       if (!order) {
         return res.status(404).json(null);
@@ -737,22 +737,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user has any confirmed orders (meaning they're not a first-time user)
       const userOrders = await storage.getOrdersByUser(userId);
       const hasConfirmedOrders = userOrders.some(order => order.status === 'confirmed');
-      
+
       if (hasConfirmedOrders) {
         // User already has confirmed orders, no need to auto-skip
         return;
       }
-      
+
       // Get all weeks up to the selected week
       const allWeeks = await storage.getWeeks();
       const sortedWeeks = allWeeks.sort((a, b) => 
         new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime()
       );
-      
+
       // Find the selected week index
       const selectedWeekIndex = sortedWeeks.findIndex(week => week.id === selectedWeekId);
       if (selectedWeekIndex === -1) return;
-      
+
       // Get all weeks before the selected week that are still upcoming
       const now = new Date();
       const precedingWeeks = sortedWeeks.slice(0, selectedWeekIndex).filter(week => {
@@ -761,12 +761,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Only skip weeks where the deadline hasn't passed yet
         return orderDeadline > now;
       });
-      
+
       // Skip all preceding weeks
       for (const week of precedingWeeks) {
         // Check if user already has an order for this week
         let existingOrder = await storage.getOrderByUserAndWeek(userId, week.id);
-        
+
         if (!existingOrder) {
           // Create a skipped order for this week
           existingOrder = await storage.createOrder({
@@ -796,7 +796,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/orders', authMiddleware, async (req, res) => {
     try {
       const { weekId, mealCount, defaultPortionSize, items } = req.body;
-      
+
       // Get week
       let week;
       if (weekId === 'current') {
@@ -811,16 +811,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: 'Week not found' });
         }
       }
-      
+
       // Auto-skip preceding weeks for first-time users
       await autoSkipPrecedingWeeks(req.session.userId!, week.id);
-      
+
       // Calculate prices
       const pricePerMeal = getPriceForMealCount(mealCount);
       const largePortionAdditional = 99;
-      
+
       let subtotal = 0;
-      
+
       // Calculate subtotal based on portion sizes
       items.forEach((item: any) => {
         if (item.portionSize === 'large') {
@@ -829,14 +829,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           subtotal += pricePerMeal;
         }
       });
-      
+
       // Calculate full price total and discount
       const fullPriceTotal = mealCount * 249;
       const discount = fullPriceTotal - subtotal;
-      
+
       // Calculate total
       const total = subtotal;
-      
+
       // Create order
       const order = await storage.createOrder({
         userId: req.session.userId!,
@@ -849,13 +849,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         total,
         deliveryDate: week.deliveryDate.toISOString()
       });
-      
+
       // Add order items
       for (const item of items) {
         const itemPrice = item.portionSize === 'large' 
           ? pricePerMeal + largePortionAdditional 
           : pricePerMeal;
-        
+
         await storage.addOrderItem({
           orderId: order.id,
           mealId: item.mealId,
@@ -863,7 +863,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           price: itemPrice
         });
       }
-      
+
       res.status(201).json(order);
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
@@ -875,23 +875,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const orderId = parseInt(req.params.orderId);
       const { mealId, portionSize } = req.body;
-      
+
       // Get the order to verify ownership and get week info
       const order = await storage.getOrder(orderId);
       if (!order || order.userId !== req.session.userId) {
         return res.status(404).json({ message: 'Order not found' });
       }
-      
+
       // Auto-skip preceding weeks for first-time users
       await autoSkipPrecedingWeeks(req.session.userId, order.weekId);
-      
+
       // Calculate price
       const pricePerMeal = getPriceForMealCount(order.mealCount);
       const largePortionAdditional = 99;
       const itemPrice = portionSize === 'large' 
         ? pricePerMeal + largePortionAdditional 
         : pricePerMeal;
-      
+
       // Add the order item
       const orderItem = await storage.addOrderItem({
         orderId,
@@ -899,19 +899,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         portionSize,
         price: itemPrice
       });
-      
+
       // Update order totals
       const orderItems = await storage.getOrderItems(orderId);
       const newSubtotal = orderItems.reduce((sum, item) => sum + item.price, 0);
       const fullPriceTotal = order.mealCount * 249;
       const discount = fullPriceTotal - newSubtotal;
-      
+
       await storage.updateOrder(orderId, {
         subtotal: newSubtotal,
         discount,
         total: newSubtotal
       });
-      
+
       res.status(201).json(orderItem);
     } catch (error) {
       console.error('Error adding order item:', error);
@@ -924,35 +924,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const orderId = parseInt(req.params.orderId);
       const itemId = parseInt(req.params.itemId);
-      
+
       // Get the order to verify ownership
       const order = await storage.getOrder(orderId);
       if (!order || order.userId !== req.session.userId) {
         return res.status(404).json({ message: 'Order not found' });
       }
-      
+
       // Get the order item to verify it belongs to this order
       const orderItems = await storage.getOrderItems(orderId);
       const itemToRemove = orderItems.find(item => item.id === itemId);
       if (!itemToRemove) {
         return res.status(404).json({ message: 'Order item not found' });
       }
-      
+
       // Remove the item (we'll need to add this method to storage)
       await storage.removeOrderItem(itemId);
-      
+
       // Update order totals
       const remainingItems = await storage.getOrderItems(orderId);
       const newSubtotal = remainingItems.reduce((sum, item) => sum + item.price, 0);
       const fullPriceTotal = order.mealCount * 249;
       const discount = fullPriceTotal - newSubtotal;
-      
+
       await storage.updateOrder(orderId, {
         subtotal: newSubtotal,
         discount,
         total: newSubtotal
       });
-      
+
       res.json({ message: 'Order item removed successfully' });
     } catch (error) {
       console.error('Error removing order item:', error);
@@ -963,18 +963,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/orders/checkout', authMiddleware, async (req, res) => {
     try {
       const { orderId, paymentMethod, address, deliveryNotes } = req.body;
-      
+
       // Get order
       const order = await storage.getOrder(orderId);
       if (!order) {
         return res.status(404).json({ message: 'Order not found' });
       }
-      
+
       // Verify order belongs to user
       if (order.userId !== req.session.userId) {
         return res.status(403).json({ message: 'Forbidden' });
       }
-      
+
       // Update order
       const updatedOrder = await storage.updateOrder(orderId, {
         status: 'confirmed',
@@ -982,7 +982,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deliveryNotes,
         paymentMethod
       });
-      
+
       // Update user address if not set
       const user = await storage.getUser(req.session.userId!);
       if (user && !user.address) {
@@ -991,7 +991,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           phone: address.phone
         });
       }
-      
+
       res.json(updatedOrder);
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
@@ -1011,7 +1011,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/admin/orders/:weekId', adminMiddleware, async (req, res) => {
     try {
       let weekId;
-      
+
       if (req.params.weekId === 'current') {
         const currentWeek = await storage.getCurrentWeek();
         if (!currentWeek) {
@@ -1021,7 +1021,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         weekId = parseInt(req.params.weekId);
       }
-      
+
       const orders = await storage.getOrdersByWeek(weekId);
       res.json({ orders });
     } catch (error) {
@@ -1044,16 +1044,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/admin/users', adminMiddleware, async (req, res) => {
     try {
       const users = await storage.getAllUsers();
-      
+
       // Remove password from response
       const safeUsers = users.map(user => {
         const { password, ...safeUser } = user;
         return safeUser;
       });
-      
+
       res.json({ users: safeUsers });
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Admin meal management endpoints
+  app.post('/api/admin/meals', adminMiddleware, async (req, res) => {
+    try {
+      const mealData = insertMealSchema.parse(req.body);
+      const meal = await storage.createMeal(mealData);
+      res.status(201).json(meal);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid meal data', errors: error.errors });
+      }
+      console.error('Error creating meal:', error);
+      res.status(500).json({ message: "Failed to create meal" });
+    }
+  });
+
+  app.patch("/api/admin/meals/:id", adminMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const mealData = req.body;
+      const meal = await storage.updateMeal(id, mealData);
+      res.json(meal);
+    } catch (error) {
+      console.error('Error updating meal:', error);
+      res.status(500).json({ message: "Failed to update meal" });
+    }
+  });
+
+  app.delete("/api/admin/meals/:id", adminMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteMeal(id);
+      res.json({ message: "Meal deleted successfully" });
+    } catch (error) {
+      console.error('Error deleting meal:', error);
+      res.status(500).json({ message: "Failed to delete meal" });
     }
   });
 
