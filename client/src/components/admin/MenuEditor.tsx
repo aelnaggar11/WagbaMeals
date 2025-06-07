@@ -57,7 +57,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
   });
 
   // Fetch meals for the week
-  const { data: weekMealsData, isLoading: weekMealsLoading } = useQuery<{ meals: Meal[] }>({
+  const { data: weekMealsData, isLoading: weekMealsLoading, refetch: refetchWeekMeals } = useQuery<{ meals: Meal[] }>({
     queryKey: ['/api/menu', weekId],
     queryFn: async () => {
       const res = await fetch(`/api/menu/${weekId}`);
@@ -66,7 +66,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
   });
 
   // Fetch all meals for adding to the week
-  const { data: allMealsData } = useQuery<{ meals: Meal[] }>({
+  const { data: allMealsData, refetch: refetchAllMeals } = useQuery<{ meals: Meal[] }>({
     queryKey: ['/api/meals'],
     queryFn: async () => {
       const res = await fetch('/api/meals');
@@ -89,9 +89,9 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
         sortOrder: (weekMealsData?.meals.length || 0) + 1
       });
 
-      // Invalidate queries to refresh data
-      await queryClient.invalidateQueries({ queryKey: ['/api/menu', weekId] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/meals'] });
+      // Refetch data to update UI immediately
+      await refetchWeekMeals();
+      await refetchAllMeals();
 
       toast({
         title: "Meal added",
@@ -111,9 +111,9 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
     try {
       await apiRequest('DELETE', `/api/weeks/${weekId}/meals/${mealId}`, {});
 
-      // Invalidate queries to refresh data
-      await queryClient.invalidateQueries({ queryKey: ['/api/menu', weekId] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/meals'] });
+      // Refetch data to update UI immediately
+      await refetchWeekMeals();
+      await refetchAllMeals();
 
       toast({
         title: "Meal removed",
@@ -135,9 +135,9 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
     try {
       await apiRequest('PATCH', `/api/meals/${editingMeal.id}`, editingMeal);
 
-      // Invalidate queries to refresh data
-      await queryClient.invalidateQueries({ queryKey: ['/api/menu', weekId] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/meals'] });
+      // Refetch data to update UI immediately
+      await refetchWeekMeals();
+      await refetchAllMeals();
 
       toast({
         title: "Meal updated",
@@ -172,9 +172,9 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
       // Add the new meal to the week
       await handleAddMealToWeek(newMeal.id);
 
-      // Invalidate queries to refresh data
-      await queryClient.invalidateQueries({ queryKey: ['/api/menu', weekId] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/meals'] });
+      // Refetch data to update UI immediately
+      await refetchWeekMeals();
+      await refetchAllMeals();
 
       toast({
         title: "Meal created",
