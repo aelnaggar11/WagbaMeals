@@ -53,18 +53,26 @@ const MenuManagement = () => {
     }
   }, [weeksData, activeWeekId]);
 
-  // Show all weeks for admin editing, sorted by start date
+  // Show only current and future weeks for admin editing, sorted by start date
+  const now = new Date();
   const editableWeeks = weeksData?.weeks
     ? weeksData.weeks
+        .filter(week => {
+          const weekEnd = new Date(week.endDate);
+          return weekEnd >= now; // Show weeks that haven't ended yet
+        })
         .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
     : [];
 
-  // Determine if a week is live (visible to users)
+  // Determine if a week is live (visible to users) using the same logic as user WeekSelector
   const isWeekLive = (week: Week) => {
     const now = new Date();
-    const weekStart = new Date(week.startDate);
+    const fourWeeksFromNow = new Date(now.getTime() + (4 * 7 * 24 * 60 * 60 * 1000));
     const orderDeadline = new Date(week.orderDeadline);
-    return now >= orderDeadline || week.isActive;
+    const startDate = new Date(week.startDate);
+    
+    // A week is live if users can see it (deadline hasn't passed, is selectable, and within 4 weeks)
+    return orderDeadline > now && week.isSelectable && startDate <= fourWeeksFromNow;
   };
 
   const currentWeekIndex = editableWeeks.findIndex(week => week.id === activeWeekId);

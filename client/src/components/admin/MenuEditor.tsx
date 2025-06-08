@@ -81,12 +81,16 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
     !weekMealsData?.meals.some(weekMeal => weekMeal.id === meal.id)
   ) || [];
 
-  // Check if this week is live (visible to users)
+  // Check if this week is live (visible to users) using the same logic as user WeekSelector
   const isWeekLive = () => {
     if (!weekData) return false;
     const now = new Date();
+    const fourWeeksFromNow = new Date(now.getTime() + (4 * 7 * 24 * 60 * 60 * 1000));
     const orderDeadline = new Date(weekData.orderDeadline);
-    return now >= orderDeadline || weekData.isActive;
+    const startDate = new Date(weekData.startDate);
+    
+    // A week is live if users can see it (deadline hasn't passed, is selectable, and within 4 weeks)
+    return orderDeadline > now && weekData.isSelectable && startDate <= fourWeeksFromNow;
   };
 
   // Handle adding a meal to the week (with live week check)
