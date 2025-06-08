@@ -58,15 +58,20 @@ const Home = () => {
             </div>
             
             <div className="md:w-1/2 relative">
-              <img 
-                src="/imperfect-circle.png" 
-                alt="Healthy meals delivered weekly" 
-                className="rounded-xl shadow-xl object-cover w-full h-auto animate-spin-slow"
-                onError={(e) => {
-                  console.error('Image failed to load:', e);
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
+              <div className="w-full h-96 flex items-center justify-center">
+                <img 
+                  src="/imperfect-circle.png" 
+                  alt="Healthy meals delivered weekly" 
+                  className="rounded-xl shadow-xl object-cover max-w-full h-auto animate-spin-slow"
+                  onError={(e) => {
+                    console.error('Image failed to load, showing fallback');
+                    const fallback = document.createElement('div');
+                    fallback.className = 'w-64 h-64 rounded-xl shadow-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center animate-spin-slow';
+                    fallback.innerHTML = '<span class="text-2xl font-bold text-primary">Wagba</span>';
+                    e.currentTarget.parentNode?.replaceChild(fallback, e.currentTarget);
+                  }}
+                  onLoad={() => console.log('Image loaded successfully')}
+                /></div>
               <div className="absolute -bottom-4 -right-4 md:bottom-4 md:right-4 bg-white rounded-lg shadow-lg p-4 max-w-xs">
                 <div className="flex items-center space-x-3 mb-2">
                   <div className="bg-accent rounded-full p-2">
