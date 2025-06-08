@@ -47,12 +47,21 @@ const MenuManagement = () => {
     }
   }, [weeksData, activeWeekId]);
 
-  // Filter to show only the next 8 weeks for admin editing
+  // Filter to show only future weeks for admin editing
+  const now = new Date();
   const editableWeeks = weeksData?.weeks
     ? weeksData.weeks
+        .filter(week => new Date(week.startDate) > now)
         .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
         .slice(0, 8)
     : [];
+
+  // Determine if a week is live (visible to users)
+  const isWeekLive = (week: Week) => {
+    const weekStart = new Date(week.startDate);
+    const orderDeadline = new Date(week.orderDeadline);
+    return now >= orderDeadline || week.isActive;
+  };
 
   const currentWeekIndex = editableWeeks.findIndex(week => week.id === activeWeekId);
   const currentWeek = editableWeeks[currentWeekIndex];
@@ -122,14 +131,11 @@ const MenuManagement = () => {
                   {currentWeek.label}
                 </h3>
                 <div className="flex items-center gap-2 mt-1">
-                  {currentWeek.isActive && (
-                    <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-medium">
-                      Current Week
+                  {isWeekLive(currentWeek) && (
+                    <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-medium">
+                      Live Week
                     </span>
                   )}
-                  <span className="text-sm text-gray-500">
-                    Week {currentWeekIndex + 1} of {editableWeeks.length}
-                  </span>
                 </div>
               </div>
               

@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Meal, Week, WeekMeal } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -34,6 +35,7 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingMeal, setEditingMeal] = useState<Meal | null>(null);
+  const [pendingAction, setPendingAction] = useState<{type: 'add' | 'remove', mealId: number} | null>(null);
 
   // New meal form
   const [newMealForm, setNewMealForm] = useState<NewMealForm>({
@@ -79,8 +81,21 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
     !weekMealsData?.meals.some(weekMeal => weekMeal.id === meal.id)
   ) || [];
 
-  // Handle adding a meal to the week
-  const handleAddMealToWeek = async (mealId: number) => {
+  // Check if this week is live (visible to users)
+  const isWeekLive = () => {
+    if (!weekData) return false;
+    const now = new Date();
+    const orderDeadline = new Date(weekData.orderDeadline);
+    return now >= orderDeadline || weekData.isActive;
+  };
+
+  // Handle adding a meal to the week (with live week check)
+  const handleAddMealToWeek = async (mealId: number, skipConfirmation = false) => {
+    if (isWeekLive() && !skipConfirmation) {
+      setPendingAction({type: 'add', mealId});
+      return;
+    }
+
     try {
       await apiRequest('POST', `/api/weeks/${weekId}/meals`, {
         mealId,
@@ -106,8 +121,13 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
     }
   };
 
-  // Handle removing a meal from the week
-  const handleRemoveMealFromWeek = async (mealId: number) => {
+  // Handle removing a meal from the week (with live week check)
+  const handleRemoveMealFromWeek = async (mealId: number, skipConfirmation = false) => {
+    if (isWeekLive() && !skipConfirmation) {
+      setPendingAction({type: 'remove', mealId});
+      return;
+    }
+
     try {
       await apiRequest('DELETE', `/api/weeks/${weekId}/meals/${mealId}`, {});
 
@@ -219,6 +239,23 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
       ...newMealForm,
       [field]: value
     });
+  };
+
+  // Handle confirmation for live week actions
+  const handleConfirmLiveWeekAction = async () => {
+    if (!pendingAction) return;
+    
+    if (pendingAction.type === 'add') {
+      await handleAddMealToWeek(pendingAction.mealId, true);
+    } else if (pendingAction.type === 'remove') {
+      await handleRemoveMealFromWeek(pendingAction.mealId, true);
+    }
+    
+    setPendingAction(null);
+  };
+
+  const handleCancelLiveWeekAction = () => {
+    setPendingAction(null);
   };
 
   if (weekLoading) {
