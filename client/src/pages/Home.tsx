@@ -59,7 +59,7 @@ const Home = () => {
             
             <div className="md:w-1/2 relative">
               <img 
-                src="/attached_assets/imperfect%20circle.png" 
+                src="/imperfect-circle.png" 
                 alt="Imperfect Circle" 
                 className="rounded-xl shadow-xl object-cover w-full h-auto animate-spin-slow"
               />
