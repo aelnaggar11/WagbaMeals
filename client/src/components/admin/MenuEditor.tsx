@@ -404,6 +404,24 @@ const MenuEditor = ({ weekId }: MenuEditorProps) => {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Live Week Warning Dialog */}
+      <AlertDialog open={pendingAction !== null} onOpenChange={() => setPendingAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Edit Live Week?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This week is currently live and visible to users. Making changes could affect users who have already placed orders. Are you sure you want to continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelLiveWeekAction}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmLiveWeekAction} className="bg-red-600 hover:bg-red-700">
+              Continue Editing
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
