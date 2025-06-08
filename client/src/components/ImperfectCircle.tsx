@@ -23,13 +23,14 @@ const ImperfectCircle: React.FC<ImperfectCircleProps> = ({
   };
 
   return (
-    <div className={`${sizeClasses[size]} ${className} animate-rotate-slow`}>
-      <img 
-        src="/attached_assets/imperfect circle.png" 
-        alt="Imperfect Circle" 
-        className="w-full h-full object-contain"
-        style={{ opacity }}
-      />
+    <div className={`${sizeClasses[size]} ${className}`}>
+      <svg viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path 
+          d="M224.9 275.1C191.5 308.5 134.2 308.5 100.8 275.1C67.4 241.7 67.7 186.3 100.8 152.9C133.9 119.5 191.5 121.5 224.9 154.9C258.3 188.3 258.3 241.7 224.9 275.1Z"
+          fill={color}
+          opacity={opacity}
+        />
+      </svg>
     </div>
   );
 };
