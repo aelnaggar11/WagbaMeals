@@ -35,29 +35,33 @@ const MenuManagement = () => {
     }
   });
   
-  // Set active week to current week when data is loaded
+  // Set active week to first future week when data is loaded
   useEffect(() => {
     if (weeksData?.weeks && !activeWeekId) {
-      const currentWeek = weeksData.weeks.find(week => week.isActive);
-      if (currentWeek) {
-        setActiveWeekId(currentWeek.id);
+      const now = new Date();
+      const futureWeeks = weeksData.weeks
+        .filter(week => new Date(week.startDate) > now)
+        .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+      
+      if (futureWeeks.length > 0) {
+        setActiveWeekId(futureWeeks[0].id);
       } else if (weeksData.weeks.length > 0) {
-        setActiveWeekId(weeksData.weeks[0].id);
+        // If no future weeks, show the most recent week
+        const sortedWeeks = weeksData.weeks.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+        setActiveWeekId(sortedWeeks[0].id);
       }
     }
   }, [weeksData, activeWeekId]);
 
-  // Filter to show only future weeks for admin editing
-  const now = new Date();
+  // Show all weeks for admin editing, sorted by start date
   const editableWeeks = weeksData?.weeks
     ? weeksData.weeks
-        .filter(week => new Date(week.startDate) > now)
         .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-        .slice(0, 8)
     : [];
 
   // Determine if a week is live (visible to users)
   const isWeekLive = (week: Week) => {
+    const now = new Date();
     const weekStart = new Date(week.startDate);
     const orderDeadline = new Date(week.orderDeadline);
     return now >= orderDeadline || week.isActive;
