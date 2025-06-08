@@ -59,13 +59,9 @@ const Home = () => {
             
             <div className="md:w-1/2 relative">
               <img 
-                src="/imperfect-circle.png" 
-                alt="Healthy meals delivered weekly" 
-                className="w-full h-auto max-w-md mx-auto rounded-xl shadow-xl animate-spin-slow"
-                onError={(e) => {
-                  console.error('Image failed to load');
-                  e.currentTarget.style.display = 'none';
-                }}
+                src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c" 
+                alt="Healthy prepared meal" 
+                className="rounded-xl shadow-xl object-cover w-full h-auto"
               />
               <div className="absolute -bottom-4 -right-4 md:bottom-4 md:right-4 bg-white rounded-lg shadow-lg p-4 max-w-xs">
                 <div className="flex items-center space-x-3 mb-2">
