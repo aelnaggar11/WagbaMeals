@@ -563,6 +563,65 @@ export class MemStorage implements IStorage {
   async removeOrderItem(itemId: number): Promise<void> {
     this.orderItems.delete(itemId);
   }
+
+  // Order status management methods
+  async skipOrder(orderId: number): Promise<Order> {
+    const order = this.orders.get(orderId);
+    if (!order) {
+      throw new Error(`Order with id ${orderId} not found`);
+    }
+
+    const updatedOrder = {
+      ...order,
+      previousStatus: order.status,
+      status: "skipped" as const,
+      updatedAt: new Date()
+    };
+    
+    this.orders.set(orderId, updatedOrder);
+    return updatedOrder;
+  }
+
+  async unskipOrder(orderId: number): Promise<Order> {
+    const order = this.orders.get(orderId);
+    if (!order) {
+      throw new Error(`Order with id ${orderId} not found`);
+    }
+
+    if (order.status !== "skipped") {
+      throw new Error(`Order ${orderId} is not in skipped status`);
+    }
+
+    const updatedOrder = {
+      ...order,
+      status: (order.previousStatus || "not_selected") as const,
+      previousStatus: null,
+      updatedAt: new Date()
+    };
+    
+    this.orders.set(orderId, updatedOrder);
+    return updatedOrder;
+  }
+
+  async markOrderAsSelected(orderId: number): Promise<Order> {
+    const order = this.orders.get(orderId);
+    if (!order) {
+      throw new Error(`Order with id ${orderId} not found`);
+    }
+
+    if (order.status === "skipped") {
+      throw new Error(`Cannot mark skipped order as selected`);
+    }
+
+    const updatedOrder = {
+      ...order,
+      status: "selected" as const,
+      updatedAt: new Date()
+    };
+    
+    this.orders.set(orderId, updatedOrder);
+    return updatedOrder;
+  }
 }
 
 // Import database storage implementation

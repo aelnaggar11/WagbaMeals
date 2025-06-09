@@ -536,4 +536,70 @@ export class DatabaseStorage implements IStorage {
 
     console.log("Database seeded successfully!");
   }
+
+  // Order status management methods
+  async skipOrder(orderId: number): Promise<Order> {
+    const order = await this.getOrder(orderId);
+    if (!order) {
+      throw new Error(`Order with id ${orderId} not found`);
+    }
+
+    const [updatedOrder] = await db
+      .update(orders)
+      .set({
+        previousStatus: order.status,
+        status: "skipped",
+        updatedAt: new Date()
+      })
+      .where(eq(orders.id, orderId))
+      .returning();
+
+    return updatedOrder;
+  }
+
+  async unskipOrder(orderId: number): Promise<Order> {
+    const order = await this.getOrder(orderId);
+    if (!order) {
+      throw new Error(`Order with id ${orderId} not found`);
+    }
+
+    if (order.status !== "skipped") {
+      throw new Error(`Order ${orderId} is not in skipped status`);
+    }
+
+    const [updatedOrder] = await db
+      .update(orders)
+      .set({
+        status: order.previousStatus || "not_selected",
+        previousStatus: null,
+        updatedAt: new Date()
+      })
+      .where(eq(orders.id, orderId))
+      .returning();
+
+    return updatedOrder;
+  }
+
+  async markOrderAsSelected(orderId: number): Promise<Order> {
+    const order = await this.getOrder(orderId);
+    if (!order) {
+      throw new Error(`Order with id ${orderId} not found`);
+    }
+
+    // Only update if not already selected and not skipped
+    if (order.status === "skipped") {
+      throw new Error(`Cannot mark skipped order as selected`);
+    }
+
+    const [updatedOrder] = await db
+      .update(orders)
+      .set({
+        status: "selected",
+        updatedAt: new Date()
+      })
+      .where(eq(orders.id, orderId))
+      .returning();
+
+    return updatedOrder;
+  }
 }

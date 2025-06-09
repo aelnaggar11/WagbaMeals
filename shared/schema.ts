@@ -135,7 +135,8 @@ export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   weekId: integer("week_id").notNull(),
-  status: text("status").default("pending"),
+  status: text("status").default("not_selected"),
+  previousStatus: text("previous_status"), // For tracking status before skipping
   mealCount: integer("meal_count").notNull(),
   defaultPortionSize: text("default_portion_size").notNull(),
   subtotal: real("subtotal").notNull(),
@@ -213,6 +214,8 @@ export type InsertUserWeekStatus = z.infer<typeof insertUserWeekStatusSchema>;
 
 export type PortionSize = "standard" | "large";
 
+export type OrderStatus = "not_selected" | "selected" | "skipped" | "delivered" | "cancelled";
+
 // Storage interface
 export interface IStorage {
   // User methods
@@ -270,6 +273,11 @@ export interface IStorage {
   getUserWeekStatus(userId: number, weekId: number): Promise<UserWeekStatus | undefined>;
   setUserWeekStatus(userWeekStatus: InsertUserWeekStatus): Promise<UserWeekStatus>;
   getUserWeekStatuses(userId: number): Promise<UserWeekStatus[]>;
+  
+  // Order status management methods
+  skipOrder(orderId: number): Promise<Order>;
+  unskipOrder(orderId: number): Promise<Order>;
+  markOrderAsSelected(orderId: number): Promise<Order>;
 }
 
 // Helper functions for pricing
