@@ -83,6 +83,8 @@ const OrdersManagement = () => {
       });
       
       queryClient.invalidateQueries({ queryKey: ['/api/admin/orders'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/orders/items`] });
       
       toast({
         title: "Order updated",
@@ -445,7 +447,7 @@ const OrdersManagement = () => {
                           </TableCell>
                           <TableCell>
                             {userOrder ? (
-                              <Badge className="bg-green-100 text-green-800">Has Order</Badge>
+                              getStatusBadge(userOrder.status || 'not_selected')
                             ) : (
                               <Badge variant="outline" className="bg-gray-100 text-gray-600">No Order</Badge>
                             )}
