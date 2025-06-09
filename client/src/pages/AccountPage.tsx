@@ -25,31 +25,60 @@ const AccountPage = () => {
 
   // Helper function to format week dates as "Sat 5 July"
   const formatWeekLabel = (weekLabel: string) => {
-    // Extract date from various formats like "May 24-30, 2025" or "Jun 21-27, 2025"
-    const dateMatch = weekLabel.match(/(\w+)\s+(\d+)-\d+,?\s*(\d+)/);
-    if (!dateMatch) return weekLabel;
+    // Handle cross-month formats like "Jun 28-Jul 4, 2025"
+    const crossMonthMatch = weekLabel.match(/(\w+)\s+(\d+)-(\w+)\s+(\d+),?\s*(\d+)/);
+    if (crossMonthMatch) {
+      const [, startMonthStr, startDayStr, , , yearStr] = crossMonthMatch;
+      const monthMap: { [key: string]: number } = {
+        'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+        'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11,
+        'January': 0, 'February': 1, 'March': 2, 'April': 3, 'June': 5,
+        'July': 6, 'August': 7, 'September': 8, 'October': 9, 'November': 10, 'December': 11
+      };
+      
+      const month = monthMap[startMonthStr];
+      if (month !== undefined) {
+        const date = new Date(parseInt(yearStr), month, parseInt(startDayStr));
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        const dayName = dayNames[date.getDay()];
+        const dayNumber = date.getDate();
+        const monthName = monthNames[date.getMonth()];
+        
+        return `${dayName} ${dayNumber} ${monthName}`;
+      }
+    }
     
-    const [, monthStr, dayStr, yearStr] = dateMatch;
-    const monthMap: { [key: string]: number } = {
-      'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
-      'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11,
-      'January': 0, 'February': 1, 'March': 2, 'April': 3, 'June': 5,
-      'July': 6, 'August': 7, 'September': 8, 'October': 9, 'November': 10, 'December': 11
-    };
+    // Handle single-month formats like "May 24-30, 2025"
+    const singleMonthMatch = weekLabel.match(/(\w+)\s+(\d+)-\d+,?\s*(\d+)/);
+    if (singleMonthMatch) {
+      const [, monthStr, dayStr, yearStr] = singleMonthMatch;
+      const monthMap: { [key: string]: number } = {
+        'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+        'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11,
+        'January': 0, 'February': 1, 'March': 2, 'April': 3, 'June': 5,
+        'July': 6, 'August': 7, 'September': 8, 'October': 9, 'November': 10, 'December': 11
+      };
+      
+      const month = monthMap[monthStr];
+      if (month !== undefined) {
+        const date = new Date(parseInt(yearStr), month, parseInt(dayStr));
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        const dayName = dayNames[date.getDay()];
+        const dayNumber = date.getDate();
+        const monthName = monthNames[date.getMonth()];
+        
+        return `${dayName} ${dayNumber} ${monthName}`;
+      }
+    }
     
-    const month = monthMap[monthStr];
-    if (month === undefined) return weekLabel;
-    
-    const date = new Date(parseInt(yearStr), month, parseInt(dayStr));
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
-                       'July', 'August', 'September', 'October', 'November', 'December'];
-    
-    const dayName = dayNames[date.getDay()];
-    const dayNumber = date.getDate();
-    const monthName = monthNames[date.getMonth()];
-    
-    return `${dayName} ${dayNumber} ${monthName}`;
+    // Return original label if no pattern matches
+    return weekLabel;
   };
   
   // Get authenticated user
