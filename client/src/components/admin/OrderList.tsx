@@ -53,10 +53,12 @@ const OrderList = ({ orders, showActions = false, onUpdateStatus }: OrderListPro
   
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending</Badge>;
-      case 'confirmed':
-        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Confirmed</Badge>;
+      case 'not_selected':
+        return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">Not Selected</Badge>;
+      case 'selected':
+        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Selected</Badge>;
+      case 'skipped':
+        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Skipped</Badge>;
       case 'delivered':
         return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Delivered</Badge>;
       case 'cancelled':
@@ -132,18 +134,6 @@ const OrderList = ({ orders, showActions = false, onUpdateStatus }: OrderListPro
                         <Button variant="outline" size="sm">Update Status</Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem 
-                          onClick={() => onUpdateStatus(order.id, 'pending')}
-                          disabled={order.status === 'pending'}
-                        >
-                          Set as Pending
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => onUpdateStatus(order.id, 'confirmed')}
-                          disabled={order.status === 'confirmed'}
-                        >
-                          Set as Confirmed
-                        </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => onUpdateStatus(order.id, 'delivered')}
                           disabled={order.status === 'delivered'}

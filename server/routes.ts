@@ -657,11 +657,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Skip or unskip a delivery
+  // Skip a delivery
   app.patch('/api/orders/:orderId/skip', authMiddleware, async (req, res) => {
     try {
       const orderId = parseInt(req.params.orderId);
-      const { skip } = req.body;
 
       // Get the order
       const order = await storage.getOrder(orderId);
@@ -683,14 +682,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Order deadline has passed' });
       }
 
-      // Update order status
-      const updatedOrder = await storage.updateOrder(orderId, {
-        status: skip ? 'skipped' : 'pending'
-      });
+      // Skip the order
+      const updatedOrder = await storage.skipOrder(orderId);
 
       res.json(updatedOrder);
     } catch (error) {
-      console.error('Error skipping/unskipping order:', error);
+      console.error('Error skipping order:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Unskip a delivery
+  app.patch('/api/orders/:orderId/unskip', authMiddleware, async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+
+      // Get the order
+      const order = await storage.getOrder(orderId);
+
+      // Check if order exists and belongs to user
+      if (!order || order.userId !== req.session.userId) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      // Get the order's week to check deadline
+      const week = await storage.getWeek(order.weekId);
+      if (!week) {
+        return res.status(404).json({ message: 'Week not found' });
+      }
+
+      // Check if deadline has passed
+      const now = new Date();
+      if (new Date(week.orderDeadline) <= now) {
+        return res.status(400).json({ message: 'Order deadline has passed' });
+      }
+
+      // Unskip the order
+      const updatedOrder = await storage.unskipOrder(orderId);
+
+      res.json(updatedOrder);
+    } catch (error) {
+      console.error('Error unskipping order:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });
@@ -841,7 +873,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const order = await storage.createOrder({
         userId: req.session.userId!,
         weekId: week.id,
-        status: 'pending',
+        status: 'not_selected',
         mealCount,
         defaultPortionSize,
         subtotal,
@@ -862,6 +894,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           portionSize: item.portionSize,
           price: itemPrice
         });
+      }
+
+      // Mark order as selected since user has made meal selections
+      if (items.length > 0) {
+        await storage.markOrderAsSelected(order.id);
       }
 
       res.status(201).json(order);
@@ -911,6 +948,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         discount,
         total: newSubtotal
       });
+
+      // Mark order as selected since user has added meal items
+      if (order.status === 'not_selected') {
+        await storage.markOrderAsSelected(orderId);
+      }
 
       res.status(201).json(orderItem);
     } catch (error) {
