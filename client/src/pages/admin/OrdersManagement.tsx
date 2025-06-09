@@ -188,8 +188,8 @@ const OrdersManagement = () => {
                       <div className="flex items-center justify-between mb-4">
                         <h4 className="font-semibold">Order #{order.id}</h4>
                         <div className="flex gap-2">
-                          {getSelectionStatusBadge(order.status)}
-                          {getDeliveryStatusBadge(order.deliveryStatus)}
+                          {getSelectionStatusBadge(order.status ?? 'not_selected')}
+                          {getDeliveryStatusBadge(order.deliveryStatus ?? 'pending')}
                         </div>
                       </div>
                       <div className="space-y-2 text-sm">
@@ -586,7 +586,7 @@ const OrdersManagement = () => {
                             {userOrder ? formatCurrency(userOrder.total) : "-"}
                           </TableCell>
                           <TableCell>
-                            {userOrder ? new Date(userOrder.createdAt).toLocaleDateString() : "-"}
+                            {userOrder && userOrder.createdAt ? new Date(userOrder.createdAt).toLocaleDateString() : "-"}
                           </TableCell>
                         </TableRow>
                       );
