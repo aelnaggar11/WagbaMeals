@@ -7,6 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Order, User as UserType } from "@shared/schema";
 import { formatCurrency, formatDate, getStatusClass } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+import { CacheManager } from "@/lib/cacheManager";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface OrderListProps {
   orders: Order[];
@@ -16,6 +19,35 @@ interface OrderListProps {
 
 const OrderList = ({ orders, showActions = false, onUpdateStatus }: OrderListProps) => {
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
+  const { toast } = useToast();
+
+  // Internal status update handler with cache management
+  const handleStatusUpdate = async (orderId: number, newStatus: string) => {
+    if (onUpdateStatus) {
+      // Use parent handler if provided
+      onUpdateStatus(orderId, newStatus);
+    } else {
+      // Internal handler with cache management
+      try {
+        await CacheManager.updateOrderStatusWithCache(
+          orderId,
+          newStatus,
+          () => apiRequest('PATCH', `/api/admin/orders/${orderId}`, { status: newStatus })
+        );
+        
+        toast({
+          title: "Order updated",
+          description: `Order #${orderId} status updated to ${newStatus}`
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to update order status. Please try again.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
   
   // Get users data for showing names
   const { data: usersData } = useQuery<{ users: UserType[] }>({
@@ -127,7 +159,7 @@ const OrderList = ({ orders, showActions = false, onUpdateStatus }: OrderListPro
                     {order.deliveryDate}
                   </div>
                 </TableCell>
-                {showActions && onUpdateStatus && (
+                {showActions && (
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -135,13 +167,13 @@ const OrderList = ({ orders, showActions = false, onUpdateStatus }: OrderListPro
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem 
-                          onClick={() => onUpdateStatus(order.id, 'delivered')}
+                          onClick={() => handleStatusUpdate(order.id, 'delivered')}
                           disabled={order.status === 'delivered'}
                         >
                           Set as Delivered
                         </DropdownMenuItem>
                         <DropdownMenuItem 
-                          onClick={() => onUpdateStatus(order.id, 'cancelled')}
+                          onClick={() => handleStatusUpdate(order.id, 'cancelled')}
                           disabled={order.status === 'cancelled'}
                           className="text-red-500"
                         >

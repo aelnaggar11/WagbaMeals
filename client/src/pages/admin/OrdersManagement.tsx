@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Admin, Order, Week, User, Meal } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { CacheManager } from "@/lib/cacheManager";
 import { formatCurrency } from "@/lib/utils";
 import { Package, Clock, MapPin, CreditCard, Users } from "lucide-react";
 import OrderList from "@/components/admin/OrderList";
@@ -75,16 +76,14 @@ const OrdersManagement = () => {
     return mealsData?.meals.find(m => m.id === mealId);
   };
   
-  // Handle status update
+  // Handle status update with comprehensive cache management
   const handleUpdateOrderStatus = async (orderId: number, newStatus: string) => {
     try {
-      await apiRequest('PATCH', `/api/admin/orders/${orderId}`, {
-        status: newStatus
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/orders'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
-      queryClient.invalidateQueries({ queryKey: [`/api/orders/items`] });
+      await CacheManager.updateOrderStatusWithCache(
+        orderId,
+        newStatus,
+        () => apiRequest('PATCH', `/api/admin/orders/${orderId}`, { status: newStatus })
+      );
       
       toast({
         title: "Order updated",
