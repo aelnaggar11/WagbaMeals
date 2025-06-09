@@ -111,9 +111,24 @@ export class CacheManager {
       // Perform the actual update
       await updateFn();
 
-      // Invalidate and refetch to ensure consistency
-      await this.invalidateOrderQueries(orderId);
-      await this.refetchOrderQueries();
+      // Aggressive cache clearing - remove all order-related data
+      queryClient.removeQueries({ 
+        predicate: (query) => {
+          const firstKey = query.queryKey[0];
+          return typeof firstKey === 'string' && (
+            firstKey.includes('/api/orders') || 
+            firstKey.includes('/api/admin/orders') ||
+            firstKey.includes('/api/user/orders') ||
+            firstKey.includes('/api/user/upcoming-meals')
+          );
+        }
+      });
+
+      // Force immediate refetch of critical data
+      await Promise.all([
+        queryClient.fetchQuery({ queryKey: ['/api/admin/orders'] }),
+        queryClient.fetchQuery({ queryKey: ['/api/orders'] })
+      ]);
 
     } catch (error) {
       // Rollback on error

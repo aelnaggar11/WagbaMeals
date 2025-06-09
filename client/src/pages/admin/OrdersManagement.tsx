@@ -19,6 +19,9 @@ const OrdersManagement = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   
+  // Force re-render state
+  const [forceUpdate, setForceUpdate] = useState(0);
+  
   // Check if admin is authenticated
   const { data: admin } = useQuery<Admin>({
     queryKey: ['/api/admin/auth/me'],
@@ -33,9 +36,9 @@ const OrdersManagement = () => {
     queryKey: ['/api/weeks'],
   });
   
-  // Fetch orders data
-  const { data: ordersData } = useQuery<{ orders: Order[] }>({
-    queryKey: ['/api/admin/orders'],
+  // Fetch orders data with force update dependency
+  const { data: ordersData, refetch: refetchOrders } = useQuery<{ orders: Order[] }>({
+    queryKey: ['/api/admin/orders', forceUpdate],
   });
   
   // Fetch users data
@@ -76,14 +79,17 @@ const OrdersManagement = () => {
     return mealsData?.meals.find(m => m.id === mealId);
   };
   
-  // Handle status update with comprehensive cache management
+  // Handle status update with forced component re-render
   const handleUpdateOrderStatus = async (orderId: number, newStatus: string) => {
     try {
-      await CacheManager.updateOrderStatusWithCache(
-        orderId,
-        newStatus,
-        () => apiRequest('PATCH', `/api/admin/orders/${orderId}`, { status: newStatus })
-      );
+      // Update the server
+      await apiRequest('PATCH', `/api/admin/orders/${orderId}`, { status: newStatus });
+      
+      // Force component re-render by updating force update state
+      setForceUpdate(prev => prev + 1);
+      
+      // Also trigger manual refetch
+      await refetchOrders();
       
       toast({
         title: "Order updated",
