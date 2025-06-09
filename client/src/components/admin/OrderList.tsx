@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Calendar, Clock, DollarSign, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -83,8 +83,8 @@ const OrderList = ({ orders, showActions = false, onUpdateStatus }: OrderListPro
         </TableHeader>
         <TableBody>
           {orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((order) => (
-            <>
-              <TableRow key={order.id} className={expandedOrderId === order.id ? "border-b-0" : ""}>
+            <React.Fragment key={order.id}>
+              <TableRow className={expandedOrderId === order.id ? "border-b-0" : ""}>
                 <TableCell className="font-medium">#{order.id}</TableCell>
                 {showActions && (
                   <TableCell className="whitespace-nowrap">
@@ -208,7 +208,7 @@ const OrderList = ({ orders, showActions = false, onUpdateStatus }: OrderListPro
                   </TableCell>
                 </TableRow>
               )}
-            </>
+            </React.Fragment>
           ))}
         </TableBody>
       </Table>
