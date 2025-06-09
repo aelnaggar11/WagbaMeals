@@ -380,7 +380,7 @@ const AccountPage = () => {
                         } ${week.isSkipped ? 'opacity-50' : ''}`}
                       >
                         <div className="font-medium">
-                          {week.weekLabel.replace(/\d{4}/, '').trim()}
+                          {formatWeekLabel(week.weekLabel)}
                         </div>
                         {week.isSkipped && (
                           <div className="text-sm text-gray-500 mt-1">Skipped</div>
