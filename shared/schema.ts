@@ -135,8 +135,7 @@ export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   weekId: integer("week_id").notNull(),
-  status: text("status").default("not_selected"), // not_selected, selected, skipped, delivered, cancelled
-  statusBeforeSkip: text("status_before_skip"), // Store previous status when skipped
+  status: text("status").default("pending"),
   mealCount: integer("meal_count").notNull(),
   defaultPortionSize: text("default_portion_size").notNull(),
   subtotal: real("subtotal").notNull(),
@@ -256,7 +255,7 @@ export interface IStorage {
   getOrder(id: number): Promise<Order | undefined>;
   getOrdersByUser(userId: number): Promise<Order[]>;
   getOrderByUserAndWeek(userId: number, weekId: number): Promise<any | undefined>;
-  getActiveOrderByUser(userId: number): Promise<Order | undefined>;
+  getPendingOrderByUser(userId: number): Promise<Order | undefined>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrder(id: number, orderData: Partial<Order>): Promise<Order>;
   getAllOrders(): Promise<Order[]>;

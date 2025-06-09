@@ -154,15 +154,11 @@ const OrdersManagement = () => {
                     <div>
                       <div className="flex items-center justify-between mb-4">
                         <h4 className="font-semibold">Order #{order.id}</h4>
-                        <Badge className={order.status === 'not_selected' ? 'bg-gray-100 text-gray-800' : 
-                                        order.status === 'selected' ? 'bg-blue-100 text-blue-800' :
-                                        order.status === 'skipped' ? 'bg-yellow-100 text-yellow-800' :
+                        <Badge className={order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                        order.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
                                         order.status === 'delivered' ? 'bg-green-100 text-green-800' : 
                                         'bg-red-100 text-red-800'}>
-                          {order.status === 'not_selected' ? 'Not Selected' : 
-                           order.status === 'selected' ? 'Selected' :
-                           order.status === 'skipped' ? 'Skipped' :
-                           order.status}
+                          {order.status}
                         </Badge>
                       </div>
                       <div className="space-y-2 text-sm">
@@ -222,15 +218,15 @@ const OrdersManagement = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleUpdateOrderStatus(order.id, 'selected')}
-                      disabled={order.status === 'selected' || order.status === 'delivered' || order.status === 'cancelled'}
+                      onClick={() => handleUpdateOrderStatus(order.id, 'confirmed')}
+                      disabled={order.status !== 'pending'}
                     >
-                      Mark Selected
+                      Mark Confirmed
                     </Button>
                     <Button
                       size="sm"
                       onClick={() => handleUpdateOrderStatus(order.id, 'delivered')}
-                      disabled={order.status === 'delivered' || order.status === 'cancelled' || order.status === 'not_selected'}
+                      disabled={order.status === 'delivered' || order.status === 'cancelled'}
                     >
                       Mark Delivered
                     </Button>

@@ -42,7 +42,7 @@ export interface IStorage {
   getOrder(id: number): Promise<Order | undefined>;
   getOrdersByUser(userId: number): Promise<Order[]>;
   getOrderByUserAndWeek(userId: number, weekId: number): Promise<any | undefined>;
-  getActiveOrderByUser(userId: number): Promise<Order | undefined>;
+  getPendingOrderByUser(userId: number): Promise<Order | undefined>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrder(id: number, orderData: Partial<Order>): Promise<Order>;
   getAllOrders(): Promise<Order[]>;
@@ -500,9 +500,9 @@ export class MemStorage implements IStorage {
     };
   }
 
-  async getActiveOrderByUser(userId: number): Promise<Order | undefined> {
+  async getPendingOrderByUser(userId: number): Promise<Order | undefined> {
     return Array.from(this.orders.values()).find(
-      (order) => order.userId === userId && (order.status === 'not_selected' || order.status === 'selected')
+      (order) => order.userId === userId && order.status === 'pending'
     );
   }
 
