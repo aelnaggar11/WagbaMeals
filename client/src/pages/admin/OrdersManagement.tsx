@@ -12,6 +12,7 @@ import { Admin, Order, Week, User, Meal } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/utils";
 import { Package, Clock, MapPin, CreditCard, Users } from "lucide-react";
+import OrderList from "@/components/admin/OrderList";
 
 const OrdersManagement = () => {
   const [, navigate] = useLocation();

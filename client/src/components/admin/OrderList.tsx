@@ -82,7 +82,7 @@ const OrderList = ({ orders, showActions = false, onUpdateStatus }: OrderListPro
           </TableRow>
         </TableHeader>
         <TableBody>
-          {orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((order) => (
+          {orders.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()).map((order) => (
             <React.Fragment key={order.id}>
               <TableRow className={expandedOrderId === order.id ? "border-b-0" : ""}>
                 <TableCell className="font-medium">#{order.id}</TableCell>
@@ -97,7 +97,7 @@ const OrderList = ({ orders, showActions = false, onUpdateStatus }: OrderListPro
                 <TableCell className="whitespace-nowrap">
                   <div className="flex items-center">
                     <Calendar size={14} className="mr-1 text-gray-500" />
-                    {new Date(order.createdAt).toLocaleDateString()}
+                    {new Date(order.createdAt || 0).toLocaleDateString()}
                   </div>
                 </TableCell>
                 <TableCell>
@@ -117,7 +117,7 @@ const OrderList = ({ orders, showActions = false, onUpdateStatus }: OrderListPro
                   </div>
                 </TableCell>
                 <TableCell>
-                  {getStatusBadge(order.status)}
+                  {getStatusBadge(order.status || 'pending')}
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                   <div className="flex items-center">
