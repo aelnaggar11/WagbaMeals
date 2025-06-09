@@ -79,11 +79,11 @@ const OrdersManagement = () => {
     return mealsData?.meals.find(m => m.id === mealId);
   };
   
-  // Handle delivery status update with forced component re-render
-  const handleUpdateDeliveryStatus = async (orderId: number, newDeliveryStatus: string) => {
+  // Handle status update with forced component re-render
+  const handleUpdateOrderStatus = async (orderId: number, newStatus: string) => {
     try {
-      // Update the server with delivery status
-      await apiRequest('PATCH', `/api/admin/orders/${orderId}`, { deliveryStatus: newDeliveryStatus });
+      // Update the server
+      await apiRequest('PATCH', `/api/admin/orders/${orderId}`, { status: newStatus });
       
       // Force component re-render by updating force update state
       setForceUpdate(prev => prev + 1);
@@ -92,13 +92,13 @@ const OrdersManagement = () => {
       await refetchOrders();
       
       toast({
-        title: "Delivery status updated",
-        description: `Order #${orderId} delivery status updated to ${newDeliveryStatus}`
+        title: "Order updated",
+        description: `Order #${orderId} status updated to ${newStatus}`
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "There was an error updating the delivery status. Please try again.",
+        description: "There was an error updating the order. Please try again.",
         variant: "destructive"
       });
     }
@@ -107,32 +107,6 @@ const OrdersManagement = () => {
   // Orders List Component
   const OrdersListTab = () => {
     const weekOrders = selectedWeekId ? ordersData?.orders.filter(order => order.weekId === selectedWeekId) || [] : [];
-    
-    const getSelectionStatusBadge = (status: string) => {
-      switch (status) {
-        case 'not_selected':
-          return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">Not Selected</Badge>;
-        case 'selected':
-          return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Selected</Badge>;
-        case 'skipped':
-          return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Skipped</Badge>;
-        default:
-          return <Badge variant="outline">{status}</Badge>;
-      }
-    };
-
-    const getDeliveryStatusBadge = (deliveryStatus: string) => {
-      switch (deliveryStatus) {
-        case 'pending':
-          return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">Pending</Badge>;
-        case 'delivered':
-          return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Delivered</Badge>;
-        case 'cancelled':
-          return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Cancelled</Badge>;
-        default:
-          return <Badge variant="outline">{deliveryStatus}</Badge>;
-      }
-    };
     
     const { data: orderItemsData } = useQuery<any>({
       queryKey: [`/api/orders/items`, selectedWeekId],
@@ -187,10 +161,12 @@ const OrdersManagement = () => {
                     <div>
                       <div className="flex items-center justify-between mb-4">
                         <h4 className="font-semibold">Order #{order.id}</h4>
-                        <div className="flex gap-2">
-                          {getSelectionStatusBadge(order.status ?? 'not_selected')}
-                          {getDeliveryStatusBadge(order.deliveryStatus ?? 'pending')}
-                        </div>
+                        <Badge className={order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                        order.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                                        order.status === 'delivered' ? 'bg-green-100 text-green-800' : 
+                                        'bg-red-100 text-red-800'}>
+                          {order.status}
+                        </Badge>
                       </div>
                       <div className="space-y-2 text-sm">
                         <div className="flex items-center">
@@ -249,18 +225,17 @@ const OrdersManagement = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleUpdateDeliveryStatus(order.id, 'delivered')}
-                      disabled={order.deliveryStatus === 'delivered' || order.deliveryStatus === 'cancelled'}
+                      onClick={() => handleUpdateOrderStatus(order.id, 'confirmed')}
+                      disabled={order.status !== 'pending'}
                     >
-                      Mark Delivered
+                      Mark Confirmed
                     </Button>
                     <Button
                       size="sm"
-                      variant="destructive"
-                      onClick={() => handleUpdateDeliveryStatus(order.id, 'cancelled')}
-                      disabled={order.deliveryStatus === 'cancelled'}
+                      onClick={() => handleUpdateOrderStatus(order.id, 'delivered')}
+                      disabled={order.status === 'delivered' || order.status === 'cancelled'}
                     >
-                      Cancel Delivery
+                      Mark Delivered
                     </Button>
                   </div>
                 </Card>
@@ -281,27 +256,23 @@ const OrdersManagement = () => {
   // Meal Prep Component
   const MealPrepTab = () => {
     const weekOrders = selectedWeekId ? ordersData?.orders.filter(order => order.weekId === selectedWeekId) || [] : [];
-    const selectedOrders = weekOrders.filter(order => order.status === 'selected');
-    const notSelectedOrders = weekOrders.filter(order => order.status === 'not_selected');
     
     const { data: allOrderItems } = useQuery<any>({
       queryKey: [`/api/meal-prep`, selectedWeekId],
       queryFn: async () => {
         if (!selectedWeekId) return [];
         const allItems: any[] = [];
-        for (const order of selectedOrders) {
+        for (const order of weekOrders) {
           try {
             const items = await apiRequest('GET', `/api/orders/${order.id}/items`);
-            if (Array.isArray(items)) {
-              allItems.push(...items);
-            }
+            allItems.push(...items);
           } catch (error) {
             console.error(`Failed to fetch items for order ${order.id}`);
           }
         }
         return allItems;
       },
-      enabled: !!selectedWeekId && selectedOrders.length > 0,
+      enabled: !!selectedWeekId && weekOrders.length > 0,
     });
 
     // Aggregate meal counts
@@ -348,101 +319,40 @@ const OrdersManagement = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {/* Selected Orders - Meals to Prepare */}
-                <div>
-                  <h4 className="text-md font-medium mb-3">Selected Orders - Confirmed Meals ({selectedOrders.length} orders)</h4>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Meal</TableHead>
-                        <TableHead className="text-center">Standard Portions</TableHead>
-                        <TableHead className="text-center">Large Portions</TableHead>
-                        <TableHead className="text-center">Total</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {Object.entries(mealCounts).map(([mealId, counts]) => (
-                        <TableRow key={mealId}>
-                          <TableCell className="font-medium">
-                            {counts.meal?.title || `Meal #${mealId}`}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="outline">{counts.standard}</Badge>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="outline">{counts.large}</Badge>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Badge>{counts.standard + counts.large}</Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {Object.keys(mealCounts).length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center py-8 text-gray-500">
-                            No confirmed meals to prepare for the selected week.
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Meal</TableHead>
+                    <TableHead className="text-center">Standard Portions</TableHead>
+                    <TableHead className="text-center">Large Portions</TableHead>
+                    <TableHead className="text-center">Total</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Object.entries(mealCounts).map(([mealId, counts]) => (
+                    <TableRow key={mealId}>
+                      <TableCell className="font-medium">
+                        {counts.meal?.title || `Meal #${mealId}`}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline">{counts.standard}</Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline">{counts.large}</Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge>{counts.standard + counts.large}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              
+              {Object.keys(mealCounts).length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No meals to prepare for the selected week.</p>
                 </div>
-
-                {/* Not Selected Orders - Need Random Meal Assignment */}
-                {notSelectedOrders.length > 0 && (
-                  <div>
-                    <h4 className="text-md font-medium mb-3">Not Selected Orders - Need Random Allocation ({notSelectedOrders.length} orders)</h4>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>User</TableHead>
-                          <TableHead className="text-center">Standard Meals</TableHead>
-                          <TableHead className="text-center">Large Meals</TableHead>
-                          <TableHead className="text-center">Total Meals</TableHead>
-                          <TableHead>Default Portion</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {notSelectedOrders.map((order) => {
-                          const user = getUserById(order.userId);
-                          return (
-                            <TableRow key={order.id}>
-                              <TableCell className="font-medium">
-                                {user?.name || user?.username || `User #${order.userId}`}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <Badge variant="outline">
-                                  {order.defaultPortionSize === 'standard' ? order.mealCount : 0}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <Badge variant="outline">
-                                  {order.defaultPortionSize === 'large' ? order.mealCount : 0}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <Badge>{order.mealCount}</Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="capitalize">
-                                  {order.defaultPortionSize}
-                                </Badge>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                    <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                      <p className="text-sm text-orange-800">
-                        <strong>Note:</strong> These users haven't selected their meals yet. 
-                        Allocate random meals based on their default portion sizes for preparation.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -456,7 +366,7 @@ const OrdersManagement = () => {
       upcomingWeeks.length > 0 ? upcomingWeeks[0].id : null
     );
     
-    const getSelectionStatusBadge = (status: string) => {
+    const getStatusBadge = (status: string) => {
       switch (status) {
         case 'not_selected':
           return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">Not Selected</Badge>;
@@ -464,21 +374,12 @@ const OrdersManagement = () => {
           return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Selected</Badge>;
         case 'skipped':
           return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Skipped</Badge>;
-        default:
-          return <Badge variant="outline">{status}</Badge>;
-      }
-    };
-
-    const getDeliveryStatusBadge = (deliveryStatus: string) => {
-      switch (deliveryStatus) {
-        case 'pending':
-          return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">Pending</Badge>;
         case 'delivered':
           return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Delivered</Badge>;
         case 'cancelled':
           return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Cancelled</Badge>;
         default:
-          return <Badge variant="outline">{deliveryStatus}</Badge>;
+          return <Badge variant="outline">{status}</Badge>;
       }
     };
     
@@ -568,10 +469,7 @@ const OrdersManagement = () => {
                           </TableCell>
                           <TableCell>
                             {userOrder ? (
-                              <div className="flex gap-2">
-                                {getSelectionStatusBadge(userOrder.status || 'not_selected')}
-                                {getDeliveryStatusBadge(userOrder.deliveryStatus || 'pending')}
-                              </div>
+                              getStatusBadge(userOrder.status || 'not_selected')
                             ) : (
                               <Badge variant="outline" className="bg-gray-100 text-gray-600">No Order</Badge>
                             )}
@@ -586,7 +484,7 @@ const OrdersManagement = () => {
                             {userOrder ? formatCurrency(userOrder.total) : "-"}
                           </TableCell>
                           <TableCell>
-                            {userOrder && userOrder.createdAt ? new Date(userOrder.createdAt).toLocaleDateString() : "-"}
+                            {userOrder ? new Date(userOrder.createdAt).toLocaleDateString() : "-"}
                           </TableCell>
                         </TableRow>
                       );
