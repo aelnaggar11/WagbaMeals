@@ -361,6 +361,23 @@ const OrdersManagement = () => {
       upcomingWeeks.length > 0 ? upcomingWeeks[0].id : null
     );
     
+    const getStatusBadge = (status: string) => {
+      switch (status) {
+        case 'not_selected':
+          return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">Not Selected</Badge>;
+        case 'selected':
+          return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Selected</Badge>;
+        case 'skipped':
+          return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Skipped</Badge>;
+        case 'delivered':
+          return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Delivered</Badge>;
+        case 'cancelled':
+          return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Cancelled</Badge>;
+        default:
+          return <Badge variant="outline">{status}</Badge>;
+      }
+    };
+    
     const weekOrders = selectedUpcomingWeekId ? ordersData?.orders.filter(order => order.weekId === selectedUpcomingWeekId) || [] : [];
     const allUsers = usersData?.users || [];
     const usersWithOrders = new Set(weekOrders.map(order => order.userId));
