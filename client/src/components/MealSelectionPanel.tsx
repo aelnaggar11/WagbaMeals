@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Meal, OrderItem, PortionSize } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { CacheManager } from "@/lib/cacheManager";
 import { MinusCircle, PlusCircle } from "lucide-react";
 
 interface MealSelectionPanelProps {
