@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, or } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { users, admins, meals, weeks, weekMeals, orders, orderItems, userWeekStatuses } from "@shared/schema";
 import type { 
@@ -306,7 +306,10 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(orders.userId, userId),
-          eq(orders.status, 'pending')
+          or(
+            eq(orders.status, 'not_selected'),
+            eq(orders.status, 'selected')
+          )
         )
       )
       .limit(1);

@@ -502,7 +502,7 @@ export class MemStorage implements IStorage {
 
   async getPendingOrderByUser(userId: number): Promise<Order | undefined> {
     return Array.from(this.orders.values()).find(
-      (order) => order.userId === userId && order.status === 'pending'
+      (order) => order.userId === userId && (order.status === 'not_selected' || order.status === 'selected')
     );
   }
 
