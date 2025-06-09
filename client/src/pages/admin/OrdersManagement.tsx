@@ -275,9 +275,11 @@ const OrdersManagement = () => {
       enabled: !!selectedWeekId && weekOrders.length > 0,
     });
 
-    // Aggregate meal counts
+    // Aggregate meal counts and calculate random meals needed
     const mealCounts: { [key: number]: { standard: number; large: number; meal?: Meal } } = {};
+    let randomMealsNeeded = { standard: 0, large: 0 };
     
+    // Count selected meals
     allOrderItems?.forEach((item: any) => {
       if (!mealCounts[item.mealId]) {
         mealCounts[item.mealId] = { standard: 0, large: 0, meal: getMealById(item.mealId) };
@@ -286,6 +288,22 @@ const OrdersManagement = () => {
         mealCounts[item.mealId].standard++;
       } else if (item.portionSize === 'large') {
         mealCounts[item.mealId].large++;
+      }
+    });
+
+    // Calculate random meals needed for "not_selected" orders
+    weekOrders.forEach(order => {
+      if (order.status === 'not_selected') {
+        const orderItemCount = allOrderItems?.filter((item: any) => item.orderId === order.id).length || 0;
+        const missingMeals = order.mealCount - orderItemCount;
+        
+        if (missingMeals > 0) {
+          if (order.defaultPortionSize === 'standard') {
+            randomMealsNeeded.standard += missingMeals;
+          } else {
+            randomMealsNeeded.large += missingMeals;
+          }
+        }
       }
     });
 
@@ -315,7 +333,10 @@ const OrdersManagement = () => {
             <CardHeader>
               <CardTitle>Meals to Prepare</CardTitle>
               <CardDescription>
-                Total orders: {weekOrders.length} • Total meals: {Object.values(mealCounts).reduce((sum, counts) => sum + counts.standard + counts.large, 0)}
+                Total orders: {weekOrders.length} • Total meals: {Object.values(mealCounts).reduce((sum, counts) => sum + counts.standard + counts.large, 0) + randomMealsNeeded.standard + randomMealsNeeded.large}
+                {(randomMealsNeeded.standard > 0 || randomMealsNeeded.large > 0) && (
+                  <span className="text-yellow-600"> (includes {randomMealsNeeded.standard + randomMealsNeeded.large} random meals)</span>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -345,6 +366,30 @@ const OrdersManagement = () => {
                       </TableCell>
                     </TableRow>
                   ))}
+                  
+                  {/* Random Meal entry for unselected orders */}
+                  {(randomMealsNeeded.standard > 0 || randomMealsNeeded.large > 0) && (
+                    <TableRow className="bg-yellow-50 border-yellow-200">
+                      <TableCell className="font-medium text-yellow-800">
+                        🎲 Random Meal (for unselected orders)
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                          {randomMealsNeeded.standard}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                          {randomMealsNeeded.large}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge className="bg-yellow-200 text-yellow-900 hover:bg-yellow-200">
+                          {randomMealsNeeded.standard + randomMealsNeeded.large}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
               
