@@ -28,6 +28,20 @@ const WeekSelector = ({ currentWeekId }: WeekSelectorProps) => {
   
   const [weeks, setWeeks] = useState<Week[]>([]);
   const [selectedWeekId, setSelectedWeekId] = useState<string>(currentWeekId);
+
+  // Helper function to format week dates as "Sat 5 July"
+  const formatWeekLabel = (week: Week) => {
+    const startDate = new Date(week.startDate);
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    const dayName = dayNames[startDate.getDay()];
+    const dayNumber = startDate.getDate();
+    const monthName = monthNames[startDate.getMonth()];
+    
+    return `${dayName} ${dayNumber} ${monthName}`;
+  };
   
   useEffect(() => {
     if (weeksData?.weeks) {
@@ -96,7 +110,7 @@ const WeekSelector = ({ currentWeekId }: WeekSelectorProps) => {
           <SelectContent>
             {weeks.map((week) => (
               <SelectItem key={week.id} value={String(week.id)}>
-                {week.label}
+                {formatWeekLabel(week)}
               </SelectItem>
             ))}
           </SelectContent>

@@ -58,11 +58,27 @@ const MenuManagement = () => {
   const editableWeeks = weeksData?.weeks
     ? weeksData.weeks
         .filter(week => {
-          const weekEnd = new Date(week.endDate);
-          return weekEnd >= now; // Show weeks that haven't ended yet
+          const weekStart = new Date(week.startDate);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
+          return weekStart >= today; // Show weeks that start today or in the future
         })
         .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
     : [];
+
+  // Helper function to format week dates as "Sat 5 July"
+  const formatWeekLabel = (week: Week) => {
+    const startDate = new Date(week.startDate);
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    const dayName = dayNames[startDate.getDay()];
+    const dayNumber = startDate.getDate();
+    const monthName = monthNames[startDate.getMonth()];
+    
+    return `${dayName} ${dayNumber} ${monthName}`;
+  };
 
   // Determine if a week is live (visible to users) using the same logic as user WeekSelector
   const isWeekLive = (week: Week) => {
@@ -140,7 +156,7 @@ const MenuManagement = () => {
               
               <div className="flex flex-col items-center text-center min-w-0 flex-1 mx-4">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  {currentWeek.label}
+                  {formatWeekLabel(currentWeek)}
                 </h3>
                 <div className="flex items-center gap-2 mt-1">
                   {isWeekLive(currentWeek) && (
