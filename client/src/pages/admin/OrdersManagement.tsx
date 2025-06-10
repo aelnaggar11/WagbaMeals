@@ -449,7 +449,7 @@ const OrdersManagement = () => {
         case 'cancelled':
           return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Cancelled</Badge>;
         default:
-          return <Badge variant="outline">{status}</Badge>;
+          return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">Not Selected</Badge>;
       }
     };
     
