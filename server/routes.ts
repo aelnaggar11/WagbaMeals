@@ -1074,7 +1074,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/admin/orders/:id', adminMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const orderData = req.body;
+      const { delivered, ...orderData } = req.body;
+      
+      // Handle delivery status separately - only allow toggling delivered flag
+      if (delivered !== undefined) {
+        const order = await storage.updateOrder(id, { delivered });
+        return res.json(order);
+      }
+      
+      // For other updates, ensure status is not changed to 'delivered'
+      if (orderData.status === 'delivered') {
+        return res.status(400).json({ message: 'Use delivered field to track delivery status' });
+      }
+      
       const order = await storage.updateOrder(id, orderData);
       res.json(order);
     } catch (error) {

@@ -103,6 +103,31 @@ const OrdersManagement = () => {
       });
     }
   };
+
+  // Handle delivery status toggle
+  const handleToggleDelivery = async (orderId: number, currentDelivered: boolean) => {
+    try {
+      // Update the server
+      await apiRequest('PATCH', `/api/admin/orders/${orderId}`, { delivered: !currentDelivered });
+      
+      // Force component re-render by updating force update state
+      setForceUpdate(prev => prev + 1);
+      
+      // Also trigger manual refetch
+      await refetchOrders();
+      
+      toast({
+        title: "Delivery status updated",
+        description: `Order #${orderId} marked as ${!currentDelivered ? 'delivered' : 'not delivered'}`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "There was an error updating the delivery status. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
   
   // Orders List Component
   const OrdersListTab = () => {
@@ -161,12 +186,19 @@ const OrdersManagement = () => {
                     <div>
                       <div className="flex items-center justify-between mb-4">
                         <h4 className="font-semibold">Order #{order.id}</h4>
-                        <Badge className={order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                                        order.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
-                                        order.status === 'delivered' ? 'bg-green-100 text-green-800' : 
-                                        'bg-red-100 text-red-800'}>
-                          {order.status}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge className={order.status === 'not_selected' ? 'bg-yellow-100 text-yellow-800' : 
+                                          order.status === 'selected' ? 'bg-blue-100 text-blue-800' :
+                                          order.status === 'skipped' ? 'bg-red-100 text-red-800' : 
+                                          'bg-gray-100 text-gray-800'}>
+                            {order.status}
+                          </Badge>
+                          {order.delivered && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              ✓ Delivered
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                       <div className="space-y-2 text-sm">
                         <div className="flex items-center">

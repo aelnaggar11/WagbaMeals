@@ -137,6 +137,7 @@ export const orders = pgTable("orders", {
   weekId: integer("week_id").notNull(),
   status: text("status").default("not_selected"),
   previousStatus: text("previous_status"), // For tracking status before skipping
+  delivered: boolean("delivered").default(false), // Separate delivery tracking
   mealCount: integer("meal_count").notNull(),
   defaultPortionSize: text("default_portion_size").notNull(),
   subtotal: real("subtotal").notNull(),
@@ -214,7 +215,7 @@ export type InsertUserWeekStatus = z.infer<typeof insertUserWeekStatusSchema>;
 
 export type PortionSize = "standard" | "large";
 
-export type OrderStatus = "not_selected" | "selected" | "skipped" | "delivered" | "cancelled";
+export type OrderStatus = "not_selected" | "selected" | "skipped" | "cancelled";
 
 // Storage interface
 export interface IStorage {
