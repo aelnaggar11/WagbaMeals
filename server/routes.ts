@@ -812,8 +812,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             total: 0,
             deliveryDate: week.deliveryDate.toISOString()
           });
-        } else if (existingOrder.status === 'pending') {
-          // Update existing pending order to skipped
+        } else if (existingOrder.status === 'not_selected') {
+          // Update existing not_selected order to skipped
           await storage.updateOrder(existingOrder.id, {
             status: 'skipped'
           });
@@ -1019,7 +1019,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update order
       const updatedOrder = await storage.updateOrder(orderId, {
-        status: 'confirmed',
+        status: 'selected',
         deliveryAddress: JSON.stringify(address),
         deliveryNotes,
         paymentMethod
