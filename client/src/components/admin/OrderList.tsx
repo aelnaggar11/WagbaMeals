@@ -15,9 +15,10 @@ interface OrderListProps {
   orders: Order[];
   showActions?: boolean;
   onUpdateStatus?: (orderId: number, status: string) => void;
+  onToggleDelivery?: (orderId: number, currentDelivered: boolean) => void;
 }
 
-const OrderList = ({ orders, showActions = false, onUpdateStatus }: OrderListProps) => {
+const OrderList = ({ orders, showActions = false, onUpdateStatus, onToggleDelivery }: OrderListProps) => {
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const { toast } = useToast();
 
@@ -91,8 +92,6 @@ const OrderList = ({ orders, showActions = false, onUpdateStatus }: OrderListPro
         return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Selected</Badge>;
       case 'skipped':
         return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Skipped</Badge>;
-      case 'delivered':
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Delivered</Badge>;
       case 'cancelled':
         return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Cancelled</Badge>;
       default:
@@ -151,7 +150,14 @@ const OrderList = ({ orders, showActions = false, onUpdateStatus }: OrderListPro
                   </div>
                 </TableCell>
                 <TableCell>
-                  {getStatusBadge(order.status || 'pending')}
+                  <div className="flex items-center gap-2">
+                    {getStatusBadge(order.status || 'not_selected')}
+                    {order.delivered && (
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        ✓ Delivered
+                      </Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                   <div className="flex items-center">
@@ -167,10 +173,9 @@ const OrderList = ({ orders, showActions = false, onUpdateStatus }: OrderListPro
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem 
-                          onClick={() => handleStatusUpdate(order.id, 'delivered')}
-                          disabled={order.status === 'delivered'}
+                          onClick={() => onToggleDelivery && onToggleDelivery(order.id, order.delivered || false)}
                         >
-                          Set as Delivered
+                          {order.delivered ? "Mark as Not Delivered" : "Mark as Delivered"}
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => handleStatusUpdate(order.id, 'cancelled')}

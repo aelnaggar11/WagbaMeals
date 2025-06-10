@@ -105,10 +105,11 @@ const OrdersManagement = () => {
   };
 
   // Handle delivery status toggle
-  const handleToggleDelivery = async (orderId: number, currentDelivered: boolean) => {
+  const handleToggleDelivery = async (orderId: number, currentDelivered: boolean | null) => {
     try {
+      const isCurrentlyDelivered = currentDelivered || false;
       // Update the server
-      await apiRequest('PATCH', `/api/admin/orders/${orderId}`, { delivered: !currentDelivered });
+      await apiRequest('PATCH', `/api/admin/orders/${orderId}`, { delivered: !isCurrentlyDelivered });
       
       // Force component re-render by updating force update state
       setForceUpdate(prev => prev + 1);
@@ -118,7 +119,7 @@ const OrdersManagement = () => {
       
       toast({
         title: "Delivery status updated",
-        description: `Order #${orderId} marked as ${!currentDelivered ? 'delivered' : 'not delivered'}`
+        description: `Order #${orderId} marked as ${!isCurrentlyDelivered ? 'delivered' : 'not delivered'}`
       });
     } catch (error) {
       toast({
@@ -256,18 +257,11 @@ const OrdersManagement = () => {
                   <div className="mt-4 pt-4 border-t flex justify-end space-x-2">
                     <Button
                       size="sm"
-                      variant="outline"
-                      onClick={() => handleUpdateOrderStatus(order.id, 'confirmed')}
-                      disabled={order.status !== 'pending'}
+                      variant={order.delivered ? "default" : "outline"}
+                      onClick={() => handleToggleDelivery(order.id, order.delivered)}
+                      className={order.delivered ? "bg-green-600 hover:bg-green-700" : ""}
                     >
-                      Mark Confirmed
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => handleUpdateOrderStatus(order.id, 'delivered')}
-                      disabled={order.status === 'delivered' || order.status === 'cancelled'}
-                    >
-                      Mark Delivered
+                      {order.delivered ? "✓ Delivered" : "Mark Delivered"}
                     </Button>
                   </div>
                 </Card>
