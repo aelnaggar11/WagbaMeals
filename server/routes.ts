@@ -907,6 +907,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get order items
+  app.get('/api/orders/:orderId/items', async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      
+      // Get the order items
+      const orderItems = await storage.getOrderItems(orderId);
+      
+      res.json(orderItems);
+    } catch (error) {
+      console.error('Error fetching order items:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   // Add item to existing order
   app.post('/api/orders/:orderId/items', authMiddleware, async (req, res) => {
     try {

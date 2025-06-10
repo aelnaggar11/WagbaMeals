@@ -142,7 +142,7 @@ const OrdersManagement = () => {
         for (const order of weekOrders) {
           try {
             const response = await apiRequest('GET', `/api/orders/${order.id}/items`);
-            items[order.id] = response;
+            items[order.id] = await response.json();
           } catch (error) {
             console.error(`Failed to fetch items for order ${order.id}`);
             items[order.id] = [];
@@ -290,7 +290,8 @@ const OrdersManagement = () => {
         const allItems: any[] = [];
         for (const order of weekOrders) {
           try {
-            const items = await apiRequest('GET', `/api/orders/${order.id}/items`);
+            const response = await apiRequest('GET', `/api/orders/${order.id}/items`);
+            const items = await response.json();
             allItems.push(...items);
           } catch (error) {
             console.error(`Failed to fetch items for order ${order.id}`);
@@ -553,7 +554,7 @@ const OrdersManagement = () => {
                             {userOrder ? formatCurrency(userOrder.total) : "-"}
                           </TableCell>
                           <TableCell>
-                            {userOrder ? new Date(userOrder.createdAt).toLocaleDateString() : "-"}
+                            {userOrder?.createdAt ? new Date(userOrder.createdAt).toLocaleDateString() : "-"}
                           </TableCell>
                         </TableRow>
                       );
