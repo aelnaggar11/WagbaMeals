@@ -276,8 +276,12 @@ const AccountPage = () => {
         };
       });
       
-      // Make API call
-      await apiRequest('PATCH', `/api/orders/${orderId}/skip`, { skip });
+      // Make API call to the correct endpoint
+      if (skip) {
+        await apiRequest('PATCH', `/api/orders/${orderId}/skip`);
+      } else {
+        await apiRequest('PATCH', `/api/orders/${orderId}/unskip`);
+      }
       
       // Success message
       toast({
