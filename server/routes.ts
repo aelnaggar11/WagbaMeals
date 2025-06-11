@@ -608,7 +608,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           order = await storage.createOrder({
             userId: req.session.userId!,
             weekId: week.id,
-            status: 'pending',
+            status: 'not_selected',
             mealCount: defaultMealCount,
             defaultPortionSize: 'standard',
             subtotal: 0,

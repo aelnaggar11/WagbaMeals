@@ -283,6 +283,10 @@ const AccountPage = () => {
         await apiRequest('PATCH', `/api/orders/${orderId}/unskip`);
       }
       
+      // Invalidate relevant queries to refresh data from server
+      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      
       // Success message
       toast({
         title: skip ? "Delivery Skipped" : "Delivery Restored",
