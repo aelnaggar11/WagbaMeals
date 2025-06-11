@@ -3,7 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { storage } from "./storage";
 import { DatabaseStorage } from "./database-storage";
-import { testDatabaseConnection } from "./db";
+import { testDatabaseConnection, pool } from "./db";
 
 // Validate required environment variables
 function validateEnvironment() {
@@ -31,6 +31,8 @@ process.on('unhandledRejection', (reason, promise) => {
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -69,31 +71,73 @@ async function initializeServer() {
     validateEnvironment();
     log("Environment validation complete");
 
-    // Initialize database with sample data (with timeout and retry logic)
-    log("Initializing database with sample data...");
-    try {
-      const dbStorage = storage as DatabaseStorage;
-      
-      // Add timeout to database initialization
-      const initPromise = dbStorage.seedInitialData();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Database initialization timeout')), 30000)
-      );
-      
-      await Promise.race([initPromise, timeoutPromise]);
-      log("Database initialization complete");
-    } catch (dbError) {
-      console.error(`Error initializing database: ${dbError}`);
-      // Don't exit on database initialization failure in production
-      // The app might still work for basic functionality
+    // Test database connection first
+    log("Testing database connection...");
+    const dbConnected = await testDatabaseConnection();
+    if (!dbConnected) {
+      const errorMsg = "Database connection failed during startup";
       if (process.env.NODE_ENV === 'production') {
-        console.warn("Continuing startup despite database initialization failure");
+        console.warn(errorMsg + " - continuing with limited functionality");
       } else {
-        throw dbError;
+        throw new Error(errorMsg);
+      }
+    } else {
+      log("Database connection successful");
+    }
+
+    // Initialize database with sample data (with timeout and retry logic)
+    if (dbConnected) {
+      log("Initializing database with sample data...");
+      try {
+        const dbStorage = storage as DatabaseStorage;
+        
+        // Add timeout to database initialization
+        const initPromise = dbStorage.seedInitialData();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database initialization timeout')), 30000)
+        );
+        
+        await Promise.race([initPromise, timeoutPromise]);
+        log("Database initialization complete");
+      } catch (dbError) {
+        console.error(`Error initializing database: ${dbError}`);
+        // Don't exit on database initialization failure in production
+        // The app might still work for basic functionality
+        if (process.env.NODE_ENV === 'production') {
+          console.warn("Continuing startup despite database initialization failure");
+        } else {
+          throw dbError;
+        }
       }
     }
 
     const server = await registerRoutes(app);
+
+    // Health check endpoint for deployment monitoring
+    app.get('/health', async (req, res) => {
+      try {
+        const dbHealthy = await testDatabaseConnection();
+        const status = {
+          status: 'ok',
+          timestamp: new Date().toISOString(),
+          uptime: process.uptime(),
+          database: dbHealthy ? 'connected' : 'disconnected',
+          environment: process.env.NODE_ENV || 'development'
+        };
+        
+        if (dbHealthy) {
+          res.status(200).json(status);
+        } else {
+          res.status(503).json({ ...status, status: 'degraded' });
+        }
+      } catch (error) {
+        res.status(503).json({
+          status: 'error',
+          timestamp: new Date().toISOString(),
+          error: 'Health check failed'
+        });
+      }
+    });
 
     // Improved error handler that doesn't re-throw
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -145,6 +189,40 @@ async function initializeServer() {
       }
       process.exit(1);
     });
+
+    // Graceful shutdown handlers
+    const gracefulShutdown = (signal: string) => {
+      log(`Received ${signal}, starting graceful shutdown...`);
+      
+      server.close((err) => {
+        if (err) {
+          console.error('Error during server shutdown:', err);
+          process.exit(1);
+        }
+        
+        log('HTTP server closed');
+        
+        // Close database connections
+        try {
+          pool.end(() => {
+            log('Database connections closed');
+            process.exit(0);
+          });
+        } catch (dbCloseError) {
+          console.error('Error closing database connections:', dbCloseError);
+          process.exit(0);
+        }
+      });
+      
+      // Force close after 30 seconds
+      setTimeout(() => {
+        console.error('Forced shutdown due to timeout');
+        process.exit(1);
+      }, 30000);
+    };
+
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
   } catch (error: any) {
     console.error(`Failed to start server: ${error.message}`);
