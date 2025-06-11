@@ -463,6 +463,8 @@ const OrdersManagement = () => {
     const [selectedUpcomingWeekId, setSelectedUpcomingWeekId] = useState<number | null>(
       upcomingWeeks.length > 0 ? upcomingWeeks[0].id : null
     );
+    const [statusFilter, setStatusFilter] = useState<string>('all'); // 'all', 'selected', 'not_selected', 'skipped', 'cancelled'
+    const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>('all'); // 'all', or specific payment methods
     
     const getStatusBadge = (status: string) => {
       switch (status) {
@@ -479,29 +481,77 @@ const OrdersManagement = () => {
       }
     };
     
-    const weekOrders = selectedUpcomingWeekId ? ordersData?.orders.filter(order => order.weekId === selectedUpcomingWeekId) || [] : [];
+    let weekOrders = selectedUpcomingWeekId ? ordersData?.orders.filter(order => order.weekId === selectedUpcomingWeekId) || [] : [];
+    
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      weekOrders = weekOrders.filter(order => (order.status || 'not_selected') === statusFilter);
+    }
+    
+    // Apply payment method filter
+    if (paymentMethodFilter !== 'all') {
+      weekOrders = weekOrders.filter(order => order.paymentMethod === paymentMethodFilter);
+    }
+    
     const allUsers = usersData?.users || [];
     const usersWithOrders = new Set(weekOrders.map(order => order.userId));
+    
+    // Get unique payment methods from all orders for filter options
+    const allWeekOrders = selectedUpcomingWeekId ? ordersData?.orders.filter(order => order.weekId === selectedUpcomingWeekId) || [] : [];
+    const uniquePaymentMethods = [...new Set(allWeekOrders.map(order => order.paymentMethod).filter(Boolean))];
 
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Upcoming Orders</h3>
-          <Select
-            value={selectedUpcomingWeekId?.toString() || ""}
-            onValueChange={(value) => setSelectedUpcomingWeekId(parseInt(value))}
-          >
-            <SelectTrigger className="w-64">
-              <SelectValue placeholder="Select upcoming week" />
-            </SelectTrigger>
-            <SelectContent>
-              {upcomingWeeks.map((week) => (
-                <SelectItem key={week.id} value={week.id.toString()}>
-                  {week.label} - Deadline: {new Date(week.orderDeadline).toLocaleDateString()}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-4">
+            <Select
+              value={statusFilter}
+              onValueChange={setStatusFilter}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="selected">Selected Only</SelectItem>
+                <SelectItem value="not_selected">Not Selected Only</SelectItem>
+                <SelectItem value="skipped">Skipped Only</SelectItem>
+                <SelectItem value="cancelled">Cancelled Only</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={paymentMethodFilter}
+              onValueChange={setPaymentMethodFilter}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by payment" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Payment Methods</SelectItem>
+                {uniquePaymentMethods.map((method) => (
+                  <SelectItem key={method} value={method}>
+                    {method}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={selectedUpcomingWeekId?.toString() || ""}
+              onValueChange={(value) => setSelectedUpcomingWeekId(parseInt(value))}
+            >
+              <SelectTrigger className="w-64">
+                <SelectValue placeholder="Select upcoming week" />
+              </SelectTrigger>
+              <SelectContent>
+                {upcomingWeeks.map((week) => (
+                  <SelectItem key={week.id} value={week.id.toString()}>
+                    {week.label} - Deadline: {new Date(week.orderDeadline).toLocaleDateString()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {selectedUpcomingWeekId && (
@@ -557,6 +607,15 @@ const OrdersManagement = () => {
                   <TableBody>
                     {allUsers.map((user) => {
                       const userOrder = weekOrders.find(order => order.userId === user.id);
+                      const allUserOrders = selectedUpcomingWeekId ? ordersData?.orders.filter(order => 
+                        order.weekId === selectedUpcomingWeekId && order.userId === user.id
+                      ) || [] : [];
+                      const hasOrder = allUserOrders.length > 0;
+                      
+                      // If we're filtering and this user doesn't match the filters, skip them
+                      if (statusFilter !== 'all' || paymentMethodFilter !== 'all') {
+                        if (!userOrder) return null; // Skip users without orders when filtering
+                      }
                       
                       return (
                         <TableRow key={user.id}>
@@ -566,25 +625,28 @@ const OrdersManagement = () => {
                           <TableCell>
                             {userOrder ? (
                               getStatusBadge(userOrder.status || 'not_selected')
+                            ) : hasOrder ? (
+                              getStatusBadge(allUserOrders[0].status || 'not_selected')
                             ) : (
                               <Badge variant="outline" className="bg-gray-100 text-gray-600">No Order</Badge>
                             )}
                           </TableCell>
                           <TableCell>
-                            {userOrder ? `${userOrder.mealCount} meals` : "-"}
+                            {userOrder ? `${userOrder.mealCount} meals` : hasOrder ? `${allUserOrders[0].mealCount} meals` : "-"}
                           </TableCell>
                           <TableCell>
-                            {userOrder?.paymentMethod || "-"}
+                            {userOrder?.paymentMethod || (hasOrder ? allUserOrders[0].paymentMethod : "-") || "-"}
                           </TableCell>
                           <TableCell>
-                            {userOrder ? formatCurrency(userOrder.total) : "-"}
+                            {userOrder ? formatCurrency(userOrder.total) : hasOrder ? formatCurrency(allUserOrders[0].total) : "-"}
                           </TableCell>
                           <TableCell>
-                            {userOrder?.createdAt ? new Date(userOrder.createdAt).toLocaleDateString() : "-"}
+                            {userOrder?.createdAt ? new Date(userOrder.createdAt).toLocaleDateString() : 
+                             hasOrder && allUserOrders[0].createdAt ? new Date(allUserOrders[0].createdAt).toLocaleDateString() : "-"}
                           </TableCell>
                         </TableRow>
                       );
-                    })}
+                    }).filter(Boolean)}
                   </TableBody>
                 </Table>
               </CardContent>
