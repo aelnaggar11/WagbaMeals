@@ -132,7 +132,16 @@ const OrdersManagement = () => {
   
   // Orders List Component
   const OrdersListTab = () => {
-    const weekOrders = selectedWeekId ? ordersData?.orders.filter(order => order.weekId === selectedWeekId) || [] : [];
+    const [statusFilter, setStatusFilter] = useState<string>('active'); // 'all', 'active', 'skipped', 'selected', 'not_selected'
+    
+    let weekOrders = selectedWeekId ? ordersData?.orders.filter(order => order.weekId === selectedWeekId) || [] : [];
+    
+    // Apply status filter
+    if (statusFilter === 'active') {
+      weekOrders = weekOrders.filter(order => order.status !== 'skipped');
+    } else if (statusFilter !== 'all') {
+      weekOrders = weekOrders.filter(order => order.status === statusFilter);
+    }
     
     const { data: orderItemsData } = useQuery<any>({
       queryKey: [`/api/orders/items`, selectedWeekId],
@@ -157,21 +166,38 @@ const OrdersManagement = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Orders for Delivery</h3>
-          <Select
-            value={selectedWeekId?.toString() || ""}
-            onValueChange={(value) => setSelectedWeekId(parseInt(value))}
-          >
-            <SelectTrigger className="w-64">
-              <SelectValue placeholder="Select week" />
-            </SelectTrigger>
-            <SelectContent>
-              {pastDeadlineWeeks.map((week) => (
-                <SelectItem key={week.id} value={week.id.toString()}>
-                  {week.label} - Delivery: {new Date(week.deliveryDate).toLocaleDateString()}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-4">
+            <Select
+              value={statusFilter}
+              onValueChange={setStatusFilter}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Orders</SelectItem>
+                <SelectItem value="active">Active Orders (Default)</SelectItem>
+                <SelectItem value="selected">Selected Only</SelectItem>
+                <SelectItem value="not_selected">Not Selected Only</SelectItem>
+                <SelectItem value="skipped">Skipped Only</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={selectedWeekId?.toString() || ""}
+              onValueChange={(value) => setSelectedWeekId(parseInt(value))}
+            >
+              <SelectTrigger className="w-64">
+                <SelectValue placeholder="Select week" />
+              </SelectTrigger>
+              <SelectContent>
+                {pastDeadlineWeeks.map((week) => (
+                  <SelectItem key={week.id} value={week.id.toString()}>
+                    {week.label} - Delivery: {new Date(week.deliveryDate).toLocaleDateString()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {selectedWeekId && (
@@ -453,9 +479,7 @@ const OrdersManagement = () => {
       }
     };
     
-    const weekOrders = selectedUpcomingWeekId ? ordersData?.orders.filter(order => 
-      order.weekId === selectedUpcomingWeekId && order.status !== 'skipped'
-    ) || [] : [];
+    const weekOrders = selectedUpcomingWeekId ? ordersData?.orders.filter(order => order.weekId === selectedUpcomingWeekId) || [] : [];
     const allUsers = usersData?.users || [];
     const usersWithOrders = new Set(weekOrders.map(order => order.userId));
 
@@ -533,11 +557,6 @@ const OrdersManagement = () => {
                   <TableBody>
                     {allUsers.map((user) => {
                       const userOrder = weekOrders.find(order => order.userId === user.id);
-                      // Check if user has a skipped order (excluded from weekOrders but may exist)
-                      const allUserOrders = selectedUpcomingWeekId ? ordersData?.orders.filter(order => 
-                        order.weekId === selectedUpcomingWeekId && order.userId === user.id
-                      ) || [] : [];
-                      const hasSkippedOrder = allUserOrders.some(order => order.status === 'skipped');
                       
                       return (
                         <TableRow key={user.id}>
@@ -547,8 +566,6 @@ const OrdersManagement = () => {
                           <TableCell>
                             {userOrder ? (
                               getStatusBadge(userOrder.status || 'not_selected')
-                            ) : hasSkippedOrder ? (
-                              <Badge variant="outline" className="bg-gray-100 text-gray-600">Skipped</Badge>
                             ) : (
                               <Badge variant="outline" className="bg-gray-100 text-gray-600">No Order</Badge>
                             )}
