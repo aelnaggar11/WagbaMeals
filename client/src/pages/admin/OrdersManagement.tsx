@@ -453,9 +453,7 @@ const OrdersManagement = () => {
       }
     };
     
-    const weekOrders = selectedUpcomingWeekId ? ordersData?.orders.filter(order => 
-      order.weekId === selectedUpcomingWeekId && order.status !== 'skipped'
-    ) || [] : [];
+    const weekOrders = selectedUpcomingWeekId ? ordersData?.orders.filter(order => order.weekId === selectedUpcomingWeekId) || [] : [];
     const allUsers = usersData?.users || [];
     const usersWithOrders = new Set(weekOrders.map(order => order.userId));
 
@@ -533,11 +531,6 @@ const OrdersManagement = () => {
                   <TableBody>
                     {allUsers.map((user) => {
                       const userOrder = weekOrders.find(order => order.userId === user.id);
-                      // Check if user has a skipped order (excluded from weekOrders but may exist)
-                      const allUserOrders = selectedUpcomingWeekId ? ordersData?.orders.filter(order => 
-                        order.weekId === selectedUpcomingWeekId && order.userId === user.id
-                      ) || [] : [];
-                      const hasSkippedOrder = allUserOrders.some(order => order.status === 'skipped');
                       
                       return (
                         <TableRow key={user.id}>
@@ -547,8 +540,6 @@ const OrdersManagement = () => {
                           <TableCell>
                             {userOrder ? (
                               getStatusBadge(userOrder.status || 'not_selected')
-                            ) : hasSkippedOrder ? (
-                              <Badge variant="outline" className="bg-gray-100 text-gray-600">Skipped</Badge>
                             ) : (
                               <Badge variant="outline" className="bg-gray-100 text-gray-600">No Order</Badge>
                             )}
