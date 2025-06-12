@@ -68,37 +68,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     store: sessionStore
   }));
 
-  // Authentication middleware with debugging
+  // Authentication middleware
   const authMiddleware = (req: Request, res: Response, next: Function) => {
-    console.log('Auth middleware - Session ID:', req.sessionID);
-    console.log('Auth middleware - User ID:', req.session.userId);
-    console.log('Auth middleware - Session data:', JSON.stringify(req.session, null, 2));
-    
     if (!req.session.userId) {
-      console.log('Auth middleware - No user ID in session, returning 401');
       return res.status(401).json({ message: 'Unauthorized' });
     }
     next();
   };
 
-  // Admin middleware with debugging
+  // Admin middleware
   const adminMiddleware = async (req: Request, res: Response, next: Function) => {
-    console.log('Admin middleware - Session ID:', req.sessionID);
-    console.log('Admin middleware - Admin ID:', req.session.adminId);
-    console.log('Admin middleware - Session data:', JSON.stringify(req.session, null, 2));
-    
     if (!req.session.adminId) {
-      console.log('Admin middleware - No admin ID in session, returning 401');
       return res.status(401).json({ message: 'Unauthorized - Admin access required' });
     }
 
     const admin = await storage.getAdmin(req.session.adminId);
     if (!admin) {
-      console.log('Admin middleware - Admin not found in database, returning 403');
       return res.status(403).json({ message: 'Forbidden - Invalid admin session' });
     }
 
-    console.log('Admin middleware - Admin authenticated:', admin.username);
     next();
   };
 
@@ -352,9 +340,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       req.session.adminId = admin.id;
-      console.log('Admin login - Session ID:', req.sessionID);
-      console.log('Admin login - Set admin ID:', admin.id);
-      console.log('Admin login - Session after setting:', JSON.stringify(req.session, null, 2));
+
 
       res.json({
         id: admin.id,
