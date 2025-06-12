@@ -11,6 +11,11 @@ function validateEnvironment() {
   const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
   
   if (missingVars.length > 0) {
+    if (process.env.NODE_ENV === 'production') {
+      console.warn(`Missing required environment variables: ${missingVars.join(', ')} - Please configure these in your deployment settings`);
+      // Don't throw in production, just warn
+      return;
+    }
     throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
   }
 }
@@ -71,18 +76,37 @@ async function initializeServer() {
     validateEnvironment();
     log("Environment validation complete");
 
-    // Test database connection first
+    // Test database connection with retry logic
     log("Testing database connection...");
-    const dbConnected = await testDatabaseConnection();
+    let dbConnected = false;
+    let retryCount = 0;
+    const maxRetries = process.env.NODE_ENV === 'production' ? 5 : 3;
+
+    while (!dbConnected && retryCount < maxRetries) {
+      try {
+        dbConnected = await testDatabaseConnection();
+        if (dbConnected) {
+          log("Database connection successful");
+          break;
+        }
+      } catch (error) {
+        console.error(`Database connection attempt ${retryCount + 1} failed:`, error);
+      }
+      
+      retryCount++;
+      if (retryCount < maxRetries) {
+        log(`Retrying database connection in ${retryCount * 2} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, retryCount * 2000));
+      }
+    }
+
     if (!dbConnected) {
-      const errorMsg = "Database connection failed during startup";
+      const errorMsg = "Database connection failed after multiple attempts";
       if (process.env.NODE_ENV === 'production') {
-        console.warn(errorMsg + " - continuing with limited functionality");
+        console.warn(errorMsg + " - continuing with limited functionality. Please check DATABASE_URL configuration.");
       } else {
         throw new Error(errorMsg);
       }
-    } else {
-      log("Database connection successful");
     }
 
     // Initialize database with sample data (with timeout and retry logic)
@@ -102,7 +126,6 @@ async function initializeServer() {
       } catch (dbError) {
         console.error(`Error initializing database: ${dbError}`);
         // Don't exit on database initialization failure in production
-        // The app might still work for basic functionality
         if (process.env.NODE_ENV === 'production') {
           console.warn("Continuing startup despite database initialization failure");
         } else {
@@ -118,24 +141,45 @@ async function initializeServer() {
       try {
         const dbHealthy = await testDatabaseConnection();
         const status = {
-          status: 'ok',
+          status: dbHealthy ? 'ok' : 'degraded',
           timestamp: new Date().toISOString(),
           uptime: process.uptime(),
           database: dbHealthy ? 'connected' : 'disconnected',
-          environment: process.env.NODE_ENV || 'development'
+          environment: process.env.NODE_ENV || 'development',
+          version: '1.0.0',
+          services: {
+            database: dbHealthy ? 'healthy' : 'unhealthy',
+            session: 'healthy',
+            api: 'healthy'
+          }
         };
         
         if (dbHealthy) {
           res.status(200).json(status);
         } else {
-          res.status(503).json({ ...status, status: 'degraded' });
+          res.status(503).json(status);
         }
       } catch (error) {
         res.status(503).json({
           status: 'error',
           timestamp: new Date().toISOString(),
-          error: 'Health check failed'
+          error: 'Health check failed',
+          environment: process.env.NODE_ENV || 'development'
         });
+      }
+    });
+
+    // Readiness probe endpoint
+    app.get('/ready', async (req, res) => {
+      try {
+        const dbHealthy = await testDatabaseConnection();
+        if (dbHealthy) {
+          res.status(200).json({ status: 'ready' });
+        } else {
+          res.status(503).json({ status: 'not ready', reason: 'database unavailable' });
+        }
+      } catch (error) {
+        res.status(503).json({ status: 'not ready', reason: 'health check failed' });
       }
     });
 

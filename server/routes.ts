@@ -16,13 +16,23 @@ declare module 'express-session' {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Session setup
+  // Session setup with production warning
+  const sessionSecret = process.env.SESSION_SECRET;
+  if (!sessionSecret && process.env.NODE_ENV === 'production') {
+    console.warn('SESSION_SECRET not set in production - please configure this in your deployment settings for security');
+  }
+  
   const SessionStore = MemoryStore(session);
   app.use(session({
-    secret: process.env.SESSION_SECRET || 'wagba-secret-key',
+    secret: sessionSecret || 'wagba-secret-key-development-only',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: process.env.NODE_ENV === 'production', maxAge: 24 * 60 * 60 * 1000 },
+    cookie: { 
+      secure: process.env.NODE_ENV === 'production', 
+      maxAge: 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
+    },
     store: new SessionStore({
       checkPeriod: 86400000 // 24 hours
     })
