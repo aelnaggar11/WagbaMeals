@@ -166,23 +166,47 @@ const AuthPage = () => {
         description: "Welcome to Wagba! Your account has been created."
       });
       
-      // If the user has saved meal selections, create an order and proceed to checkout
-      const savedSelections = sessionStorage.getItem('mealSelections');
+      // Check for saved meal selections (sessionStorage first, then backend as fallback)
+      let savedSelections = null;
+      const sessionStorageSelections = sessionStorage.getItem('mealSelections');
+      
+      if (sessionStorageSelections) {
+        try {
+          savedSelections = JSON.parse(sessionStorageSelections);
+        } catch (error) {
+          console.error('Error parsing sessionStorage selections:', error);
+        }
+      }
+
+      // If no sessionStorage selections, check backend storage
+      if (!savedSelections) {
+        try {
+          // Wait a moment for session to be established
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const backendSelections = await apiRequest('GET', '/api/temp/meal-selections');
+          if (backendSelections) {
+            savedSelections = backendSelections;
+          }
+        } catch (error) {
+          console.log('No backend selections found, proceeding without order creation');
+        }
+      }
       
       if (savedSelections) {
         try {
-          const selections = JSON.parse(savedSelections);
+          // The order should already be created by the registration endpoint
+          // if the selections were stored in backend storage
+          // But we'll create it here as fallback for sessionStorage selections
           
-          // Wait a moment for session to be established
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Create the order using the saved selections
-          await apiRequest('POST', '/api/orders', {
-            weekId: selections.weekId,
-            mealCount: selections.mealCount,
-            defaultPortionSize: selections.portionSize,
-            items: selections.selectedMeals
-          });
+          if (sessionStorageSelections) {
+            // Create order only if selections came from sessionStorage
+            await apiRequest('POST', '/api/orders', {
+              weekId: savedSelections.weekId,
+              mealCount: savedSelections.mealCount,
+              defaultPortionSize: savedSelections.portionSize,
+              items: savedSelections.selectedMeals
+            });
+          }
           
           // Invalidate pending order query to ensure fresh data
           await queryClient.invalidateQueries({ queryKey: ['/api/orders/pending'] });
@@ -190,16 +214,15 @@ const AuthPage = () => {
           // Clear the saved selections
           sessionStorage.removeItem('mealSelections');
           
-          // Wait another moment before navigation to ensure queries are updated
+          // Wait for queries to update
           await new Promise(resolve => setTimeout(resolve, 300));
           
           // Redirect to checkout
           navigate('/checkout');
         } catch (error) {
-          console.error("Error creating order:", error);
+          console.error("Error handling order after registration:", error);
           
-          // During onboarding (when there are saved selections), always try to proceed to checkout
-          // even if order creation fails - the user can create/update their order there
+          // During onboarding, always try to proceed to checkout
           sessionStorage.removeItem('mealSelections');
           navigate('/checkout');
         }

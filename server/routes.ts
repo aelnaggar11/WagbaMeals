@@ -136,20 +136,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const selections = req.session.tempMealSelections;
           
+          // Calculate pricing for the order
+          const pricePerMeal = getPriceForMealCount(selections.mealCount);
+          const largePortionAdditional = 99;
+          
+          let subtotal = 0;
+          for (const mealItem of selections.selectedMeals) {
+            const basePrice = pricePerMeal;
+            const itemPrice = mealItem.portionSize === "large" ? basePrice + largePortionAdditional : basePrice;
+            subtotal += itemPrice;
+          }
+          
+          const fullPriceTotal = selections.mealCount * 249;
+          const discount = fullPriceTotal - subtotal;
+          const total = subtotal;
+
           // Create the order using the temporarily stored selections
           const order = await storage.createOrder({
             userId: user.id,
             weekId: selections.weekId,
             mealCount: selections.mealCount,
-            defaultPortionSize: selections.portionSize as any
+            defaultPortionSize: selections.portionSize,
+            subtotal,
+            discount,
+            total
           });
 
           // Add the meal items to the order
           for (const mealItem of selections.selectedMeals) {
+            const basePrice = pricePerMeal;
+            const itemPrice = mealItem.portionSize === "large" ? basePrice + largePortionAdditional : basePrice;
+            
             await storage.addOrderItem({
               orderId: order.id,
               mealId: mealItem.mealId,
-              portionSize: mealItem.portionSize
+              portionSize: mealItem.portionSize,
+              price: itemPrice
             });
           }
 
