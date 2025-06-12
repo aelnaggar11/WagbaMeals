@@ -48,6 +48,7 @@ const AdminAuthPage = () => {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: 'include', // Ensure cookies are sent with request
         body: JSON.stringify({
           username: formData.username,
           password: formData.password

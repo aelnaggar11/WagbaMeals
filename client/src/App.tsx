@@ -30,17 +30,29 @@ function App() {
     return () => window.removeEventListener('popstate', handleRouteChange);
   }, []);
   
-  // User authentication query
+  // User authentication query with proper 401 handling
   const { data: user, isLoading: userLoading } = useQuery<User | null>({
     queryKey: ['/api/auth/me'],
+    queryFn: async () => {
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
+      if (res.status === 401) return null;
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return res.json();
+    },
     refetchOnWindowFocus: true,
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 1
   });
 
-  // Admin authentication query
+  // Admin authentication query with proper 401 handling
   const { data: admin, isLoading: adminLoading } = useQuery<Admin | null>({
     queryKey: ['/api/admin/auth/me'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/auth/me', { credentials: 'include' });
+      if (res.status === 401) return null;
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return res.json();
+    },
     refetchOnWindowFocus: true,
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 1
