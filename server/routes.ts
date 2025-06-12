@@ -721,11 +721,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add order items
       if (items && items.length > 0) {
         for (const item of items) {
-          await storage.addOrderItem({
-            orderId: order.id,
-            mealId: item.mealId,
-            portionSize: item.portionSize
-          });
+          const meal = await storage.getMeal(item.mealId);
+          console.log('Meal data:', meal);
+          if (meal) {
+            const basePrice = meal.price || 249; // Default price if not set
+            const price = item.portionSize === 'large' ? basePrice * 1.2 : basePrice;
+            console.log('Calculated price:', price, 'for portion:', item.portionSize);
+            await storage.addOrderItem({
+              orderId: order.id,
+              mealId: item.mealId,
+              portionSize: item.portionSize,
+              price: Math.round(price * 100) / 100 // Round to 2 decimal places
+            });
+          }
         }
       }
 
