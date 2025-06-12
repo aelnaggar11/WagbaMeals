@@ -55,7 +55,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
-  // Production session debugging
+  // Production-optimized session configuration
   const isProduction = process.env.NODE_ENV === 'production';
   console.log('=== SESSION CONFIGURATION DEBUG ===');
   console.log('Environment:', process.env.NODE_ENV);
@@ -64,19 +64,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   console.log('Secure cookies enabled:', isProduction);
   console.log('====================================');
 
-  app.use(session({
+  // Enhanced session configuration for production reliability
+  const sessionOptions = {
     secret: sessionSecret || 'wagba-secret-key-development-only',
     resave: false,
-    saveUninitialized: true, // Allow sessions for anonymous users during onboarding
+    saveUninitialized: true,
+    rolling: true, // Reset expiration on activity
     cookie: { 
-      secure: false, // Temporarily disable for production debugging
+      secure: isProduction && process.env.REPLIT_DEPLOYMENT !== undefined, // Auto-detect HTTPS
       maxAge: 24 * 60 * 60 * 1000,
       httpOnly: true,
-      sameSite: 'lax' // Use 'lax' for both environments to allow navigation during onboarding
+      sameSite: 'lax' as const
     },
     store: sessionStore,
-    name: 'wagba_session' // Custom session name for debugging
-  }));
+    name: isProduction ? 'wagba_prod' : 'wagba_dev'
+  };
+
+  // Additional production security headers
+  if (isProduction) {
+    app.use((req, res, next) => {
+      res.header('X-Content-Type-Options', 'nosniff');
+      res.header('X-Frame-Options', 'DENY');
+      res.header('X-XSS-Protection', '1; mode=block');
+      next();
+    });
+  }
+
+  app.use(session(sessionOptions));
 
   // Authentication middleware with debugging
   const authMiddleware = (req: Request, res: Response, next: Function) => {
