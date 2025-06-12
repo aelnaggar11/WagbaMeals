@@ -20,9 +20,11 @@ const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [deliveryNotes, setDeliveryNotes] = useState("");
   
-  // Fetch current order
-  const { data: pendingOrder, isLoading } = useQuery<Order>({
+  // Fetch current order with retry and error handling
+  const { data: pendingOrder, isLoading, error, refetch } = useQuery<Order>({
     queryKey: ['/api/orders/pending'],
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
   
   // Fetch user profile for delivery address
@@ -46,6 +48,16 @@ const CheckoutPage = () => {
     phone: ""
   });
   
+  // Auto-retry fetching pending order if it fails initially (helps with timing issues after registration)
+  useEffect(() => {
+    if (error && !pendingOrder) {
+      const timer = setTimeout(() => {
+        refetch();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, pendingOrder, refetch]);
+
   // Update address form with user profile data when available
   useEffect(() => {
     if (userProfile?.address) {
@@ -134,13 +146,44 @@ const CheckoutPage = () => {
     );
   }
   
-  if (!pendingOrder) {
+  // Handle authentication errors and provide retry options
+  if (error && !isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-md mx-auto text-center">
+          <h1 className="text-2xl font-bold mb-4">Unable to Load Order</h1>
+          <p className="text-gray-600 mb-6">
+            We're having trouble loading your order. This might be a temporary issue.
+          </p>
+          <div className="space-y-3">
+            <Button onClick={() => refetch()} className="w-full">
+              Try Again
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/menu/current')}
+              className="w-full"
+            >
+              Browse Menu
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!pendingOrder && !isLoading) {
     return (
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-md mx-auto text-center">
           <h1 className="text-2xl font-bold mb-4">No Pending Order</h1>
           <p className="text-gray-600 mb-6">You don't have any orders ready for checkout.</p>
-          <Button onClick={() => navigate('/menu/current')}>Browse Menu</Button>
+          <div className="space-y-3">
+            <Button onClick={() => refetch()} className="w-full">
+              Refresh
+            </Button>
+            <Button onClick={() => navigate('/menu/current')}>Browse Menu</Button>
+          </div>
         </div>
       </div>
     );
@@ -282,29 +325,30 @@ const CheckoutPage = () => {
           </div>
           
           {/* Order Summary */}
-          <div>
-            <Card className="sticky top-24">
-              <CardHeader>
-                <CardTitle>Order Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>EGP {pendingOrder.subtotal.toFixed(0)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Delivery Fee</span>
-                  <span>EGP 0.00</span>
-                </div>
-                {pendingOrder.discount > 0 && (
-                  <div className="flex justify-between text-accent">
-                    <span>Discount</span>
-                    <span>-EGP {pendingOrder.discount.toFixed(0)}</span>
+          {pendingOrder && (
+            <div>
+              <Card className="sticky top-24">
+                <CardHeader>
+                  <CardTitle>Order Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-between">
+                    <span>Subtotal</span>
+                    <span>EGP {pendingOrder.subtotal.toFixed(0)}</span>
                   </div>
-                )}
-                <div className="flex justify-between font-bold text-lg pt-4 border-t">
-                  <span>Total</span>
-                  <span className="text-primary">EGP {pendingOrder.total.toFixed(0)}</span>
+                  <div className="flex justify-between">
+                    <span>Delivery Fee</span>
+                    <span>EGP 0.00</span>
+                  </div>
+                  {pendingOrder.discount > 0 && (
+                    <div className="flex justify-between text-accent">
+                      <span>Discount</span>
+                      <span>-EGP {pendingOrder.discount.toFixed(0)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-bold text-lg pt-4 border-t">
+                    <span>Total</span>
+                    <span className="text-primary">EGP {pendingOrder.total.toFixed(0)}</span>
                 </div>
               </CardContent>
               <CardFooter>
@@ -318,6 +362,7 @@ const CheckoutPage = () => {
               </CardFooter>
             </Card>
           </div>
+          )}
         </div>
       </div>
     </div>

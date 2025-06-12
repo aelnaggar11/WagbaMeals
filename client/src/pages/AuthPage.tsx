@@ -157,8 +157,9 @@ const AuthPage = () => {
         isAdmin: false
       });
       
-      // Invalidate queries to refresh auth state
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      // Invalidate all auth-related queries to refresh auth state
+      await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/user/profile'] });
       
       toast({
         title: "Registration successful",
@@ -172,6 +173,9 @@ const AuthPage = () => {
         try {
           const selections = JSON.parse(savedSelections);
           
+          // Wait a moment for session to be established
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
           // Create the order using the saved selections
           await apiRequest('POST', '/api/orders', {
             weekId: selections.weekId,
@@ -180,8 +184,14 @@ const AuthPage = () => {
             items: selections.selectedMeals
           });
           
+          // Invalidate pending order query to ensure fresh data
+          await queryClient.invalidateQueries({ queryKey: ['/api/orders/pending'] });
+          
           // Clear the saved selections
           sessionStorage.removeItem('mealSelections');
+          
+          // Wait another moment before navigation to ensure queries are updated
+          await new Promise(resolve => setTimeout(resolve, 300));
           
           // Redirect to checkout
           navigate('/checkout');
