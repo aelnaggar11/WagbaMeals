@@ -60,6 +60,13 @@ const AdminAuthPage = () => {
         throw new Error(error.message || "Login failed");
       }
 
+      const adminData = await response.json();
+      
+      // Store admin token as backup authentication method
+      if (adminData && adminData.token) {
+        localStorage.setItem('wagba_admin_token', adminData.token);
+      }
+
       // Invalidate and refetch the admin auth query
       await queryClient.invalidateQueries({ queryKey: ['/api/admin/auth/me'] });
       await queryClient.refetchQueries({ queryKey: ['/api/admin/auth/me'] });

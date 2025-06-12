@@ -15,7 +15,11 @@ export async function apiRequest(
   const headers: Record<string, string> = data ? { "Content-Type": "application/json" } : {};
   
   // Add token header as backup authentication
-  const token = localStorage.getItem('wagba_auth_token');
+  const isAdminRequest = url.includes('/admin/');
+  const token = isAdminRequest 
+    ? localStorage.getItem('wagba_admin_token')
+    : localStorage.getItem('wagba_auth_token');
+    
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -40,7 +44,11 @@ export const getQueryFn: <T>(options: {
     const headers: Record<string, string> = {};
     
     // Add token header as backup authentication
-    const token = localStorage.getItem('wagba_auth_token');
+    const isAdminRequest = queryKey[0].toString().includes('/admin/');
+    const token = isAdminRequest 
+      ? localStorage.getItem('wagba_admin_token')
+      : localStorage.getItem('wagba_auth_token');
+      
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
