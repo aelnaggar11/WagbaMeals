@@ -61,10 +61,15 @@ const AuthPage = () => {
     setIsSubmitting(true);
     
     try {
-      await apiRequest('POST', '/api/auth/login', {
+      const response = await apiRequest('POST', '/api/auth/login', {
         email: formData.email,
         password: formData.password
       });
+      
+      // Store token as backup authentication method
+      if (response.token) {
+        localStorage.setItem('wagba_auth_token', response.token);
+      }
       
       // Invalidate queries to refresh auth state
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });

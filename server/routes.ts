@@ -81,20 +81,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.use(session(sessionOptions));
 
-  // Authentication middleware with debugging
-  const authMiddleware = (req: Request, res: Response, next: Function) => {
+  // Enhanced authentication middleware with token fallback
+  const authMiddleware = async (req: Request, res: Response, next: Function) => {
     console.log('Auth middleware check:', {
       sessionId: req.sessionID,
       userId: req.session.userId,
       sessionExists: !!req.session,
-      cookieExists: !!req.headers.cookie
+      cookieExists: !!req.headers.cookie,
+      tokenCookie: !!req.cookies.wagba_auth_token
     });
     
-    if (!req.session.userId) {
-      console.log('Authentication failed: No userId in session');
-      return res.status(401).json({ message: 'Unauthorized' });
+    // First try session-based auth
+    if (req.session.userId) {
+      console.log('Session auth successful for user:', req.session.userId);
+      return next();
     }
-    next();
+    
+    // Fallback to token-based auth
+    const token = req.cookies.wagba_auth_token;
+    if (token) {
+      try {
+        const decoded = Buffer.from(token, 'base64').toString();
+        const [userId, timestamp, email] = decoded.split(':');
+        
+        if (userId && email) {
+          // Verify user still exists
+          const user = await storage.getUser(parseInt(userId));
+          if (user && user.email === email) {
+            console.log('Token auth successful for user:', userId);
+            // Set session for future requests
+            req.session.userId = parseInt(userId);
+            return next();
+          }
+        }
+      } catch (error) {
+        console.log('Token auth failed:', String(error));
+      }
+    }
+    
+    console.log('Authentication failed: No valid session or token');
+    return res.status(401).json({ message: 'Unauthorized' });
   };
 
   // Admin middleware
@@ -282,24 +308,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sessionData: req.session
       });
 
-      // EMERGENCY: Force immediate session save and verification
-      await new Promise((resolve, reject) => {
-        req.session.save((err) => {
-          if (err) {
-            console.error('EMERGENCY LOGIN - Session save error:', err);
-            reject(err);
-          } else {
-            console.log('EMERGENCY LOGIN - Session saved successfully for user:', user.id);
-            resolve(null);
-          }
-        });
-      });
+      // Set session
+      req.session.userId = user.id;
+
+      // BACKUP: Create a simple token as fallback
+      const token = Buffer.from(`${user.id}:${Date.now()}:${user.email}`).toString('base64');
       
-      // Double-check session was saved
-      console.log('EMERGENCY LOGIN - Final session check:', {
-        sessionId: req.sessionID,
-        userId: req.session.userId,
-        sessionStore: sessionStore.constructor.name
+      // Force session save
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error:', err);
+        } else {
+          console.log('Session saved for user:', user.id);
+        }
+      });
+
+      // Set token cookie as backup
+      res.cookie('wagba_auth_token', token, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000
       });
 
       res.json({
@@ -308,7 +337,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: user.email,
         name: user.name,
         phone: user.phone,
-        address: user.address
+        address: user.address,
+        token: token
       });
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
