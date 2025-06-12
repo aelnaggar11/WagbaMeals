@@ -12,6 +12,12 @@ declare module 'express-session' {
   interface SessionData {
     userId?: number;
     adminId?: number;
+    tempMealSelections?: {
+      weekId: number;
+      mealCount: number;
+      portionSize: string;
+      selectedMeals: any[];
+    };
   }
 }
 
@@ -26,12 +32,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(session({
     secret: sessionSecret || 'wagba-secret-key-development-only',
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true, // Allow sessions for anonymous users during onboarding
     cookie: { 
       secure: process.env.NODE_ENV === 'production', 
       maxAge: 24 * 60 * 60 * 1000,
       httpOnly: true,
-      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
+      sameSite: 'lax' // Use 'lax' for both environments to allow navigation during onboarding
     },
     store: new SessionStore({
       checkPeriod: 86400000 // 24 hours
@@ -59,6 +65,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     next();
   };
+
+  // Temporary meal selection storage for onboarding
+  app.post('/api/temp/meal-selections', async (req, res) => {
+    try {
+      const { weekId, mealCount, portionSize, selectedMeals } = req.body;
+      
+      if (!weekId || !mealCount || !selectedMeals) {
+        return res.status(400).json({ message: 'Missing required meal selection data' });
+      }
+
+      // Store in session for reliable cross-page persistence
+      req.session.tempMealSelections = {
+        weekId,
+        mealCount,
+        portionSize,
+        selectedMeals
+      };
+
+      res.json({ message: 'Meal selections stored successfully' });
+    } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.get('/api/temp/meal-selections', async (req, res) => {
+    try {
+      const selections = req.session.tempMealSelections;
+      if (!selections) {
+        return res.status(404).json(null);
+      }
+      res.json(selections);
+    } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
 
   // Auth Routes
   app.post('/api/auth/register', async (req, res) => {
@@ -89,6 +130,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Set session
       req.session.userId = user.id;
+
+      // Check if there are temporary meal selections to create an order
+      if (req.session.tempMealSelections) {
+        try {
+          const selections = req.session.tempMealSelections;
+          
+          // Create the order using the temporarily stored selections
+          const order = await storage.createOrder({
+            userId: user.id,
+            weekId: selections.weekId,
+            mealCount: selections.mealCount,
+            defaultPortionSize: selections.portionSize as any
+          });
+
+          // Add the meal items to the order
+          for (const mealItem of selections.selectedMeals) {
+            await storage.addOrderItem({
+              orderId: order.id,
+              mealId: mealItem.mealId,
+              portionSize: mealItem.portionSize
+            });
+          }
+
+          // Clear the temporary selections
+          delete req.session.tempMealSelections;
+        } catch (orderError) {
+          console.error('Error creating order during registration:', orderError);
+          // Don't fail registration if order creation fails
+        }
+      }
 
       res.status(201).json({
         id: user.id,

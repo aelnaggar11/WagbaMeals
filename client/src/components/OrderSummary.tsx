@@ -84,14 +84,27 @@ const OrderSummary = ({
         variant: "destructive"
       });
       
-      // Save current selections to sessionStorage
-      const selections = {
-        selectedMeals,
-        mealCount,
-        portionSize,
-        weekId
-      };
-      sessionStorage.setItem('mealSelections', JSON.stringify(selections));
+      try {
+        // Save selections to backend session storage (more reliable than sessionStorage)
+        await apiRequest('POST', '/api/temp/meal-selections', {
+          weekId,
+          mealCount,
+          portionSize,
+          selectedMeals
+        });
+        
+        // Also save to sessionStorage as fallback
+        const selections = {
+          selectedMeals,
+          mealCount,
+          portionSize,
+          weekId
+        };
+        sessionStorage.setItem('mealSelections', JSON.stringify(selections));
+      } catch (error) {
+        console.error('Error saving meal selections:', error);
+        // Continue with just sessionStorage if backend fails
+      }
       
       // Redirect to auth page with return URL
       window.location.href = `/auth?returnTo=${encodeURIComponent(window.location.pathname)}`;
