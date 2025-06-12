@@ -6,6 +6,8 @@ import { insertUserSchema, insertMealSchema, insertWeekSchema, insertOrderSchema
 import bcrypt from "bcryptjs";
 import session from "express-session";
 import MemoryStore from 'memorystore';
+import ConnectPgSimple from 'connect-pg-simple';
+import { pool } from "./db";
 import { getPriceForMealCount } from "@shared/schema";
 
 declare module 'express-session' {
@@ -28,7 +30,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.warn('SESSION_SECRET not set in production - please configure this in your deployment settings for security');
   }
   
-  const SessionStore = MemoryStore(session);
+  // Use database session store for production, memory store for development
+  let sessionStore;
+  if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL && pool) {
+    try {
+      const PgSession = ConnectPgSimple(session);
+      sessionStore = new PgSession({
+        pool: pool,
+        tableName: 'user_sessions',
+        createTableIfMissing: true,
+      });
+      console.log('Using PostgreSQL session store for production');
+    } catch (error) {
+      console.warn('Failed to initialize PostgreSQL session store, falling back to memory store:', error);
+      const SessionStore = MemoryStore(session);
+      sessionStore = new SessionStore({
+        checkPeriod: 86400000 // 24 hours
+      });
+    }
+  } else {
+    const SessionStore = MemoryStore(session);
+    sessionStore = new SessionStore({
+      checkPeriod: 86400000 // 24 hours
+    });
+  }
+
   app.use(session({
     secret: sessionSecret || 'wagba-secret-key-development-only',
     resave: false,
@@ -39,30 +65,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       httpOnly: true,
       sameSite: 'lax' // Use 'lax' for both environments to allow navigation during onboarding
     },
-    store: new SessionStore({
-      checkPeriod: 86400000 // 24 hours
-    })
+    store: sessionStore
   }));
 
-  // Authentication middleware
+  // Authentication middleware with debugging
   const authMiddleware = (req: Request, res: Response, next: Function) => {
+    console.log('Auth middleware - Session ID:', req.sessionID);
+    console.log('Auth middleware - User ID:', req.session.userId);
+    console.log('Auth middleware - Session data:', JSON.stringify(req.session, null, 2));
+    
     if (!req.session.userId) {
+      console.log('Auth middleware - No user ID in session, returning 401');
       return res.status(401).json({ message: 'Unauthorized' });
     }
     next();
   };
 
-  // Admin middleware
+  // Admin middleware with debugging
   const adminMiddleware = async (req: Request, res: Response, next: Function) => {
+    console.log('Admin middleware - Session ID:', req.sessionID);
+    console.log('Admin middleware - Admin ID:', req.session.adminId);
+    console.log('Admin middleware - Session data:', JSON.stringify(req.session, null, 2));
+    
     if (!req.session.adminId) {
+      console.log('Admin middleware - No admin ID in session, returning 401');
       return res.status(401).json({ message: 'Unauthorized - Admin access required' });
     }
 
     const admin = await storage.getAdmin(req.session.adminId);
     if (!admin) {
+      console.log('Admin middleware - Admin not found in database, returning 403');
       return res.status(403).json({ message: 'Forbidden - Invalid admin session' });
     }
 
+    console.log('Admin middleware - Admin authenticated:', admin.username);
     next();
   };
 
@@ -220,8 +256,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid credentials' });
       }
 
-      // Set session
+      // Set session with debugging
       req.session.userId = user.id;
+      console.log('User login - Session ID:', req.sessionID);
+      console.log('User login - Set user ID:', user.id);
+      console.log('User login - Session after setting:', JSON.stringify(req.session, null, 2));
 
       res.json({
         id: user.id,
@@ -313,6 +352,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       req.session.adminId = admin.id;
+      console.log('Admin login - Session ID:', req.sessionID);
+      console.log('Admin login - Set admin ID:', admin.id);
+      console.log('Admin login - Session after setting:', JSON.stringify(req.session, null, 2));
 
       res.json({
         id: admin.id,
