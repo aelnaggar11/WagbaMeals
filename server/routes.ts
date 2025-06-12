@@ -246,9 +246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Set session with debugging
       req.session.userId = user.id;
-      console.log('User login - Session ID:', req.sessionID);
-      console.log('User login - Set user ID:', user.id);
-      console.log('User login - Session after setting:', JSON.stringify(req.session, null, 2));
+
 
       res.json({
         id: user.id,
@@ -696,6 +694,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orders = await storage.getOrdersByUser(req.session.userId!);
       res.json({ orders });
     } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.post('/api/orders', authMiddleware, async (req, res) => {
+    try {
+      const { weekId, mealCount, defaultPortionSize, items, totalPrice } = req.body;
+
+      // Create the order
+      const order = await storage.createOrder({
+        userId: req.session.userId!,
+        weekId,
+        status: 'selected',
+        mealCount,
+        defaultPortionSize: defaultPortionSize || 'standard',
+        subtotal: totalPrice || 0,
+        discount: 0,
+        total: totalPrice || 0,
+        deliveryDate: new Date().toISOString(),
+        deliveryAddress: null,
+        deliveryNotes: null,
+        paymentMethod: null
+      });
+
+      // Add order items
+      if (items && items.length > 0) {
+        for (const item of items) {
+          await storage.addOrderItem({
+            orderId: order.id,
+            mealId: item.mealId,
+            portionSize: item.portionSize
+          });
+        }
+      }
+
+      res.status(201).json(order);
+    } catch (error) {
+      console.error('Error creating order:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });
