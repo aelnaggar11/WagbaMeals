@@ -97,8 +97,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return next();
     }
     
-    // Fallback to token-based auth
-    const token = req.cookies.wagba_auth_token;
+    // Fallback to token-based auth (cookie or header)
+    const cookieToken = req.cookies.wagba_auth_token;
+    const headerToken = req.headers.authorization?.replace('Bearer ', '');
+    const token = headerToken || cookieToken;
+    
     if (token) {
       try {
         const decoded = Buffer.from(token, 'base64').toString();
@@ -108,7 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Verify user still exists
           const user = await storage.getUser(parseInt(userId));
           if (user && user.email === email) {
-            console.log('Token auth successful for user:', userId);
+            console.log('Token auth successful for user:', userId, 'via', headerToken ? 'header' : 'cookie');
             // Set session for future requests
             req.session.userId = parseInt(userId);
             return next();
@@ -350,6 +353,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (err) {
         return res.status(500).json({ message: 'Error logging out' });
       }
+      // Clear token cookie as well
+      res.clearCookie('wagba_auth_token');
       res.json({ message: 'Logged out successfully' });
     });
   });

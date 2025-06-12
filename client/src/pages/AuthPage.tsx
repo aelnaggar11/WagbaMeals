@@ -67,7 +67,7 @@ const AuthPage = () => {
       });
       
       // Store token as backup authentication method
-      if (response.token) {
+      if (response && response.token) {
         localStorage.setItem('wagba_auth_token', response.token);
       }
       

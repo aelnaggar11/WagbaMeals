@@ -41,6 +41,9 @@ const Navigation = () => {
         queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       }
       
+      // Clear stored authentication token
+      localStorage.removeItem('wagba_auth_token');
+      
       // Clear all queries to ensure proper logout
       queryClient.clear();
       
@@ -56,11 +59,18 @@ const Navigation = () => {
       // Force a page reload to clear any auth state in memory
       window.location.href = '/';
     } catch (error) {
+      // Even if logout fails, clear the token and redirect
+      localStorage.removeItem('wagba_auth_token');
+      queryClient.clear();
+      
       toast({
         title: "Error",
         description: "There was an error logging out. Please try again.",
         variant: "destructive"
       });
+      
+      // Still redirect to clear any problematic state
+      window.location.href = '/';
     }
   };
 
