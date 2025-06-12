@@ -188,12 +188,10 @@ const AuthPage = () => {
         } catch (error) {
           console.error("Error creating order:", error);
           
-          // Redirect to return URL if available or meal selection as fallback
-          if (returnTo) {
-            navigate(returnTo);
-          } else {
-            navigate('/menu/current');
-          }
+          // During onboarding (when there are saved selections), always try to proceed to checkout
+          // even if order creation fails - the user can create/update their order there
+          sessionStorage.removeItem('mealSelections');
+          navigate('/checkout');
         }
       } else {
         // No saved selections, redirect to return URL if available or meal plans as fallback
