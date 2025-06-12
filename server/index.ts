@@ -7,17 +7,51 @@ import { testDatabaseConnection, pool } from "./db";
 
 // Validate required environment variables
 function validateEnvironment() {
+  log("Validating environment configuration...");
+  
+  // Production deployment diagnostics
+  console.log('=== DEPLOYMENT DIAGNOSTICS ===');
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('DATABASE_URL present:', !!process.env.DATABASE_URL);
+  console.log('SESSION_SECRET present:', !!process.env.SESSION_SECRET);
+  console.log('PORT:', process.env.PORT || '5000');
+  
+  if (process.env.DATABASE_URL) {
+    console.log('Database URL format:', process.env.DATABASE_URL.substring(0, 20) + '...');
+  }
+  
+  if (process.env.SESSION_SECRET) {
+    console.log('Session secret length:', process.env.SESSION_SECRET.length);
+  }
+  console.log('================================');
+  
   const requiredEnvVars = ['DATABASE_URL'];
   const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
   
   if (missingVars.length > 0) {
+    console.error(`Missing required environment variables: ${missingVars.join(', ')}`);
     if (process.env.NODE_ENV === 'production') {
-      console.warn(`Missing required environment variables: ${missingVars.join(', ')} - Please configure these in your deployment settings`);
-      // Don't throw in production, just warn
-      return;
+      console.error('PRODUCTION DEPLOYMENT FAILED: Missing critical environment variables');
+      console.error('Required environment variables:');
+      console.error('   - DATABASE_URL: PostgreSQL connection string');
+      console.error('   - SESSION_SECRET: Secure random string (32+ characters)');
+      throw new Error(`Production deployment failed: Missing environment variables`);
     }
-    throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+    console.warn("Continuing in development mode with missing variables");
   }
+  
+  // Validate SESSION_SECRET for production
+  if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+    console.error('SESSION_SECRET is required for production deployments');
+    console.error('Generate a secure session secret with: openssl rand -base64 32');
+    throw new Error('SESSION_SECRET environment variable is required');
+  }
+  
+  if (process.env.SESSION_SECRET && process.env.SESSION_SECRET.length < 32) {
+    console.warn('SESSION_SECRET should be at least 32 characters long for security');
+  }
+  
+  log("Environment validation complete");
 }
 
 // Global error handlers to prevent crashes

@@ -55,22 +55,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
+  // Production session debugging
+  const isProduction = process.env.NODE_ENV === 'production';
+  console.log('=== SESSION CONFIGURATION DEBUG ===');
+  console.log('Environment:', process.env.NODE_ENV);
+  console.log('Session secret source:', sessionSecret ? 'provided' : 'default');
+  console.log('Session store type:', sessionStore.constructor.name);
+  console.log('Secure cookies enabled:', isProduction);
+  console.log('====================================');
+
   app.use(session({
     secret: sessionSecret || 'wagba-secret-key-development-only',
     resave: false,
     saveUninitialized: true, // Allow sessions for anonymous users during onboarding
     cookie: { 
-      secure: process.env.NODE_ENV === 'production', 
+      secure: false, // Temporarily disable for production debugging
       maxAge: 24 * 60 * 60 * 1000,
       httpOnly: true,
       sameSite: 'lax' // Use 'lax' for both environments to allow navigation during onboarding
     },
-    store: sessionStore
+    store: sessionStore,
+    name: 'wagba_session' // Custom session name for debugging
   }));
 
-  // Authentication middleware
+  // Authentication middleware with debugging
   const authMiddleware = (req: Request, res: Response, next: Function) => {
+    console.log('Auth middleware check:', {
+      sessionId: req.sessionID,
+      userId: req.session.userId,
+      sessionExists: !!req.session,
+      cookieExists: !!req.headers.cookie
+    });
+    
     if (!req.session.userId) {
+      console.log('Authentication failed: No userId in session');
       return res.status(401).json({ message: 'Unauthorized' });
     }
     next();
@@ -244,9 +262,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid credentials' });
       }
 
-      // Set session with debugging
+      // Set session with comprehensive debugging
+      console.log('LOGIN DEBUG - Before setting session:', {
+        sessionId: req.sessionID,
+        sessionExists: !!req.session,
+        sessionData: req.session,
+        userId: user.id,
+        headers: req.headers.cookie
+      });
+      
       req.session.userId = user.id;
+      
+      console.log('LOGIN DEBUG - After setting session:', {
+        sessionId: req.sessionID,
+        userId: req.session.userId,
+        sessionData: req.session
+      });
 
+      // Force session save
+      req.session.save((err) => {
+        if (err) {
+          console.error('LOGIN DEBUG - Session save error:', err);
+        } else {
+          console.log('LOGIN DEBUG - Session saved successfully for user:', user.id);
+        }
+      });
 
       res.json({
         id: user.id,
