@@ -388,11 +388,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/auth/me', async (req, res) => {
     try {
-      if (!req.session.userId) {
+      // Check session first
+      let userId = req.session.userId;
+      
+      // If no session, try token authentication
+      if (!userId) {
+        const cookieToken = req.cookies.wagba_auth_token;
+        const headerToken = req.headers.authorization?.replace('Bearer ', '');
+        const token = headerToken || cookieToken;
+        
+        if (token) {
+          try {
+            const decoded = Buffer.from(token, 'base64').toString();
+            const [tokenUserId, timestamp, email] = decoded.split(':');
+            
+            if (tokenUserId && email) {
+              const user = await storage.getUser(parseInt(tokenUserId));
+              if (user && user.email === email) {
+                userId = parseInt(tokenUserId);
+                // Set session for future requests
+                req.session.userId = userId;
+              }
+            }
+          } catch (error) {
+            console.log('Token decode error in /api/auth/me:', String(error));
+          }
+        }
+      }
+
+      if (!userId) {
         return res.status(401).json(null);
       }
 
-      const user = await storage.getUser(req.session.userId!);
+      const user = await storage.getUser(userId);
       if (!user) {
         return res.status(401).json(null);
       }
