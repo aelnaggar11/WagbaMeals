@@ -126,13 +126,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.status(401).json({ message: 'Unauthorized' });
   };
 
-  // Admin middleware
+  // Enhanced admin middleware with token fallback
   const adminMiddleware = async (req: Request, res: Response, next: Function) => {
-    if (!req.session.adminId) {
+    // Check session first
+    let adminId = req.session.adminId;
+    
+    // If no session, try token authentication
+    if (!adminId) {
+      const cookieToken = req.cookies.wagba_admin_token;
+      const headerToken = req.headers.authorization?.replace('Bearer ', '');
+      const token = headerToken || cookieToken;
+      
+      if (token) {
+        try {
+          const decoded = Buffer.from(token, 'base64').toString();
+          const [type, tokenAdminId, timestamp, email] = decoded.split(':');
+          
+          if (type === 'admin' && tokenAdminId && email) {
+            const admin = await storage.getAdmin(parseInt(tokenAdminId));
+            if (admin && admin.email === email) {
+              adminId = parseInt(tokenAdminId);
+              // Set session for future requests
+              req.session.adminId = adminId;
+            }
+          }
+        } catch (error) {
+          console.log('Admin token auth failed:', String(error));
+        }
+      }
+    }
+
+    if (!adminId) {
       return res.status(401).json({ message: 'Unauthorized - Admin access required' });
     }
 
-    const admin = await storage.getAdmin(req.session.adminId);
+    const admin = await storage.getAdmin(adminId);
     if (!admin) {
       return res.status(403).json({ message: 'Forbidden - Invalid admin session' });
     }
@@ -437,13 +465,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       req.session.adminId = admin.id;
 
+      // BACKUP: Create admin token as fallback
+      const adminToken = Buffer.from(`admin:${admin.id}:${Date.now()}:${admin.email}`).toString('base64');
+      
+      // Force session save
+      req.session.save((err) => {
+        if (err) {
+          console.error('Admin session save error:', err);
+        }
+      });
+
+      // Set admin token cookie as backup
+      res.cookie('wagba_admin_token', adminToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000
+      });
 
       res.json({
         id: admin.id,
         username: admin.username,
         email: admin.email,
         name: admin.name,
-        role: admin.role
+        role: admin.role,
+        token: adminToken
       });
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
@@ -452,11 +498,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/admin/auth/me', async (req, res) => {
     try {
-      if (!req.session.adminId) {
+      // Check session first
+      let adminId = req.session.adminId;
+      
+      // If no session, try token authentication
+      if (!adminId) {
+        const cookieToken = req.cookies.wagba_admin_token;
+        const headerToken = req.headers.authorization?.replace('Bearer ', '');
+        const token = headerToken || cookieToken;
+        
+        if (token) {
+          try {
+            const decoded = Buffer.from(token, 'base64').toString();
+            const [type, tokenAdminId, timestamp, email] = decoded.split(':');
+            
+            if (type === 'admin' && tokenAdminId && email) {
+              const admin = await storage.getAdmin(parseInt(tokenAdminId));
+              if (admin && admin.email === email) {
+                adminId = parseInt(tokenAdminId);
+                // Set session for future requests
+                req.session.adminId = adminId;
+              }
+            }
+          } catch (error) {
+            console.log('Admin token decode error in /api/admin/auth/me:', String(error));
+          }
+        }
+      }
+
+      if (!adminId) {
         return res.status(401).json(null);
       }
 
-      const admin = await storage.getAdmin(req.session.adminId);
+      const admin = await storage.getAdmin(adminId);
       if (!admin) {
         return res.status(401).json(null);
       }
