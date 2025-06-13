@@ -457,8 +457,8 @@ export default function FixedMealSelector({
                       </div>
                     </div>
                     
-                    {/* Individual portion size controls for selected meals */}
-                    {isSelected && (
+                    {/* Individual portion size controls for selected meals - only show for Mix & Match */}
+                    {isSelected && (defaultPortionSize === 'mixed' || defaultPortionSize === 'mix') && (
                       <div className="border-t bg-gray-50 p-4">
                         <Label className="text-sm font-medium mb-3 block">Portion Sizes:</Label>
                         <div className="space-y-2">
@@ -485,6 +485,18 @@ export default function FixedMealSelector({
                               </div>
                             );
                           })}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Show default portion size for Standard/Large subscriptions */}
+                    {isSelected && defaultPortionSize !== 'mixed' && defaultPortionSize !== 'mix' && (
+                      <div className="border-t bg-gray-50 p-4">
+                        <div className="text-sm text-gray-600">
+                          All meals: {defaultPortionSize === 'large' ? 'Large' : 'Standard'} portion
+                          {defaultPortionSize === 'large' && (
+                            <span className="ml-2 text-green-600 font-medium">+99 EGP each</span>
+                          )}
                         </div>
                       </div>
                     )}
