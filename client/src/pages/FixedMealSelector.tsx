@@ -323,21 +323,37 @@ export default function FixedMealSelector({
                     </div>
                   </div>
                   
-                  {/* Show portion sizes for each meal instance */}
+                  {/* Interactive portion size controls for each meal instance */}
                   <div className="border-t bg-gray-50 p-4">
-                    <div className="grid grid-cols-1 gap-2">
-                      {group.items.map((mealItem: WeekItem, itemIndex: number) => (
-                        <div key={mealItem.id} className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">
-                            {group.items.length > 1 ? `Meal ${itemIndex + 1}:` : 'Portion:'}
-                          </span>
-                          <span className="font-medium">
-                            {mealItem.portionSize === 'standard' ? 'Standard' : 
-                             mealItem.portionSize === 'large' ? 'Large' : 
-                             mealItem.portionSize || 'Not selected'}
-                          </span>
-                        </div>
-                      ))}
+                    <div className="grid grid-cols-1 gap-3">
+                      {group.items.map((mealItem: WeekItem, itemIndex: number) => {
+                        const actualIndex = selectedItems.findIndex(item => item.id === mealItem.id);
+                        return (
+                          <div key={mealItem.id} className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">
+                              {group.items.length > 1 ? `Meal ${itemIndex + 1}:` : 'Portion size:'}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <Select
+                                value={mealItem.portionSize || ""}
+                                onValueChange={(value) => handlePortionSizeChange(actualIndex, value, true)}
+                              >
+                                <SelectTrigger className="w-28 h-8 text-xs">
+                                  <SelectValue placeholder="Choose size" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="standard">Standard</SelectItem>
+                                  <SelectItem value="large">Large</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              {/* Show price difference for large portions */}
+                              {mealItem.portionSize === 'large' && (
+                                <span className="text-xs text-green-600 font-medium">+99 EGP</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
