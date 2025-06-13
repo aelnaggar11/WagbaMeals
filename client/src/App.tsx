@@ -65,10 +65,18 @@ function App() {
       location.startsWith('/checkout');
     const isAdminRoute = location.startsWith('/admin');
       
+    // Redirect authenticated users away from auth page to their account
+    if (!userLoading && user && location === '/auth') {
+      window.location.href = '/account';
+      return;
+    }
+    
+    // Redirect unauthenticated users from protected routes to auth
     if (!userLoading && !user && isUserRoute) {
       window.location.href = '/auth';
     }
     
+    // Admin redirects
     if (!adminLoading && !admin && isAdminRoute && location !== '/admin/login') {
       window.location.href = '/admin/login';
     }
