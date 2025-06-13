@@ -966,18 +966,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let order = await storage.getOrderByUserAndWeek(req.session.userId!, week.id);
         const orderDeadlinePassed = new Date(week.orderDeadline) <= now;
 
-        // If no order exists, create one with user's default meal count
+        // If no order exists, create one with user's default meal count and portion preference
         if (!order) {
-          // Get user's default meal count from their most recent order
+          // Get user's default meal count and portion size from their most recent order
           const userOrders = await storage.getOrdersByUser(req.session.userId!);
           const defaultMealCount = userOrders.length > 0 ? userOrders[userOrders.length - 1].mealCount : 4;
+          const defaultPortionSize = userOrders.length > 0 ? userOrders[userOrders.length - 1].defaultPortionSize : 'standard';
 
           order = await storage.createOrder({
             userId: req.session.userId!,
             weekId: week.id,
             status: 'not_selected',
             mealCount: defaultMealCount,
-            defaultPortionSize: 'standard',
+            defaultPortionSize: defaultPortionSize,
             subtotal: 0,
             discount: 0,
             total: 0,
