@@ -45,6 +45,7 @@ Wagba is a full-stack meal delivery application focused on weekly meal plans. Th
 - **Order Lifecycle**: Draft → Pending → Confirmed → Delivered workflow
 - **Skip Functionality**: Allow users to skip weeks without canceling
 - **Order Modification**: Edit meals before order deadline
+- **Delivery Editing**: Change meal count and portion size for specific weeks, with option to apply to all future deliveries
 - **Pricing Engine**: Dynamic pricing based on meal count and portion size
 
 ### Admin Dashboard

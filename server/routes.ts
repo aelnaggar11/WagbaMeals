@@ -1130,6 +1130,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update delivery preferences for a specific week
+  app.patch('/api/orders/:weekId/delivery', authMiddleware, async (req, res) => {
+    try {
+      const weekId = parseInt(req.params.weekId);
+      const { mealCount, defaultPortionSize, applyToFuture } = req.body;
+      const userId = req.session.userId!;
+
+      // Validate input
+      if (!mealCount || !defaultPortionSize) {
+        return res.status(400).json({ message: 'Meal count and portion size are required' });
+      }
+
+      // Validate meal count
+      const validMealCounts = [5, 7, 10, 14];
+      if (!validMealCounts.includes(parseInt(mealCount))) {
+        return res.status(400).json({ message: 'Invalid meal count' });
+      }
+
+      // Validate portion size
+      if (!['standard', 'large'].includes(defaultPortionSize)) {
+        return res.status(400).json({ message: 'Invalid portion size' });
+      }
+
+      // Check if the week exists and order deadline hasn't passed
+      const week = await storage.getWeek(weekId);
+      if (!week) {
+        return res.status(404).json({ message: 'Week not found' });
+      }
+
+      const now = new Date();
+      const deadline = new Date(week.orderDeadline);
+      if (deadline < now) {
+        return res.status(400).json({ message: 'Order deadline has passed for this week' });
+      }
+
+      // Get or create order for this week
+      let order = await storage.getOrderByUserAndWeek(userId, weekId);
+      
+      if (!order) {
+        // Create new order if it doesn't exist
+        const pricePerMeal = getPriceForMealCount(parseInt(mealCount));
+        const largePortionAdditional = defaultPortionSize === 'large' ? 99 : 0;
+        const itemPrice = pricePerMeal + largePortionAdditional;
+        const subtotal = itemPrice * parseInt(mealCount);
+        const fullPriceTotal = parseInt(mealCount) * 249;
+        const discount = Math.max(0, fullPriceTotal - subtotal);
+
+        order = await storage.createOrder({
+          userId,
+          weekId,
+          mealCount: parseInt(mealCount),
+          defaultPortionSize,
+          subtotal,
+          discount,
+          total: subtotal
+        });
+      } else {
+        // Update existing order
+        const pricePerMeal = getPriceForMealCount(parseInt(mealCount));
+        const largePortionAdditional = defaultPortionSize === 'large' ? 99 : 0;
+        const itemPrice = pricePerMeal + largePortionAdditional;
+        const subtotal = itemPrice * parseInt(mealCount);
+        const fullPriceTotal = parseInt(mealCount) * 249;
+        const discount = Math.max(0, fullPriceTotal - subtotal);
+
+        order = await storage.updateOrder(order.id, {
+          mealCount: parseInt(mealCount),
+          defaultPortionSize,
+          subtotal,
+          discount,
+          total: subtotal
+        });
+      }
+
+      // If applyToFuture is true, update all future weeks as well
+      if (applyToFuture) {
+        const allWeeks = await storage.getWeeks();
+        const futureWeeks = allWeeks.filter(w => {
+          const wDeliveryDate = new Date(w.deliveryDate);
+          const currentWeekDeliveryDate = new Date(week.deliveryDate);
+          const wDeadline = new Date(w.orderDeadline);
+          return wDeliveryDate > currentWeekDeliveryDate && wDeadline > now;
+        });
+
+        for (const futureWeek of futureWeeks) {
+          let futureOrder = await storage.getOrderByUserAndWeek(userId, futureWeek.id);
+          
+          const pricePerMeal = getPriceForMealCount(parseInt(mealCount));
+          const largePortionAdditional = defaultPortionSize === 'large' ? 99 : 0;
+          const itemPrice = pricePerMeal + largePortionAdditional;
+          const subtotal = itemPrice * parseInt(mealCount);
+          const fullPriceTotal = parseInt(mealCount) * 249;
+          const discount = Math.max(0, fullPriceTotal - subtotal);
+
+          if (!futureOrder) {
+            // Create new order for future week
+            await storage.createOrder({
+              userId,
+              weekId: futureWeek.id,
+              mealCount: parseInt(mealCount),
+              defaultPortionSize,
+              subtotal,
+              discount,
+              total: subtotal
+            });
+          } else {
+            // Update existing future order
+            await storage.updateOrder(futureOrder.id, {
+              mealCount: parseInt(mealCount),
+              defaultPortionSize,
+              subtotal,
+              discount,
+              total: subtotal
+            });
+          }
+        }
+      }
+
+      res.json({ 
+        message: 'Delivery preferences updated successfully',
+        order,
+        updatedFutureWeeks: applyToFuture
+      });
+    } catch (error) {
+      console.error('Error updating delivery preferences:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   // Helper function to auto-skip preceding weeks for first-time users
   const autoSkipPrecedingWeeks = async (userId: number, selectedWeekId: number) => {
     try {
