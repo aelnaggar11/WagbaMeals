@@ -199,7 +199,7 @@ const AccountPage = () => {
 
   // Set initial selected week when data is loaded and sync local state
   useEffect(() => {
-    if (upcomingMealsData?.upcomingMeals && upcomingMealsData.upcomingMeals.length > 0) {
+    if ((upcomingMealsData as any)?.upcomingMeals && (upcomingMealsData as any).upcomingMeals.length > 0) {
       // Initialize local state with server data if not already set
       if (!localUpcomingMeals) {
         setLocalUpcomingMeals(upcomingMealsData);
@@ -208,14 +208,14 @@ const AccountPage = () => {
       // Set initial selected week to the first week with a confirmed order (first delivery)
       if (!selectedWeekId) {
         // Find the first week that has an order and is not skipped
-        const firstDeliveryWeek = upcomingMealsData.upcomingMeals.find((week: any) => 
+        const firstDeliveryWeek = (upcomingMealsData as any).upcomingMeals.find((week: any) => 
           week.orderId && !week.isSkipped
         );
 
         // If we found a week with a delivery, use that; otherwise use the first available week
         const weekToSelect = firstDeliveryWeek 
           ? firstDeliveryWeek.weekId 
-          : upcomingMealsData.upcomingMeals[0].weekId;
+          : (upcomingMealsData as any).upcomingMeals[0].weekId;
 
         setSelectedWeekId(weekToSelect);
       }
@@ -241,9 +241,9 @@ const AccountPage = () => {
   useEffect(() => {
     if (profile) {
       setFormData({
-        name: profile.name || "",
-        email: profile.email || "",
-        phone: profile.phone || "",
+        name: (profile as any).name || "",
+        email: (profile as any).email || "",
+        phone: (profile as any).phone || "",
         street: "",
         building: "",
         apartment: "",
@@ -252,9 +252,9 @@ const AccountPage = () => {
       });
 
       // Parse address if available
-      if (profile.address) {
+      if ((profile as any).address) {
         try {
-          const addressObj = JSON.parse(profile.address);
+          const addressObj = JSON.parse((profile as any).address);
           setFormData(prev => ({
             ...prev,
             street: addressObj.street || "",
@@ -524,12 +524,12 @@ const AccountPage = () => {
         setAvailableMeals(response.meals || []);
 
         // Get current meal selections for this week from upcoming meals data
-        const currentWeek = displayUpcomingMeals?.upcomingMeals.find(week => week.weekId === selectedWeekId);
+        const currentWeek = displayUpcomingMeals?.upcomingMeals.find((week: any) => week.weekId === selectedWeekId);
         if (currentWeek) {
           setMealCount(currentWeek.mealCount);
 
           // Convert week items to OrderItems
-          const orderItems: OrderItem[] = currentWeek.items.map(item => ({
+          const orderItems: OrderItem[] = currentWeek.items.map((item: any) => ({
             mealId: item.mealId,
             portionSize: item.portionSize as PortionSize
           }));
@@ -748,6 +748,7 @@ const AccountPage = () => {
                                   </Button>
                                 )}
                               </div>
+                            </div>
                             </CardContent>
                           </Card>
 
