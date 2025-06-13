@@ -271,7 +271,7 @@ export default function FixedMealSelector({
     );
   }
 
-  const meals = data?.meals || [];
+  const meals = (data as any)?.meals || [];
 
   return (
     <div>

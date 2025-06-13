@@ -601,7 +601,7 @@ const AccountPage = () => {
                 <div className="space-y-6">
                   {/* Week selector */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-8">
-                    {displayUpcomingMeals.upcomingMeals.map((week) => (
+                    {displayUpcomingMeals.upcomingMeals.map((week: any) => (
                       <button
                         key={week.weekId}
                         onClick={() => setSelectedWeekId(week.weekId)}
@@ -622,7 +622,7 @@ const AccountPage = () => {
                   </div>
 
                   {/* Selected week details */}
-                  {selectedWeekId && displayUpcomingMeals.upcomingMeals.map(week => {
+                  {selectedWeekId && displayUpcomingMeals.upcomingMeals.map((week: any) => {
                     if (week.weekId !== selectedWeekId) return null;
 
                     const deadline = new Date(week.orderDeadline);
@@ -640,10 +640,10 @@ const AccountPage = () => {
                             <CardDescription>
                               <div className="text-sm mt-2">
                                 <span className="block mb-1">
-                                  <strong>Order By:</strong> {formatDate(deadline, true)}
+                                  <strong>Order By:</strong> {formatDate(deadline)}
                                 </span>
                                 <span className="block">
-                                  <strong>Delivery Date:</strong> {formatDate(deliveryDate, true)}
+                                  <strong>Delivery Date:</strong> {formatDate(deliveryDate)}
                                 </span>
                               </div>
                             </CardDescription>
@@ -784,7 +784,7 @@ const AccountPage = () => {
             <div>
               <h2 className="text-2xl font-bold text-primary mb-6">Order History</h2>
 
-              {ordersData?.orders && ordersData.orders.length > 0 ? (
+              {(ordersData as any)?.orders && (ordersData as any).orders.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -796,16 +796,16 @@ const AccountPage = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {ordersData.orders.map((order: Order) => (
+                    {(ordersData as any).orders.map((order: any) => (
                       <TableRow key={order.id}>
                         <TableCell className="font-medium">#{order.id}</TableCell>
-                        <TableCell>{formatDate(new Date(order.createdAt))}</TableCell>
+                        <TableCell>{order.createdAt ? formatDate(new Date(order.createdAt)) : 'N/A'}</TableCell>
                         <TableCell>
-                          <span className={getStatusClass(order.status)}>
-                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          <span className={order.status ? getStatusClass(order.status) : ''}>
+                            {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Unknown'}
                           </span>
                         </TableCell>
-                        <TableCell>${order.total.toFixed(2)}</TableCell>
+                        <TableCell>${order.total ? order.total.toFixed(2) : '0.00'}</TableCell>
                         <TableCell>
                           <Button 
                             variant="outline" 
