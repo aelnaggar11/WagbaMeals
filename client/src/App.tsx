@@ -34,26 +34,14 @@ function App() {
   const { data: user, isLoading: userLoading } = useQuery<User | null>({
     queryKey: ['/api/auth/me'],
     queryFn: async () => {
-      const res = await fetch('/api/auth/me', { 
-        credentials: 'include',
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
-      });
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
       if (res.status === 401) return null;
       if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
       return res.json();
     },
     refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    staleTime: 0, // Always refetch to ensure fresh auth state
-    retry: (failureCount, error) => {
-      // Don't retry 401 errors
-      if (error instanceof Error && error.message.includes('401')) {
-        return false;
-      }
-      return failureCount < 2;
-    }
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1
   });
 
   // Admin authentication query with proper 401 handling

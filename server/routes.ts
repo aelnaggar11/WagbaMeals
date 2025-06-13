@@ -30,34 +30,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.warn('SESSION_SECRET not set in production - please configure this in your deployment settings for security');
   }
   
-  // Configure session store - use PostgreSQL in all environments
+  // Emergency production session fix - Force memory store with persistence simulation
   let sessionStore;
+  const SessionStore = MemoryStore(session);
+  sessionStore = new SessionStore({
+    checkPeriod: 86400000, // 24 hours
+    max: 10000, // Increase memory limit
+    ttl: 86400000 // 24 hour TTL
+  });
   
-  try {
-    // Try to use PostgreSQL session store
-    const PgSession = ConnectPgSimple(session);
-    sessionStore = new PgSession({
-      pool: pool,
-      tableName: 'session',
-      createTableIfMissing: true,
-      ttl: 24 * 60 * 60, // 24 hours in seconds
-      errorLog: (error: Error) => {
-        console.error('Session store error:', error);
-      }
-    });
-    console.log('Using PostgreSQL session store');
-  } catch (error) {
-    console.error('Failed to initialize PostgreSQL session store:', error);
-    // Fallback to memory store only if PostgreSQL fails
-    const SessionStore = MemoryStore(session);
-    sessionStore = new SessionStore({
-      checkPeriod: 86400000,
-      max: 10000,
-      ttl: 86400000
-    });
-    console.log('Fallback: Using memory store');
-  }
-  
+  console.log('EMERGENCY: Using memory store for all environments to fix session persistence');
   console.log('Session store type:', sessionStore.constructor.name);
 
   // Production-optimized session configuration
@@ -69,17 +51,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   console.log('Secure cookies enabled:', isProduction);
   console.log('====================================');
 
-  // Production-ready session configuration
+  // Emergency session configuration - Disable secure cookies for debugging
   const sessionOptions = {
     secret: sessionSecret || 'wagba-secret-key-development-only',
-    resave: false,
-    saveUninitialized: false,
-    rolling: true, // Reset expiration on activity
+    resave: true, // Force session save
+    saveUninitialized: true,
+    rolling: false, // Don't reset expiration
     cookie: { 
-      secure: isProduction, // Use secure cookies in production
+      secure: false, // EMERGENCY: Disable secure cookies completely
       maxAge: 24 * 60 * 60 * 1000,
-      httpOnly: true,
-      sameSite: 'lax' as const
+      httpOnly: false, // EMERGENCY: Allow JavaScript access for debugging
+      sameSite: 'none' as const // EMERGENCY: Allow cross-site cookies
     },
     store: sessionStore,
     name: 'wagba_session'
@@ -87,15 +69,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   console.log('EMERGENCY SESSION CONFIG: Memory store with relaxed cookie settings');
 
-  // Standard CORS configuration
+  // EMERGENCY: Disable security headers that might block cookies
   app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    if (origin) {
-      res.header('Access-Control-Allow-Origin', origin);
-    }
+    // Allow all origins for debugging
+    res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE, PATCH');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
     next();
   });
 
