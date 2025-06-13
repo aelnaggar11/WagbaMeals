@@ -325,36 +325,48 @@ export default function FixedMealSelector({
                         )}
                       </div>
                       
-                      {/* Portion size controls inline with meal info */}
-                      <div className="mt-3 space-y-2">
-                        {group.items.map((mealItem: WeekItem, itemIndex: number) => {
-                          const actualIndex = selectedItems.findIndex(item => item.id === mealItem.id);
-                          return (
-                            <div key={mealItem.id} className="flex items-center justify-between text-sm">
-                              <span className="text-gray-600">
-                                {group.items.length > 1 ? `Meal ${itemIndex + 1}:` : 'Portion:'}
-                              </span>
-                              <div className="flex items-center gap-2">
-                                <Select
-                                  value={mealItem.portionSize || ""}
-                                  onValueChange={(value) => handlePortionSizeChange(actualIndex, value, true)}
-                                >
-                                  <SelectTrigger className="w-24 h-7 text-xs">
-                                    <SelectValue placeholder="Size" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="standard">Standard</SelectItem>
-                                    <SelectItem value="large">Large</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                {mealItem.portionSize === 'large' && (
-                                  <span className="text-xs text-green-600 font-medium">+99 EGP</span>
-                                )}
+                      {/* Portion size controls - only show for Mix & Match subscriptions */}
+                      {defaultPortionSize === 'mixed' && (
+                        <div className="mt-3 space-y-2">
+                          {group.items.map((mealItem: WeekItem, itemIndex: number) => {
+                            const actualIndex = selectedItems.findIndex(item => item.id === mealItem.id);
+                            return (
+                              <div key={mealItem.id} className="flex items-center justify-between text-sm">
+                                <span className="text-gray-600">
+                                  {group.items.length > 1 ? `Meal ${itemIndex + 1}:` : 'Portion:'}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <Select
+                                    value={mealItem.portionSize || ""}
+                                    onValueChange={(value) => handlePortionSizeChange(actualIndex, value)}
+                                  >
+                                    <SelectTrigger className="w-24 h-7 text-xs">
+                                      <SelectValue placeholder="Choose" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="standard">Standard</SelectItem>
+                                      <SelectItem value="large">Large</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  {mealItem.portionSize === 'large' && (
+                                    <span className="text-xs text-green-600 font-medium">+99 EGP</span>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      
+                      {/* Show default portion size for Standard/Large subscriptions */}
+                      {defaultPortionSize !== 'mixed' && (
+                        <div className="mt-2 text-sm text-gray-600">
+                          All meals: {defaultPortionSize === 'large' ? 'Large' : 'Standard'} portion
+                          {defaultPortionSize === 'large' && (
+                            <span className="ml-2 text-green-600 font-medium">+99 EGP each</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

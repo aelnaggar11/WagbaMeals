@@ -127,7 +127,10 @@ Wagba is a full-stack meal delivery application focused on weekly meal plans. Th
 - Session persistence across application restarts
 
 ## Changelog
-- June 13, 2025. Initial setup
+- June 13, 2025: Individual meal portion size controls implemented with conditional display based on subscription type
+- June 13, 2025: Mix & Match subscriptions show interactive portion controls, Standard/Large show static text
+- June 13, 2025: Enhanced delivery editing with 4-15 meal count dropdown and existing pricing tiers
+- June 13, 2025: Initial setup
 
 ## User Preferences
 
