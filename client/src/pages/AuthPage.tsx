@@ -213,14 +213,23 @@ const AuthPage = () => {
             });
           }
           
-          // Invalidate pending order query to ensure fresh data
+          // Invalidate all relevant queries to ensure fresh auth state
+          await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
           await queryClient.invalidateQueries({ queryKey: ['/api/orders/pending'] });
+          await queryClient.invalidateQueries({ queryKey: ['/api/user/profile'] });
           
           // Clear the saved selections
           sessionStorage.removeItem('mealSelections');
           
-          // Wait for queries to update
-          await new Promise(resolve => setTimeout(resolve, 300));
+          // Wait longer for authentication and order state to stabilize
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Pre-fetch the user data to ensure authentication is working
+          try {
+            await queryClient.fetchQuery({ queryKey: ['/api/auth/me'] });
+          } catch (error) {
+            console.log('Auth prefetch failed, proceeding anyway:', error);
+          }
           
           // Redirect to checkout
           navigate('/checkout');

@@ -233,6 +233,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Set session
       req.session.userId = user.id;
 
+      // BACKUP: Create user token as fallback for immediate authentication
+      const userToken = Buffer.from(`${user.id}:${Date.now()}:${user.email}`).toString('base64');
+      
+      // Force session save
+      req.session.save((err) => {
+        if (err) {
+          console.error('User session save error:', err);
+        }
+      });
+
+      // Set user token cookie as backup
+      res.cookie('wagba_auth_token', userToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000
+      });
+
       // Check if there are temporary meal selections to create an order
       if (req.session.tempMealSelections) {
         try {

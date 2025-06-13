@@ -20,11 +20,19 @@ const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [deliveryNotes, setDeliveryNotes] = useState("");
   
-  // Fetch current order with retry and error handling
+  // Fetch current order with enhanced retry and error handling for onboarding
   const { data: pendingOrder, isLoading, error, refetch } = useQuery<Order>({
     queryKey: ['/api/orders/pending'],
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retry: (failureCount, error) => {
+      // During onboarding, retry authentication errors more aggressively
+      if (error?.message?.includes('401') && failureCount < 5) {
+        return true;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: attemptIndex => Math.min(500 * 2 ** attemptIndex, 5000),
+    refetchOnWindowFocus: true,
+    staleTime: 0, // Always fetch fresh data for pending orders
   });
   
   // Fetch user profile for delivery address
@@ -48,15 +56,20 @@ const CheckoutPage = () => {
     phone: ""
   });
   
-  // Auto-retry fetching pending order if it fails initially (helps with timing issues after registration)
+  // Enhanced auto-retry with authentication state monitoring
   useEffect(() => {
-    if (error && !pendingOrder) {
+    if (error && !pendingOrder && !isLoading) {
+      // If it's an auth error, also try to refresh the auth state
+      if (error.message?.includes('401')) {
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      }
+      
       const timer = setTimeout(() => {
         refetch();
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [error, pendingOrder, refetch]);
+  }, [error, pendingOrder, isLoading, refetch, queryClient]);
 
   // Update address form with user profile data when available
   useEffect(() => {
