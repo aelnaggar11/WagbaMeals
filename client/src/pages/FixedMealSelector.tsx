@@ -337,11 +337,11 @@ export default function FixedMealSelector({
                                 </span>
                                 <div className="flex items-center gap-2">
                                   <Select
-                                    value={mealItem.portionSize || ""}
+                                    value={mealItem.portionSize || "standard"}
                                     onValueChange={(value) => handlePortionSizeChange(actualIndex, value)}
                                   >
                                     <SelectTrigger className="w-24 h-7 text-xs">
-                                      <SelectValue placeholder="Choose" />
+                                      <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
                                       <SelectItem value="standard">Standard</SelectItem>
