@@ -63,11 +63,43 @@ const AccountPage = () => {
     retry: 1
   });
 
-  console.log("AccountPage - Auth State:", {
-    currentUser: !!currentUser,
-    isUserLoading,
-    userId: currentUser?.id,
-    location
+  // Get user profile
+  const { data: profile, isLoading: isProfileLoading } = useQuery({
+    queryKey: ['/api/user/profile'],
+    enabled: !!currentUser
+  });
+
+  // Get order history
+  const { data: ordersData } = useQuery({
+    queryKey: ['/api/orders'],
+    enabled: !!currentUser
+  });
+
+  // Get upcoming meals with local state for immediate updates
+  const { data: upcomingMealsData, isLoading: isLoadingUpcomingMeals } = useQuery({
+    queryKey: ['/api/user/upcoming-meals'],
+    enabled: !!currentUser
+  });
+
+  // Local state to override server data for immediate UI updates
+  const [localUpcomingMeals, setLocalUpcomingMeals] = useState<any>(null);
+
+  // Available meals
+  const [availableMeals, setAvailableMeals] = useState<Meal[]>([]);
+  const [selectedMeals, setSelectedMeals] = useState<OrderItem[]>([]);
+  const [selectedWeekId, setSelectedWeekId] = useState<number | null>(null);
+  const [mealCount, setMealCount] = useState(0);
+
+  // Form state
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    street: "",
+    building: "",
+    apartment: "",
+    area: "",
+    landmark: ""
   });
 
   // Use useEffect for navigation to avoid hook order issues
@@ -93,6 +125,13 @@ const AccountPage = () => {
   if (!currentUser) {
     return null;
   }
+
+  console.log("AccountPage - Auth State:", {
+    currentUser: !!currentUser,
+    isUserLoading,
+    userId: currentUser?.id,
+    location
+  });
 
   // Calculate pricing for delivery editing
   const calculateDeliveryPrice = (mealCount: number, portionSize: string) => {
@@ -170,33 +209,6 @@ const AccountPage = () => {
     return weekLabel;
   };
 
-  // Get user profile
-  const { data: profile, isLoading: isProfileLoading } = useQuery({
-    queryKey: ['/api/user/profile'],
-    enabled: !!currentUser
-  });
-
-  // Get order history
-  const { data: ordersData } = useQuery({
-    queryKey: ['/api/orders'],
-    enabled: !!currentUser
-  });
-
-  // Get upcoming meals with local state for immediate updates
-  const { data: upcomingMealsData, isLoading: isLoadingUpcomingMeals } = useQuery({
-    queryKey: ['/api/user/upcoming-meals'],
-    enabled: !!currentUser
-  });
-
-  // Local state to override server data for immediate UI updates
-  const [localUpcomingMeals, setLocalUpcomingMeals] = useState<any>(null);
-
-  // Available meals
-  const [availableMeals, setAvailableMeals] = useState<Meal[]>([]);
-  const [selectedMeals, setSelectedMeals] = useState<OrderItem[]>([]);
-  const [selectedWeekId, setSelectedWeekId] = useState<number | null>(null);
-  const [mealCount, setMealCount] = useState(0);
-
   // Set initial selected week when data is loaded and sync local state
   useEffect(() => {
     if ((upcomingMealsData as any)?.upcomingMeals && (upcomingMealsData as any).upcomingMeals.length > 0) {
@@ -224,18 +236,6 @@ const AccountPage = () => {
 
   // Use local state if available, otherwise fall back to server data
   const displayUpcomingMeals = localUpcomingMeals || upcomingMealsData;
-
-  // Form state
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    street: "",
-    building: "",
-    apartment: "",
-    area: "",
-    landmark: ""
-  });
 
   // Update form data when profile data is loaded
   useEffect(() => {
