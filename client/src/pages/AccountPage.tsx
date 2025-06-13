@@ -20,6 +20,37 @@ const AccountPage = () => {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
 
+  // All state declarations must be at the top level
+  const [isEditing, setIsEditing] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isLoadingMeals, setIsLoadingMeals] = useState(false);
+
+  // Single state variable to track which week is being processed
+  const [processingWeekId, setProcessingWeekId] = useState<number | null>(null);
+
+  // Delivery editing state
+  const [editingDelivery, setEditingDelivery] = useState<{
+    weekId: number;
+    currentMealCount: number;
+    currentPortionSize: string;
+  } | null>(null);
+  const [editForm, setEditForm] = useState({
+    mealCount: 0,
+    portionSize: 'standard' as 'standard' | 'large' | 'mixed',
+    applyToFuture: false
+  });
+
+  // Payment method editing state
+  const [editingPayment, setEditingPayment] = useState<{
+    weekId: number;
+    orderId: number;
+    currentPaymentMethod: string | null;
+  } | null>(null);
+  const [paymentForm, setPaymentForm] = useState({
+    paymentMethod: 'credit_card' as 'credit_card' | 'cash' | 'bank_transfer',
+    applyToFuture: false
+  });
+
   // Get current user with proper loading state handling
   const { data: currentUser, isLoading: isUserLoading } = useQuery<User | null>({
     queryKey: ['/api/auth/me'],
@@ -62,35 +93,6 @@ const AccountPage = () => {
   if (!currentUser) {
     return null;
   }
-  const [isEditing, setIsEditing] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isLoadingMeals, setIsLoadingMeals] = useState(false);
-
-  // Single state variable to track which week is being processed
-  const [processingWeekId, setProcessingWeekId] = useState<number | null>(null);
-
-  // Delivery editing state
-  const [editingDelivery, setEditingDelivery] = useState<{
-    weekId: number;
-    currentMealCount: number;
-    currentPortionSize: string;
-  } | null>(null);
-  const [editForm, setEditForm] = useState({
-    mealCount: 0,
-    portionSize: 'standard' as 'standard' | 'large' | 'mixed',
-    applyToFuture: false
-  });
-
-  // Payment method editing state
-  const [editingPayment, setEditingPayment] = useState<{
-    weekId: number;
-    orderId: number;
-    currentPaymentMethod: string | null;
-  } | null>(null);
-  const [paymentForm, setPaymentForm] = useState({
-    paymentMethod: 'credit_card' as 'credit_card' | 'cash' | 'bank_transfer',
-    applyToFuture: false
-  });
 
   // Calculate pricing for delivery editing
   const calculateDeliveryPrice = (mealCount: number, portionSize: string) => {
@@ -206,7 +208,7 @@ const AccountPage = () => {
       // Set initial selected week to the first week with a confirmed order (first delivery)
       if (!selectedWeekId) {
         // Find the first week that has an order and is not skipped
-        const firstDeliveryWeek = upcomingMealsData.upcomingMeals.find(week => 
+        const firstDeliveryWeek = upcomingMealsData.upcomingMeals.find((week: any) => 
           week.orderId && !week.isSkipped
         );
 
