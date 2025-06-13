@@ -77,10 +77,14 @@ function App() {
       location.startsWith('/checkout');
     const isAdminRoute = location.startsWith('/admin');
       
-    // Redirect authenticated users away from auth page to their account
+    // Only redirect authenticated users away from auth page after a delay
+    // to allow registration/login flows to complete their own redirects
     if (!userLoading && user && location === '/auth') {
-      window.location.href = '/account';
-      return;
+      const timeoutId = setTimeout(() => {
+        window.location.href = '/account';
+      }, 2000); // 2 second delay to allow AuthPage redirects to complete
+      
+      return () => clearTimeout(timeoutId);
     }
     
     // Redirect unauthenticated users from protected routes to auth
