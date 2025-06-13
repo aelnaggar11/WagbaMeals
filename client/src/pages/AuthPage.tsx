@@ -181,6 +181,7 @@ const AuthPage = () => {
       // Invalidate all auth-related queries to refresh auth state
       await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       await queryClient.invalidateQueries({ queryKey: ['/api/user/profile'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/orders/pending'] });
       
       toast({
         title: "Registration successful",
@@ -238,17 +239,22 @@ const AuthPage = () => {
           sessionStorage.removeItem('mealSelections');
           
           // Wait longer for authentication and order state to stabilize
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 1500));
           
           // Pre-fetch the user data to ensure authentication is working
           try {
-            await queryClient.fetchQuery({ queryKey: ['/api/auth/me'] });
+            const authData = await queryClient.fetchQuery({ queryKey: ['/api/auth/me'] });
+            if (!authData) {
+              throw new Error('Authentication failed');
+            }
           } catch (error) {
             console.log('Auth prefetch failed, proceeding anyway:', error);
           }
           
-          // Redirect to checkout
-          navigate('/checkout');
+          // Force a page reload to ensure clean state before redirect
+          setTimeout(() => {
+            window.location.href = '/checkout';
+          }, 500);
         } catch (error) {
           console.error("Error handling order after registration:", error);
           
@@ -258,21 +264,26 @@ const AuthPage = () => {
         }
       } else {
         // No saved selections, wait for auth state to update then redirect to account
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 1500));
         
         // Pre-fetch the user data to ensure authentication is working
         try {
-          await queryClient.fetchQuery({ queryKey: ['/api/auth/me'] });
+          const authData = await queryClient.fetchQuery({ queryKey: ['/api/auth/me'] });
+          if (!authData) {
+            throw new Error('Authentication failed');
+          }
         } catch (error) {
           console.log('Auth prefetch failed, proceeding anyway:', error);
         }
         
-        // Redirect to return URL if available or account page
-        if (returnTo) {
-          navigate(returnTo);
-        } else {
-          navigate('/account');
-        }
+        // Force a page reload to ensure clean state before redirect
+        setTimeout(() => {
+          if (returnTo) {
+            window.location.href = returnTo;
+          } else {
+            window.location.href = '/account';
+          }
+        }, 500);
       }
     } catch (error) {
       toast({

@@ -70,26 +70,21 @@ function App() {
     retry: 1
   });
   
-  // Handle auth redirects
+  // Handle auth redirects with improved timing
   useEffect(() => {
     const isUserRoute = 
       location.startsWith('/account') || 
       location.startsWith('/checkout');
     const isAdminRoute = location.startsWith('/admin');
       
-    // Only redirect authenticated users away from auth page after a delay
-    // to allow registration/login flows to complete their own redirects
-    if (!userLoading && user && location === '/auth') {
+    // Only redirect unauthenticated users from protected routes to auth
+    // Don't redirect authenticated users away from auth page - let AuthPage handle it
+    if (!userLoading && !user && isUserRoute) {
       const timeoutId = setTimeout(() => {
-        window.location.href = '/account';
-      }, 2000); // 2 second delay to allow AuthPage redirects to complete
+        window.location.href = '/auth?returnTo=' + encodeURIComponent(location);
+      }, 500); // Small delay to allow auth state to stabilize
       
       return () => clearTimeout(timeoutId);
-    }
-    
-    // Redirect unauthenticated users from protected routes to auth
-    if (!userLoading && !user && isUserRoute) {
-      window.location.href = '/auth';
     }
     
     // Admin redirects
