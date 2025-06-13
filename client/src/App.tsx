@@ -58,20 +58,25 @@ function App() {
     retry: 1
   });
   
-  // Handle auth redirects
+  // Handle auth redirects with a delay to avoid premature redirects after checkout
   useEffect(() => {
     const isUserRoute = 
       location.startsWith('/account') || 
       location.startsWith('/checkout');
     const isAdminRoute = location.startsWith('/admin');
       
-    if (!userLoading && !user && isUserRoute) {
-      window.location.href = '/auth';
-    }
+    // Add a small delay for auth state to stabilize after operations like checkout
+    const timeoutId = setTimeout(() => {
+      if (!userLoading && !user && isUserRoute) {
+        window.location.href = '/auth';
+      }
+      
+      if (!adminLoading && !admin && isAdminRoute && location !== '/admin/login') {
+        window.location.href = '/admin/login';
+      }
+    }, 500); // 500ms delay
     
-    if (!adminLoading && !admin && isAdminRoute && location !== '/admin/login') {
-      window.location.href = '/admin/login';
-    }
+    return () => clearTimeout(timeoutId);
   }, [user, admin, userLoading, adminLoading, location]);
   
   // Show loading spinner for protected routes

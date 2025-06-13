@@ -122,8 +122,9 @@ const CheckoutPage = () => {
         deliveryNotes
       });
       
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      // Invalidate queries to refresh data including auth state
+      await queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       
       toast({
         title: "Order placed successfully!",
@@ -131,8 +132,10 @@ const CheckoutPage = () => {
         variant: "default"
       });
       
-      // Redirect to account page
-      navigate('/account');
+      // Small delay to ensure auth state is updated before redirect
+      setTimeout(() => {
+        navigate('/account');
+      }, 100);
     } catch (error) {
       toast({
         title: "Error placing order",
