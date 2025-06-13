@@ -307,53 +307,54 @@ export default function FixedMealSelector({
                     </div>
                     
                     <div className="flex-1">
-                      <div className="flex items-center">
-                        <h4 className="font-medium text-lg">{group.meal.title}</h4>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium text-lg">{group.meal.title}</h4>
+                          <div className="flex items-center mt-1 text-sm text-gray-600">
+                            <span>{group.meal.calories || 0} cal</span>
+                            <span className="mx-2">•</span>
+                            <span>{group.meal.protein || 0}g protein</span>
+                          </div>
+                        </div>
+                        
+                        {/* Quantity badge */}
                         {group.items.length > 1 && (
-                          <Badge variant="secondary" className="ml-2">
+                          <Badge variant="secondary" className="mr-4">
                             x{group.items.length}
                           </Badge>
                         )}
                       </div>
-                      <div className="flex items-center mt-1 text-sm text-gray-600">
-                        <span>{group.meal.calories || 0} cal</span>
-                        <span className="mx-2">•</span>
-                        <span>{group.meal.protein || 0}g protein</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Interactive portion size controls for each meal instance */}
-                  <div className="border-t bg-gray-50 p-4">
-                    <div className="grid grid-cols-1 gap-3">
-                      {group.items.map((mealItem: WeekItem, itemIndex: number) => {
-                        const actualIndex = selectedItems.findIndex(item => item.id === mealItem.id);
-                        return (
-                          <div key={mealItem.id} className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">
-                              {group.items.length > 1 ? `Meal ${itemIndex + 1}:` : 'Portion size:'}
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <Select
-                                value={mealItem.portionSize || ""}
-                                onValueChange={(value) => handlePortionSizeChange(actualIndex, value, true)}
-                              >
-                                <SelectTrigger className="w-28 h-8 text-xs">
-                                  <SelectValue placeholder="Choose size" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="standard">Standard</SelectItem>
-                                  <SelectItem value="large">Large</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              {/* Show price difference for large portions */}
-                              {mealItem.portionSize === 'large' && (
-                                <span className="text-xs text-green-600 font-medium">+99 EGP</span>
-                              )}
+                      
+                      {/* Portion size controls inline with meal info */}
+                      <div className="mt-3 space-y-2">
+                        {group.items.map((mealItem: WeekItem, itemIndex: number) => {
+                          const actualIndex = selectedItems.findIndex(item => item.id === mealItem.id);
+                          return (
+                            <div key={mealItem.id} className="flex items-center justify-between text-sm">
+                              <span className="text-gray-600">
+                                {group.items.length > 1 ? `Meal ${itemIndex + 1}:` : 'Portion:'}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <Select
+                                  value={mealItem.portionSize || ""}
+                                  onValueChange={(value) => handlePortionSizeChange(actualIndex, value, true)}
+                                >
+                                  <SelectTrigger className="w-24 h-7 text-xs">
+                                    <SelectValue placeholder="Size" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="standard">Standard</SelectItem>
+                                    <SelectItem value="large">Large</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                {mealItem.portionSize === 'large' && (
+                                  <span className="text-xs text-green-600 font-medium">+99 EGP</span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>
