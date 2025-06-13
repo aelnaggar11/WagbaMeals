@@ -213,7 +213,7 @@ export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 export type UserWeekStatus = typeof userWeekStatuses.$inferSelect;
 export type InsertUserWeekStatus = z.infer<typeof insertUserWeekStatusSchema>;
 
-export type PortionSize = "standard" | "large";
+export type PortionSize = "standard" | "large" | "mixed";
 
 export type OrderStatus = "not_selected" | "selected" | "skipped" | "cancelled";
 

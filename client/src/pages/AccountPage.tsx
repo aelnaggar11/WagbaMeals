@@ -34,7 +34,7 @@ const AccountPage = () => {
   } | null>(null);
   const [editForm, setEditForm] = useState({
     mealCount: 0,
-    portionSize: 'standard' as 'standard' | 'large',
+    portionSize: 'standard' as 'standard' | 'large' | 'mixed',
     applyToFuture: false
   });
 
@@ -832,10 +832,18 @@ const AccountPage = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="4">4 meals</SelectItem>
                     <SelectItem value="5">5 meals</SelectItem>
+                    <SelectItem value="6">6 meals</SelectItem>
                     <SelectItem value="7">7 meals</SelectItem>
+                    <SelectItem value="8">8 meals</SelectItem>
+                    <SelectItem value="9">9 meals</SelectItem>
                     <SelectItem value="10">10 meals</SelectItem>
+                    <SelectItem value="11">11 meals</SelectItem>
+                    <SelectItem value="12">12 meals</SelectItem>
+                    <SelectItem value="13">13 meals</SelectItem>
                     <SelectItem value="14">14 meals</SelectItem>
+                    <SelectItem value="15">15 meals</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -846,7 +854,7 @@ const AccountPage = () => {
                 </Label>
                 <Select 
                   value={editForm.portionSize} 
-                  onValueChange={(value) => setEditForm({...editForm, portionSize: value as 'standard' | 'large'})}
+                  onValueChange={(value) => setEditForm({...editForm, portionSize: value as 'standard' | 'large' | 'mixed'})}
                 >
                   <SelectTrigger className="col-span-3">
                     <SelectValue />
@@ -854,6 +862,7 @@ const AccountPage = () => {
                   <SelectContent>
                     <SelectItem value="standard">Standard</SelectItem>
                     <SelectItem value="large">Large (+99 EGP per meal)</SelectItem>
+                    <SelectItem value="mixed">Mix & Match</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

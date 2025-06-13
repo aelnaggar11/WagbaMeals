@@ -16,16 +16,23 @@ export function calculateDiscount(mealCount: number, basePrice: number): number 
 }
 
 export function getPriceForMealCount(mealCount: number): number {
-  // Pricing tiers based on meal count
-  if (mealCount >= 10) {
-    return 199; // 10+ meals
-  } else if (mealCount >= 7) {
-    return 219; // 7-9 meals
-  } else if (mealCount >= 5) {
-    return 239; // 5-6 meals
-  } else {
-    return 249; // 4 meals (base price)
-  }
+  // Pricing tiers based on meal count - matches onboarding system
+  const pricing: { [key: number]: number } = {
+    4: 249,
+    5: 239,
+    6: 239,
+    7: 219,
+    8: 219,
+    9: 219,
+    10: 199,
+    11: 199,
+    12: 199,
+    13: 199,
+    14: 199,
+    15: 199
+  };
+  
+  return pricing[mealCount] || 249; // fallback to base price
 }
 
 export function formatDate(date: Date | string): string {
