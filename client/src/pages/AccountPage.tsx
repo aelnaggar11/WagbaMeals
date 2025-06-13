@@ -895,6 +895,22 @@ const AccountPage = () => {
                   Apply these changes to all future deliveries
                 </Label>
               </div>
+
+              {/* Price Display */}
+              {editForm.mealCount > 0 && (
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="text-sm text-gray-600">
+                    New total: <span className="font-semibold text-green-600">
+                      EGP {calculateDeliveryPrice(editForm.mealCount, editForm.portionSize).toFixed(0)}
+                    </span>
+                  </div>
+                  {editForm.portionSize === 'mixed' && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      Base price shown. Individual meal portions can be selected later.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             
             <DialogFooter>
