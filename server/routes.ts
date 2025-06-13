@@ -1013,7 +1013,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           canEdit: !orderDeadlinePassed,
           canSkip: !orderDeadlinePassed && order.status !== 'skipped',
           canUnskip: !orderDeadlinePassed && order.status === 'skipped',
-          mealCount: order.mealCount
+          mealCount: order.mealCount,
+          defaultPortionSize: order.defaultPortionSize || 'standard'
         });
       }
 
@@ -1533,6 +1534,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: 'Order item removed successfully' });
     } catch (error) {
       console.error('Error removing order item:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Update individual meal portion size
+  app.patch('/api/orders/:orderId/items/:itemId', authMiddleware, async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const itemId = parseInt(req.params.itemId);
+      const { portionSize } = req.body;
+
+      // Validate portion size
+      if (!['standard', 'large'].includes(portionSize)) {
+        return res.status(400).json({ message: 'Invalid portion size' });
+      }
+
+      // Get the order to verify ownership
+      const order = await storage.getOrder(orderId);
+      if (!order || order.userId !== req.session.userId) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      // Get the order item to verify it belongs to this order
+      const orderItems = await storage.getOrderItems(orderId);
+      const itemToUpdate = orderItems.find(item => item.id === itemId);
+      if (!itemToUpdate) {
+        return res.status(404).json({ message: 'Order item not found' });
+      }
+
+      // Calculate new price
+      const pricePerMeal = getPriceForMealCount(order.mealCount);
+      const largePortionAdditional = 99;
+      const newPrice = portionSize === 'large' 
+        ? pricePerMeal + largePortionAdditional 
+        : pricePerMeal;
+
+      // Update the item - we need to add this method to storage interface
+      await storage.updateOrderItem(itemId, {
+        portionSize,
+        price: newPrice
+      });
+
+      // Update order totals
+      const updatedItems = await storage.getOrderItems(orderId);
+      const newSubtotal = updatedItems.reduce((sum, item) => sum + item.price, 0);
+      const fullPriceTotal = order.mealCount * 249;
+      const discount = fullPriceTotal - newSubtotal;
+
+      await storage.updateOrder(orderId, {
+        subtotal: newSubtotal,
+        discount,
+        total: newSubtotal
+      });
+
+      res.json({ message: 'Portion size updated successfully' });
+    } catch (error) {
+      console.error('Error updating portion size:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });

@@ -631,6 +631,7 @@ const AccountPage = () => {
                               orderId={week.orderId}
                               mealCount={week.mealCount}
                               items={week.items}
+                              defaultPortionSize={week.defaultPortionSize || 'standard'}
                             />
                           </div>
                         )}

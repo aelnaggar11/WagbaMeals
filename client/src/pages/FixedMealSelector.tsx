@@ -225,6 +225,19 @@ export default function FixedMealSelector({
       });
       return;
     }
+
+    // For mixed subscriptions, validate that all meals have portion sizes selected
+    if (defaultPortionSize === 'mixed') {
+      const missingPortions = selectedItems.filter(item => !item.portionSize || item.portionSize === '');
+      if (missingPortions.length > 0) {
+        toast({
+          title: "Portion sizes required",
+          description: "Please select a portion size for all meals before saving.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
     
     // Group the meals for display
     const grouped = groupMealsByCount(selectedItems);
@@ -278,31 +291,51 @@ export default function FixedMealSelector({
           
           {savedItems.length > 0 ? (
             <div className="space-y-4">
-              {savedItems.map((item: any, index: number) => (
-                <div key={index} className="flex items-center p-4 border rounded-lg">
-                  <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden mr-4">
-                    {item.meal.imageUrl && (
-                      <img 
-                        src={item.meal.imageUrl} 
-                        alt={item.meal.title} 
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center">
-                      <h4 className="font-medium text-lg">{item.meal.title}</h4>
-                      {item.count > 1 && (
-                        <Badge variant="secondary" className="ml-2">
-                          x{item.count}
-                        </Badge>
+              {savedItems.map((group: any, index: number) => (
+                <div key={index} className="border rounded-lg overflow-hidden">
+                  <div className="flex items-center p-4">
+                    <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden mr-4">
+                      {group.meal.imageUrl && (
+                        <img 
+                          src={group.meal.imageUrl} 
+                          alt={group.meal.title} 
+                          className="w-full h-full object-cover"
+                        />
                       )}
                     </div>
-                    <div className="flex items-center mt-1 text-sm text-gray-600">
-                      <span>{item.meal.calories || 0} cal</span>
-                      <span className="mx-2">•</span>
-                      <span>{item.meal.protein || 0}g protein</span>
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center">
+                        <h4 className="font-medium text-lg">{group.meal.title}</h4>
+                        {group.items.length > 1 && (
+                          <Badge variant="secondary" className="ml-2">
+                            x{group.items.length}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center mt-1 text-sm text-gray-600">
+                        <span>{group.meal.calories || 0} cal</span>
+                        <span className="mx-2">•</span>
+                        <span>{group.meal.protein || 0}g protein</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Show portion sizes for each meal instance */}
+                  <div className="border-t bg-gray-50 p-4">
+                    <div className="grid grid-cols-1 gap-2">
+                      {group.items.map((mealItem: WeekItem, itemIndex: number) => (
+                        <div key={mealItem.id} className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">
+                            {group.items.length > 1 ? `Meal ${itemIndex + 1}:` : 'Portion:'}
+                          </span>
+                          <span className="font-medium">
+                            {mealItem.portionSize === 'standard' ? 'Standard' : 
+                             mealItem.portionSize === 'large' ? 'Large' : 
+                             mealItem.portionSize || 'Not selected'}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>

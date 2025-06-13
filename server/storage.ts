@@ -51,6 +51,8 @@ export interface IStorage {
   // OrderItem methods
   getOrderItems(orderId: number): Promise<OrderItemFull[]>;
   addOrderItem(orderItem: InsertOrderItem): Promise<OrderItemFull>;
+  updateOrderItem(itemId: number, updates: Partial<OrderItemFull>): Promise<OrderItemFull>;
+  removeOrderItem(itemId: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
