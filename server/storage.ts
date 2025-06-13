@@ -562,6 +562,17 @@ export class MemStorage implements IStorage {
     return orderItem;
   }
 
+  async updateOrderItem(itemId: number, updates: Partial<OrderItemFull>): Promise<OrderItemFull> {
+    const item = this.orderItems.get(itemId);
+    if (!item) {
+      throw new Error('Order item not found');
+    }
+    
+    const updatedItem = { ...item, ...updates };
+    this.orderItems.set(itemId, updatedItem);
+    return updatedItem;
+  }
+
   async removeOrderItem(itemId: number): Promise<void> {
     this.orderItems.delete(itemId);
   }

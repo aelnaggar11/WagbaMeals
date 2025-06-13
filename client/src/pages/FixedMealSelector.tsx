@@ -183,6 +183,8 @@ export default function FixedMealSelector({
     }
   };
 
+
+
   // Remove a meal from the selection
   const handleRemoveMeal = async (meal: Meal) => {
     // Find the first occurrence of this meal in our selection
