@@ -38,17 +38,6 @@ const AccountPage = () => {
     applyToFuture: false
   });
 
-  // Payment method editing state
-  const [editingPayment, setEditingPayment] = useState<{
-    weekId: number;
-    orderId: number;
-    currentPaymentMethod: string | null;
-  } | null>(null);
-  const [paymentForm, setPaymentForm] = useState({
-    paymentMethod: 'credit_card' as 'credit_card' | 'cash' | 'bank_transfer',
-    applyToFuture: false
-  });
-
   // Calculate pricing for delivery editing
   const calculateDeliveryPrice = (mealCount: number, portionSize: string) => {
     const pricing: { [key: number]: number } = {
@@ -126,12 +115,12 @@ const AccountPage = () => {
   };
   
   // Get authenticated user
-  const { data: user, isLoading: isUserLoading } = useQuery({
+  const { data: user } = useQuery({
     queryKey: ['/api/auth/me'],
   });
   
   // Get user profile
-  const { data: profile, isLoading: isProfileLoading } = useQuery({
+  const { data: profile } = useQuery({
     queryKey: ['/api/user/profile'],
     enabled: !!user
   });
@@ -304,15 +293,6 @@ const AccountPage = () => {
     });
   };
 
-  // Open payment method editing dialog
-  const openEditPayment = (weekId: number, orderId: number, currentPaymentMethod: string | null) => {
-    setEditingPayment({ weekId, orderId, currentPaymentMethod });
-    setPaymentForm({
-      paymentMethod: (currentPaymentMethod as 'credit_card' | 'cash' | 'bank_transfer') || 'credit_card',
-      applyToFuture: false
-    });
-  };
-
   // Handle delivery editing
   const handleEditDelivery = async () => {
     if (!editingDelivery) return;
@@ -342,41 +322,6 @@ const AccountPage = () => {
       toast({
         title: "Error",
         description: "There was an error updating your delivery. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  // Handle payment method editing
-  const handleEditPayment = async () => {
-    if (!editingPayment) return;
-
-    try {
-      setIsUpdating(true);
-
-      // Update the payment method for the specific order
-      await apiRequest('PATCH', `/api/orders/${editingPayment.orderId}/payment`, {
-        paymentMethod: paymentForm.paymentMethod,
-        applyToFuture: paymentForm.applyToFuture
-      });
-
-      // Refresh upcoming meals data
-      await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
-
-      toast({
-        title: "Payment Method Updated",
-        description: paymentForm.applyToFuture 
-          ? "Your payment method has been updated for this week and all future weeks."
-          : "Your payment method has been updated for this week."
-      });
-
-      setEditingPayment(null);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "There was an error updating your payment method. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -510,20 +455,7 @@ const AccountPage = () => {
     fetchMealsForWeek();
   }, [selectedWeekId, upcomingMealsData, toast]);
 
-  // Show loading while authentication is in progress
-  if (isUserLoading) {
-    return (
-      <div className="container mx-auto px-4 py-16">
-        <div className="flex flex-col items-center justify-center py-12">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mb-4"></div>
-          <p className="text-gray-600">Loading your account...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Only show login prompt if user is definitively not authenticated
-  if (!user) {
+  if (!user || !profile) {
     return (
       <div className="container mx-auto px-4 py-16">
         <div className="flex flex-col items-center justify-center py-12">
@@ -534,14 +466,6 @@ const AccountPage = () => {
       </div>
     );
   }
-
-  // Show profile loading state separately - don't block the entire page
-  const profileData = profile || {
-    name: user.name || '',
-    email: user.email || '',
-    phone: user.phone || '',
-    address: user.address || ''
-  };
 
   return (
     <div className="container mx-auto px-4 py-16">
@@ -640,20 +564,7 @@ const AccountPage = () => {
                                     <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
-                                    Edit Delivery
-                                  </Button>
-                                )}
-                                {!isDeadlinePassed && !week.isSkipped && week.orderId && (
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => openEditPayment(week.weekId, week.orderId, week.paymentMethod)}
-                                    className="flex items-center"
-                                  >
-                                    <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                    </svg>
-                                    Payment
+                                    Edit
                                   </Button>
                                 )}
                                 {week.orderId && week.canSkip && !week.isSkipped && (
@@ -1008,67 +919,6 @@ const AccountPage = () => {
                 Cancel
               </Button>
               <Button onClick={handleEditDelivery} disabled={isUpdating}>
-                {isUpdating ? "Updating..." : "Save Changes"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Edit Payment Method Dialog */}
-        <Dialog open={!!editingPayment} onOpenChange={() => setEditingPayment(null)}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Edit Payment Method</DialogTitle>
-              <DialogDescription>
-                Update your payment method for this delivery or all future deliveries.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="paymentMethod">Payment Method</Label>
-                <Select 
-                  value={paymentForm.paymentMethod} 
-                  onValueChange={(value) => setPaymentForm(prev => ({ ...prev, paymentMethod: value as 'credit_card' | 'cash' | 'bank_transfer' }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select payment method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="credit_card">Credit Card</SelectItem>
-                    <SelectItem value="cash">Cash on Delivery</SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="applyToFuture"
-                  checked={paymentForm.applyToFuture}
-                  onCheckedChange={(checked) => setPaymentForm(prev => ({ ...prev, applyToFuture: !!checked }))}
-                />
-                <Label htmlFor="applyToFuture" className="text-sm">
-                  Apply to all future deliveries
-                </Label>
-              </div>
-              
-              {editingPayment && (
-                <div className="bg-gray-50 p-3 rounded-md text-sm">
-                  <p className="font-medium">Current: {editingPayment.currentPaymentMethod || 'Not set'}</p>
-                  <p className="text-gray-600 mt-1">
-                    {paymentForm.applyToFuture 
-                      ? "This will update your payment method for this week and all future weeks."
-                      : "This will only update your payment method for this week."
-                    }
-                  </p>
-                </div>
-              )}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditingPayment(null)}>
-                Cancel
-              </Button>
-              <Button onClick={handleEditPayment} disabled={isUpdating}>
                 {isUpdating ? "Updating..." : "Save Changes"}
               </Button>
             </DialogFooter>

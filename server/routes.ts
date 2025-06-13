@@ -1015,8 +1015,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           canSkip: !orderDeadlinePassed && order.status !== 'skipped',
           canUnskip: !orderDeadlinePassed && order.status === 'skipped',
           mealCount: order.mealCount,
-          defaultPortionSize: order.defaultPortionSize || 'standard',
-          paymentMethod: order.paymentMethod
+          defaultPortionSize: order.defaultPortionSize || 'standard'
         });
       }
 
@@ -1282,78 +1281,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Error updating delivery preferences:', error);
-      res.status(500).json({ message: 'Server error' });
-    }
-  });
-
-  // Update payment method for a specific order
-  app.patch('/api/orders/:orderId/payment', authMiddleware, async (req, res) => {
-    try {
-      const orderId = parseInt(req.params.orderId);
-      const { paymentMethod, applyToFuture } = req.body;
-      const userId = req.session.userId!;
-
-      // Validate input
-      if (!paymentMethod) {
-        return res.status(400).json({ message: 'Payment method is required' });
-      }
-
-      // Validate payment method
-      const validPaymentMethods = ['credit_card', 'cash', 'bank_transfer'];
-      if (!validPaymentMethods.includes(paymentMethod)) {
-        return res.status(400).json({ message: 'Invalid payment method' });
-      }
-
-      // Get the order to verify ownership
-      const order = await storage.getOrder(orderId);
-      if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
-      }
-
-      if (order.userId !== userId) {
-        return res.status(403).json({ message: 'Unauthorized to modify this order' });
-      }
-
-      // Update the specific order's payment method
-      await storage.updateOrder(orderId, {
-        paymentMethod
-      });
-
-      // If applyToFuture is true, update all future orders as well
-      if (applyToFuture) {
-        const userOrders = await storage.getOrdersByUser(userId);
-        const currentOrderWeek = await storage.getWeek(order.weekId);
-        
-        if (currentOrderWeek) {
-          const currentDeliveryDate = new Date(currentOrderWeek.deliveryDate);
-          
-          // Get all future orders for this user
-          const futureOrders = [];
-          for (const userOrder of userOrders) {
-            const orderWeek = await storage.getWeek(userOrder.weekId);
-            if (orderWeek) {
-              const orderDeliveryDate = new Date(orderWeek.deliveryDate);
-              if (orderDeliveryDate > currentDeliveryDate) {
-                futureOrders.push(userOrder);
-              }
-            }
-          }
-
-          // Update payment method for all future orders
-          for (const futureOrder of futureOrders) {
-            await storage.updateOrder(futureOrder.id, {
-              paymentMethod
-            });
-          }
-        }
-      }
-
-      res.json({
-        message: 'Payment method updated successfully',
-        updatedFutureOrders: applyToFuture
-      });
-    } catch (error) {
-      console.error('Error updating payment method:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });
