@@ -20,6 +20,22 @@ const AccountPage = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   
+  // All useState hooks must be at the top before any early returns
+  const [isEditing, setIsEditing] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isLoadingMeals, setIsLoadingMeals] = useState(false);
+  const [processingWeekId, setProcessingWeekId] = useState<number | null>(null);
+  const [editingDelivery, setEditingDelivery] = useState<{
+    weekId: number;
+    currentMealCount: number;
+    currentPortionSize: string;
+  } | null>(null);
+  const [editForm, setEditForm] = useState({
+    mealCount: 0,
+    portionSize: 'standard' as 'standard' | 'large' | 'mixed',
+    applyToFuture: false
+  });
+  
   // Check authentication state with aggressive refetching for post-checkout scenarios
   const { data: currentUser, isLoading: isUserLoading, refetch: refetchAuth } = useQuery<User | null>({
     queryKey: ['/api/auth/me'],
@@ -79,13 +95,12 @@ const AccountPage = () => {
     }
   }, [currentUser, isUserLoading, navigate]);
   
-  // Show authentication status for debugging
-  console.log('AccountPage - Auth State:', {
-    currentUser: !!currentUser,
-    isUserLoading,
-    userId: currentUser?.id,
-    location: window.location.pathname
-  });
+  // Clear checkout success flag when authenticated
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.removeItem('wagba_checkout_success');
+    }
+  }, [currentUser]);
 
   // Show loading or user info while debugging
   if (!currentUser) {
@@ -107,24 +122,6 @@ const AccountPage = () => {
       </div>
     );
   }
-  const [isEditing, setIsEditing] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isLoadingMeals, setIsLoadingMeals] = useState(false);
-  
-  // Single state variable to track which week is being processed
-  const [processingWeekId, setProcessingWeekId] = useState<number | null>(null);
-  
-  // Delivery editing state
-  const [editingDelivery, setEditingDelivery] = useState<{
-    weekId: number;
-    currentMealCount: number;
-    currentPortionSize: string;
-  } | null>(null);
-  const [editForm, setEditForm] = useState({
-    mealCount: 0,
-    portionSize: 'standard' as 'standard' | 'large' | 'mixed',
-    applyToFuture: false
-  });
 
   // Calculate pricing for delivery editing
   const calculateDeliveryPrice = (mealCount: number, portionSize: string) => {
