@@ -19,6 +19,30 @@ import FixedMealSelector from "@/pages/FixedMealSelector";
 const AccountPage = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  
+  // Check authentication state
+  const { data: currentUser, isLoading: isUserLoading } = useQuery<User | null>({
+    queryKey: ['/api/auth/me'],
+    retry: 1
+  });
+  
+  // Show loading while authentication is being verified
+  if (isUserLoading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your account...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Redirect to auth if not authenticated
+  if (!currentUser) {
+    navigate('/auth');
+    return null;
+  }
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isLoadingMeals, setIsLoadingMeals] = useState(false);
