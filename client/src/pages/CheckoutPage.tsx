@@ -125,16 +125,7 @@ const CheckoutPage = () => {
         deliveryNotes
       });
       
-      console.log('CheckoutPage - Checkout API successful, refreshing data');
-      
-      // Force refresh of auth state to ensure it's current after checkout
-      await queryClient.refetchQueries({ queryKey: ['/api/auth/me'] });
-      
-      // Refresh other data
-      await queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
-      
-      console.log('CheckoutPage - Data refreshed, showing success toast');
+      console.log('CheckoutPage - Checkout API successful');
       
       toast({
         title: "Order placed successfully!",
@@ -142,8 +133,8 @@ const CheckoutPage = () => {
         variant: "default"
       });
       
-      // Wait for auth state to stabilize before navigation
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Set a flag in localStorage to indicate successful checkout
+      localStorage.setItem('wagba_checkout_success', 'true');
       
       console.log('CheckoutPage - Navigating to /account');
       navigate('/account');

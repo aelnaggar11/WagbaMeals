@@ -20,13 +20,23 @@ const AccountPage = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   
-  // Check authentication state with more robust retry logic
-  const { data: currentUser, isLoading: isUserLoading } = useQuery<User | null>({
+  // Check authentication state with aggressive refetching for post-checkout scenarios
+  const { data: currentUser, isLoading: isUserLoading, refetch: refetchAuth } = useQuery<User | null>({
     queryKey: ['/api/auth/me'],
-    retry: 3,
-    retryDelay: 1000,
-    staleTime: 1000 * 60 * 2, // 2 minutes to prevent frequent re-fetching
+    retry: 5,
+    retryDelay: 500,
+    staleTime: 0, // Always fetch fresh data to catch post-checkout auth state
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
+  
+  // Force immediate auth refetch when component mounts (for post-checkout navigation)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      refetchAuth();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [refetchAuth]);
   
   // Show loading while authentication is being verified
   if (isUserLoading) {
@@ -40,14 +50,32 @@ const AccountPage = () => {
     );
   }
   
-  // Redirect to auth if not authenticated after sufficient wait time
+  // Handle post-checkout redirect logic
   useEffect(() => {
+    const checkoutSuccess = localStorage.getItem('wagba_checkout_success');
+    
     if (!isUserLoading && !currentUser) {
-      const timeoutId = setTimeout(() => {
-        navigate('/auth');
-      }, 3000); // 3 second delay to allow post-checkout auth state to stabilize
-      
-      return () => clearTimeout(timeoutId);
+      if (checkoutSuccess === 'true') {
+        // Give much longer time after successful checkout
+        const timeoutId = setTimeout(() => {
+          localStorage.removeItem('wagba_checkout_success');
+          navigate('/auth');
+        }, 10000); // 10 seconds for post-checkout scenarios
+        
+        return () => clearTimeout(timeoutId);
+      } else {
+        // Normal redirect for non-checkout scenarios
+        const timeoutId = setTimeout(() => {
+          navigate('/auth');
+        }, 3000);
+        
+        return () => clearTimeout(timeoutId);
+      }
+    }
+    
+    // Clear the checkout success flag when user is authenticated
+    if (currentUser && checkoutSuccess === 'true') {
+      localStorage.removeItem('wagba_checkout_success');
     }
   }, [currentUser, isUserLoading, navigate]);
   
