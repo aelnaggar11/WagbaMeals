@@ -309,7 +309,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: user.email,
         name: user.name,
         phone: user.phone,
-        address: user.address
+        address: user.address,
+        token: userToken
       });
     } catch (error) {
       if (error instanceof z.ZodError) {

@@ -154,13 +154,18 @@ const AuthPage = () => {
       // Generate a unique username from the email
       const username = formData.email.split('@')[0] + '_' + Math.floor(Math.random() * 10000);
       
-      await apiRequest('POST', '/api/auth/register', {
+      const registrationResponse = await apiRequest('POST', '/api/auth/register', {
         username: username,
         password: formData.password,
         email: formData.email,
         name: formData.email.split('@')[0], // Use part of email as name
         isAdmin: false
       });
+      
+      // Store authentication token immediately for reliable session handling
+      if (registrationResponse && registrationResponse.token) {
+        localStorage.setItem('wagba_auth_token', registrationResponse.token);
+      }
       
       // Invalidate all auth-related queries to refresh auth state
       await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
