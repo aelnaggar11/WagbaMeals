@@ -102,6 +102,8 @@ const CheckoutPage = () => {
   };
   
   const handleSubmitOrder = async () => {
+    console.log('CheckoutPage - Starting checkout process');
+    
     // Validation
     if (!address.street || !address.area || !address.phone) {
       toast({
@@ -115,6 +117,7 @@ const CheckoutPage = () => {
     setIsSubmitting(true);
     
     try {
+      console.log('CheckoutPage - Calling checkout API');
       await apiRequest('POST', '/api/orders/checkout', {
         orderId: pendingOrder?.id,
         paymentMethod,
@@ -122,9 +125,13 @@ const CheckoutPage = () => {
         deliveryNotes
       });
       
+      console.log('CheckoutPage - Checkout API successful, refreshing data');
+      
       // Refresh data but don't invalidate auth state to prevent login loops
       await queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      
+      console.log('CheckoutPage - Data refreshed, showing success toast');
       
       toast({
         title: "Order placed successfully!",
@@ -132,9 +139,11 @@ const CheckoutPage = () => {
         variant: "default"
       });
       
+      console.log('CheckoutPage - Navigating to /account');
       // Navigate immediately since user is already authenticated
       navigate('/account');
     } catch (error) {
+      console.error('CheckoutPage - Checkout error:', error);
       toast({
         title: "Error placing order",
         description: "There was a problem processing your order. Please try again.",

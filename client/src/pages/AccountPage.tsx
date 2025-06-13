@@ -40,24 +40,44 @@ const AccountPage = () => {
     );
   }
   
-  // Redirect to auth if not authenticated (with delay to prevent post-checkout loops)
+  // Temporarily disable auto-redirect to debug authentication issues
+  // TODO: Re-enable after fixing authentication state management
+  /*
   useEffect(() => {
     if (!isUserLoading && !currentUser) {
       const timeoutId = setTimeout(() => {
         navigate('/auth');
-      }, 2000); // 2 second delay to allow auth state to fully stabilize
+      }, 2000);
       
       return () => clearTimeout(timeoutId);
     }
   }, [currentUser, isUserLoading, navigate]);
+  */
   
-  // Show loading or return null while redirecting
+  // Show authentication status for debugging
+  console.log('AccountPage - Auth State:', {
+    currentUser: !!currentUser,
+    isUserLoading,
+    userId: currentUser?.id,
+    location: window.location.pathname
+  });
+
+  // Show loading or user info while debugging
   if (!currentUser) {
     return (
       <div className="h-screen w-full flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Redirecting...</p>
+          <p className="text-gray-600">Loading user authentication...</p>
+          <p className="text-sm text-gray-500 mt-2">
+            {isUserLoading ? 'Checking authentication...' : 'Authentication failed - please login'}
+          </p>
+          <button 
+            onClick={() => navigate('/auth')}
+            className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
+          >
+            Go to Login
+          </button>
         </div>
       </div>
     );
