@@ -5,6 +5,8 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { MinusCircle, PlusCircle, Save } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 interface Meal {
   id: number;
@@ -26,13 +28,15 @@ interface FixedMealSelectorProps {
   orderId: number | null;
   mealCount: number;
   items: WeekItem[];
+  defaultPortionSize?: string; // The user's subscription portion size preference
 }
 
 export default function FixedMealSelector({
   weekId,
   orderId,
   mealCount = 3,
-  items = []
+  items = [],
+  defaultPortionSize = 'standard'
 }: FixedMealSelectorProps) {
   const { toast } = useToast();
   const [selectedItems, setSelectedItems] = useState<WeekItem[]>([]);
@@ -61,18 +65,18 @@ export default function FixedMealSelector({
     }
   }, [items, isInitialized]);
 
-  // Group meals by ID and count them
+  // Group meals by ID with their portion sizes
   const groupMealsByCount = (items: WeekItem[]) => {
-    const groups: Record<number, { meal: Meal, count: number }> = {};
+    const groups: Record<number, { meal: Meal, items: WeekItem[] }> = {};
     
     items.forEach(item => {
       if (!groups[item.mealId]) {
         groups[item.mealId] = {
           meal: item.meal,
-          count: 1
+          items: [item]
         };
       } else {
-        groups[item.mealId].count++;
+        groups[item.mealId].items.push(item);
       }
     });
     
@@ -82,6 +86,45 @@ export default function FixedMealSelector({
   // Get the count of a particular meal in selections
   const getMealCount = (mealId: number): number => {
     return selectedItems.filter(item => item.mealId === mealId).length;
+  };
+
+  // Update portion size for a specific meal item
+  const handlePortionSizeChange = async (itemIndex: number, newPortionSize: string) => {
+    try {
+      const updatedItems = [...selectedItems];
+      const item = updatedItems[itemIndex];
+      
+      // Update local state
+      updatedItems[itemIndex] = { ...item, portionSize: newPortionSize };
+      setSelectedItems(updatedItems);
+
+      // Update on server if we have an order ID and item ID
+      if (orderId && item.id) {
+        const response = await fetch(`/api/orders/${orderId}/items/${item.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            portionSize: newPortionSize
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to update portion size');
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update portion size. Please try again."
+      });
+    }
+  };
+
+  // Get all selected items for a specific meal
+  const getSelectedItemsForMeal = (mealId: number): WeekItem[] => {
+    return selectedItems.filter(item => item.mealId === mealId);
   };
 
   // Add a meal to the selection
@@ -95,11 +138,20 @@ export default function FixedMealSelector({
     }
 
     try {
+      // Determine initial portion size based on subscription type
+      let initialPortionSize = "standard";
+      if (defaultPortionSize === 'mixed') {
+        // For mixed subscriptions, require user to choose
+        initialPortionSize = "";
+      } else if (defaultPortionSize === 'large') {
+        initialPortionSize = "large";
+      }
+
       // Create a new item
       const newItem: WeekItem = {
         id: Date.now(), // Temporary ID for UI
         mealId: meal.id,
-        portionSize: "standard",
+        portionSize: initialPortionSize,
         meal: meal
       };
       
@@ -338,6 +390,38 @@ export default function FixedMealSelector({
                         </Button>
                       </div>
                     </div>
+                    
+                    {/* Individual portion size controls for selected meals */}
+                    {isSelected && (
+                      <div className="border-t bg-gray-50 p-4">
+                        <Label className="text-sm font-medium mb-3 block">Portion Sizes:</Label>
+                        <div className="space-y-2">
+                          {getSelectedItemsForMeal(meal.id).map((item, itemIndex) => {
+                            const globalItemIndex = selectedItems.findIndex(si => si.id === item.id);
+                            return (
+                              <div key={item.id} className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">Meal {itemIndex + 1}:</span>
+                                <Select
+                                  value={item.portionSize}
+                                  onValueChange={(value) => handlePortionSizeChange(globalItemIndex, value)}
+                                >
+                                  <SelectTrigger className="w-40">
+                                    <SelectValue placeholder={defaultPortionSize === 'mixed' ? "Choose size" : item.portionSize} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {defaultPortionSize === 'mixed' && (
+                                      <SelectItem value="" disabled>Choose size</SelectItem>
+                                    )}
+                                    <SelectItem value="standard">Standard</SelectItem>
+                                    <SelectItem value="large">Large (+99 EGP)</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
