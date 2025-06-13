@@ -122,9 +122,9 @@ const CheckoutPage = () => {
         deliveryNotes
       });
       
-      // Invalidate queries to refresh data including auth state
+      // Refresh data but don't invalidate auth state to prevent login loops
       await queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
       
       toast({
         title: "Order placed successfully!",
@@ -132,10 +132,8 @@ const CheckoutPage = () => {
         variant: "default"
       });
       
-      // Small delay to ensure auth state is updated before redirect
-      setTimeout(() => {
-        navigate('/account');
-      }, 100);
+      // Navigate immediately since user is already authenticated
+      navigate('/account');
     } catch (error) {
       toast({
         title: "Error placing order",

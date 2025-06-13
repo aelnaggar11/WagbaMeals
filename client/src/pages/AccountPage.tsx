@@ -20,10 +20,12 @@ const AccountPage = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   
-  // Check authentication state
+  // Check authentication state with more robust retry logic
   const { data: currentUser, isLoading: isUserLoading } = useQuery<User | null>({
     queryKey: ['/api/auth/me'],
-    retry: 1
+    retry: 3,
+    retryDelay: 1000,
+    staleTime: 1000 * 60 * 2, // 2 minutes to prevent frequent re-fetching
   });
   
   // Show loading while authentication is being verified
@@ -38,10 +40,27 @@ const AccountPage = () => {
     );
   }
   
-  // Redirect to auth if not authenticated
+  // Redirect to auth if not authenticated (with delay to prevent post-checkout loops)
+  useEffect(() => {
+    if (!isUserLoading && !currentUser) {
+      const timeoutId = setTimeout(() => {
+        navigate('/auth');
+      }, 2000); // 2 second delay to allow auth state to fully stabilize
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [currentUser, isUserLoading, navigate]);
+  
+  // Show loading or return null while redirecting
   if (!currentUser) {
-    navigate('/auth');
-    return null;
+    return (
+      <div className="h-screen w-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting...</p>
+        </div>
+      </div>
+    );
   }
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
