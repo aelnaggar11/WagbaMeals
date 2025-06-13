@@ -43,6 +43,8 @@ export default function FixedMealSelector({
   const [savedItems, setSavedItems] = useState<any[]>([]);
   const [isSaved, setIsSaved] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  
+
 
   // Fetch meals for this week
   const { data, isLoading } = useQuery({
@@ -326,7 +328,7 @@ export default function FixedMealSelector({
                       </div>
                       
                       {/* Portion size controls - only show for Mix & Match subscriptions */}
-                      {defaultPortionSize === 'mixed' && (
+                      {(defaultPortionSize === 'mixed' || defaultPortionSize === 'mix') && (
                         <div className="mt-3 space-y-2">
                           {group.items.map((mealItem: WeekItem, itemIndex: number) => {
                             const actualIndex = selectedItems.findIndex(item => item.id === mealItem.id);
@@ -359,7 +361,7 @@ export default function FixedMealSelector({
                       )}
                       
                       {/* Show default portion size for Standard/Large subscriptions */}
-                      {defaultPortionSize !== 'mixed' && (
+                      {defaultPortionSize !== 'mixed' && defaultPortionSize !== 'mix' && (
                         <div className="mt-2 text-sm text-gray-600">
                           All meals: {defaultPortionSize === 'large' ? 'Large' : 'Standard'} portion
                           {defaultPortionSize === 'large' && (
