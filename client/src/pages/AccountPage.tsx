@@ -19,126 +19,258 @@ import FixedMealSelector from "@/pages/FixedMealSelector";
 const AccountPage = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  
-  // All useState hooks must be at the top before any early returns
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isLoadingMeals, setIsLoadingMeals] = useState(false);
+  
+  // Single state variable to track which week is being processed
   const [processingWeekId, setProcessingWeekId] = useState<number | null>(null);
+  
+  // Delivery editing state
   const [editingDelivery, setEditingDelivery] = useState<{
     weekId: number;
     currentMealCount: number;
     currentPortionSize: string;
   } | null>(null);
   const [editForm, setEditForm] = useState({
-    mealCount: 4,
+    mealCount: 0,
     portionSize: 'standard' as 'standard' | 'large' | 'mixed',
     applyToFuture: false
   });
-  
-  // Check authentication state with aggressive refetching for post-checkout scenarios
-  const { data: currentUser, isLoading: isUserLoading, refetch: refetchAuth } = useQuery<User | null>({
-    queryKey: ['/api/auth/me'],
-    retry: 5,
-    retryDelay: 500,
-    staleTime: 0, // Always fetch fresh data to catch post-checkout auth state
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+
+  // Payment method editing state
+  const [editingPayment, setEditingPayment] = useState<{
+    weekId: number;
+    orderId: number;
+    currentPaymentMethod: string | null;
+  } | null>(null);
+  const [paymentForm, setPaymentForm] = useState({
+    paymentMethod: 'credit_card' as 'credit_card' | 'cash' | 'bank_transfer',
+    applyToFuture: false
   });
 
-  // Get user profile
-  const { data: profile } = useQuery({
-    queryKey: ['/api/user/profile'],
-    enabled: !!currentUser
-  });
-
-  // Get upcoming meals data  
-  const { data: upcomingMeals } = useQuery({
-    queryKey: ['/api/user/upcoming-meals'],
-    enabled: !!currentUser
-  });
-
-  // Get user orders
-  const { data: ordersData } = useQuery({
-    queryKey: ['/api/user/orders'],
-    enabled: !!currentUser
-  });
-  
-  // Force immediate auth refetch when component mounts (for post-checkout navigation)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      refetchAuth();
-    }, 100); // Very quick refetch to ensure fresh auth state
+  // Calculate pricing for delivery editing
+  const calculateDeliveryPrice = (mealCount: number, portionSize: string) => {
+    const pricing: { [key: number]: number } = {
+      4: 249, 5: 239, 6: 239, 7: 219, 8: 219, 9: 219,
+      10: 199, 11: 199, 12: 199, 13: 199, 14: 199, 15: 199
+    };
     
-    return () => clearTimeout(timer);
-  }, [refetchAuth]);
-
-  // Handle post-checkout authentication with extended timeout
-  useEffect(() => {
-    const isPostCheckout = localStorage.getItem('wagba_checkout_success') === 'true';
+    const basePrice = pricing[mealCount] || 249;
     
-    if (isPostCheckout) {
-      // Extended timeout for post-checkout scenario
-      const checkoutTimer = setTimeout(() => {
-        refetchAuth();
-        localStorage.removeItem('wagba_checkout_success');
-      }, isPostCheckout ? 10000 : 3000); // 10 seconds for post-checkout, 3 seconds otherwise
-      
-      return () => clearTimeout(checkoutTimer);
+    if (portionSize === 'large') {
+      return (basePrice + 99) * mealCount;
+    } else if (portionSize === 'mixed') {
+      return basePrice * mealCount; // Base price for mixed (portions selected individually)
     }
-  }, [refetchAuth]);
-
-  // Show loading state while checking authentication
-  if (isUserLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your account...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Redirect to login if not authenticated
-  if (!currentUser) {
-    navigate('/auth');
-    return null;
-  }
-
-  const handleProfileUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsUpdating(true);
     
-    try {
-      const formData = new FormData(e.target as HTMLFormElement);
-      const profileData = {
-        name: formData.get('name') as string,
-        email: formData.get('email') as string,
-        phone: formData.get('phone') as string,
-        address: {
-          street: formData.get('street') as string,
-          area: formData.get('area') as string,
-          building: formData.get('building') as string,
-          floor: formData.get('floor') as string,
-          apartment: formData.get('apartment') as string,
-          instructions: formData.get('instructions') as string,
-        }
-      };
+    return basePrice * mealCount;
+  };
 
-      await apiRequest('PUT', '/api/user/profile', profileData);
-      await queryClient.invalidateQueries({ queryKey: ['/api/user/profile'] });
+  // Helper function to format week dates as "Sat 5 July"
+  const formatWeekLabel = (weekLabel: string) => {
+    // Handle cross-month formats like "Jun 28-Jul 4, 2025"
+    const crossMonthMatch = weekLabel.match(/(\w+)\s+(\d+)-(\w+)\s+(\d+),?\s*(\d+)/);
+    if (crossMonthMatch) {
+      const [, startMonthStr, startDayStr, , , yearStr] = crossMonthMatch;
+      const monthMap: { [key: string]: number } = {
+        'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+        'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11,
+        'January': 0, 'February': 1, 'March': 2, 'April': 3, 'June': 5,
+        'July': 6, 'August': 7, 'September': 8, 'October': 9, 'November': 10, 'December': 11
+      };
       
+      const month = monthMap[startMonthStr];
+      if (month !== undefined) {
+        const date = new Date(parseInt(yearStr), month, parseInt(startDayStr));
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        const dayName = dayNames[date.getDay()];
+        const dayNumber = date.getDate();
+        const monthName = monthNames[date.getMonth()];
+        
+        return `${dayName} ${dayNumber} ${monthName}`;
+      }
+    }
+    
+    // Handle single-month formats like "May 24-30, 2025"
+    const singleMonthMatch = weekLabel.match(/(\w+)\s+(\d+)-\d+,?\s*(\d+)/);
+    if (singleMonthMatch) {
+      const [, monthStr, dayStr, yearStr] = singleMonthMatch;
+      const monthMap: { [key: string]: number } = {
+        'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+        'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11,
+        'January': 0, 'February': 1, 'March': 2, 'April': 3, 'June': 5,
+        'July': 6, 'August': 7, 'September': 8, 'October': 9, 'November': 10, 'December': 11
+      };
+      
+      const month = monthMap[monthStr];
+      if (month !== undefined) {
+        const date = new Date(parseInt(yearStr), month, parseInt(dayStr));
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        const dayName = dayNames[date.getDay()];
+        const dayNumber = date.getDate();
+        const monthName = monthNames[date.getMonth()];
+        
+        return `${dayName} ${dayNumber} ${monthName}`;
+      }
+    }
+    
+    // Return original label if no pattern matches
+    return weekLabel;
+  };
+  
+  // Get authenticated user
+  const { data: user, isLoading: isUserLoading } = useQuery({
+    queryKey: ['/api/auth/me'],
+  });
+  
+  // Get user profile
+  const { data: profile, isLoading: isProfileLoading } = useQuery({
+    queryKey: ['/api/user/profile'],
+    enabled: !!user
+  });
+  
+  // Get order history
+  const { data: ordersData } = useQuery({
+    queryKey: ['/api/orders'],
+    enabled: !!user
+  });
+  
+  // Get upcoming meals with local state for immediate updates
+  const { data: upcomingMealsData, isLoading: isLoadingUpcomingMeals } = useQuery({
+    queryKey: ['/api/user/upcoming-meals'],
+    enabled: !!user
+  });
+  
+  // Local state to override server data for immediate UI updates
+  const [localUpcomingMeals, setLocalUpcomingMeals] = useState<any>(null);
+  
+  // Available meals
+  const [availableMeals, setAvailableMeals] = useState<Meal[]>([]);
+  const [selectedMeals, setSelectedMeals] = useState<OrderItem[]>([]);
+  const [selectedWeekId, setSelectedWeekId] = useState<number | null>(null);
+  const [mealCount, setMealCount] = useState(0);
+
+  // Set initial selected week when data is loaded and sync local state
+  useEffect(() => {
+    if (upcomingMealsData?.upcomingMeals && upcomingMealsData.upcomingMeals.length > 0) {
+      // Initialize local state with server data if not already set
+      if (!localUpcomingMeals) {
+        setLocalUpcomingMeals(upcomingMealsData);
+      }
+      
+      // Set initial selected week to the first week with a confirmed order (first delivery)
+      if (!selectedWeekId) {
+        // Find the first week that has an order and is not skipped
+        const firstDeliveryWeek = upcomingMealsData.upcomingMeals.find(week => 
+          week.orderId && !week.isSkipped
+        );
+        
+        // If we found a week with a delivery, use that; otherwise use the first available week
+        const weekToSelect = firstDeliveryWeek 
+          ? firstDeliveryWeek.weekId 
+          : upcomingMealsData.upcomingMeals[0].weekId;
+          
+        setSelectedWeekId(weekToSelect);
+      }
+    }
+  }, [upcomingMealsData, selectedWeekId, localUpcomingMeals]);
+
+  // Use local state if available, otherwise fall back to server data
+  const displayUpcomingMeals = localUpcomingMeals || upcomingMealsData;
+
+  // Form state
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    street: "",
+    building: "",
+    apartment: "",
+    area: "",
+    landmark: ""
+  });
+
+  // Update form data when profile data is loaded
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        name: profile.name || "",
+        email: profile.email || "",
+        phone: profile.phone || "",
+        street: "",
+        building: "",
+        apartment: "",
+        area: "",
+        landmark: ""
+      });
+
+      // Parse address if available
+      if (profile.address) {
+        try {
+          const addressObj = JSON.parse(profile.address);
+          setFormData(prev => ({
+            ...prev,
+            street: addressObj.street || "",
+            building: addressObj.building || "",
+            apartment: addressObj.apartment || "",
+            area: addressObj.area || "",
+            landmark: addressObj.landmark || ""
+          }));
+        } catch (e) {
+          console.error("Failed to parse address:", e);
+        }
+      }
+    }
+  }, [profile]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSaveProfile = async () => {
+    setIsUpdating(true);
+
+    try {
+      // Format address object
+      const address = JSON.stringify({
+        street: formData.street,
+        building: formData.building,
+        apartment: formData.apartment,
+        area: formData.area,
+        landmark: formData.landmark
+      });
+
+      await apiRequest('PATCH', '/api/user/profile', {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        address
+      });
+
+      // Invalidate profile query to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/user/profile'] });
+
       toast({
         title: "Profile Updated",
-        description: "Your profile has been updated successfully.",
+        description: "Your profile has been updated successfully."
       });
-      
+
       setIsEditing(false);
-    } catch (error: any) {
+    } catch (error) {
       toast({
-        title: "Update Failed",
-        description: error.message || "Failed to update profile",
+        title: "Error",
+        description: "There was an error updating your profile. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -149,216 +281,67 @@ const AccountPage = () => {
   const handleLogout = async () => {
     try {
       await apiRequest('POST', '/api/auth/logout');
+      
+      // Clear cache and redirect to home
+      queryClient.invalidateQueries();
       navigate('/');
     } catch (error) {
-      console.error('Logout error:', error);
-      // Navigate anyway in case of error
-      navigate('/');
-    }
-  };
-
-  const formatWeekLabel = (weekLabel: string) => {
-    // Check if it's a delivery date pattern like "26 Dec - 2 Jan"
-    const deliveryPattern = /(\d{1,2})\s+(\w{3})\s*-\s*(\d{1,2})\s+(\w{3})/;
-    const match = weekLabel.match(deliveryPattern);
-    
-    if (match) {
-      const [, startDay, startMonth, endDay, endMonth] = match;
-      
-      // Convert month abbreviations to full names
-      const monthMap: { [key: string]: string } = {
-        'Jan': 'January', 'Feb': 'February', 'Mar': 'March', 'Apr': 'April',
-        'May': 'May', 'Jun': 'June', 'Jul': 'July', 'Aug': 'August',
-        'Sep': 'September', 'Oct': 'October', 'Nov': 'November', 'Dec': 'December'
-      };
-      
-      const startMonthFull = monthMap[startMonth] || startMonth;
-      const endMonthFull = monthMap[endMonth] || endMonth;
-      
-      return `${startDay} ${startMonthFull} - ${endDay} ${endMonthFull}`;
-    }
-    
-    // Check if it's a single date like "Week of 26 Dec" or "26 Dec"
-    const singleDatePattern = /(?:Week of )?(\d{1,2})\s+(\w{3})/;
-    const singleMatch = weekLabel.match(singleDatePattern);
-    
-    if (singleMatch) {
-      const [, day, month] = singleMatch;
-      const monthMap: { [key: string]: string } = {
-        'Jan': 'January', 'Feb': 'February', 'Mar': 'March', 'Apr': 'April',
-        'May': 'May', 'Jun': 'June', 'Jul': 'July', 'Aug': 'August',
-        'Sep': 'September', 'Oct': 'October', 'Nov': 'November', 'Dec': 'December'
-      };
-      
-      const monthFull = monthMap[month] || month;
-      return `Week of ${day} ${monthFull}`;
-    }
-    
-    // Check if it's a pattern like "This Week" or "Next Week"
-    if (weekLabel.toLowerCase().includes('this week') || weekLabel.toLowerCase().includes('next week')) {
-      // Calculate the actual date
-      const today = new Date();
-      const isNextWeek = weekLabel.toLowerCase().includes('next week');
-      
-      if (isNextWeek) {
-        today.setDate(today.getDate() + 7);
-      }
-      
-      // Find the start of the week (assuming Monday is the start)
-      const dayOfWeek = today.getDay();
-      const daysUntilMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-      const startOfWeek = new Date(today);
-      startOfWeek.setDate(today.getDate() + daysUntilMonday);
-      
-      // Format the date
-      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      
-      const dayName = dayNames[startOfWeek.getDay()];
-      const dayNumber = startOfWeek.getDate();
-      const monthName = monthNames[startOfWeek.getMonth()];
-      
-      return `Week of ${dayNumber} ${monthName}`;
-    }
-    
-    // For patterns like "Current Week" try to parse and format nicely
-    if (weekLabel.toLowerCase().includes('current')) {
-      const today = new Date();
-      
-      // Find the start of the current week (Monday)
-      const dayOfWeek = today.getDay();
-      const daysUntilMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-      const startOfWeek = new Date(today);
-      startOfWeek.setDate(today.getDate() + daysUntilMonday);
-      
-      // Format the date
-      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      
-      const dayName = dayNames[startOfWeek.getDay()];
-      const dayNumber = startOfWeek.getDate();
-      const monthName = monthNames[startOfWeek.getMonth()];
-      
-      return `Week of ${dayNumber} ${monthName}`;
-    }
-    
-    // Try to extract any date from the label
-    const anyDatePattern = /(\d{1,2})\s+(\w{3,})/;
-    const anyMatch = weekLabel.match(anyDatePattern);
-    
-    if (anyMatch) {
-      const [, day, month] = anyMatch;
-      
-      // Check if month is abbreviated and convert to full name
-      const monthMap: { [key: string]: string } = {
-        'Jan': 'January', 'Feb': 'February', 'Mar': 'March', 'Apr': 'April',
-        'May': 'May', 'Jun': 'June', 'Jul': 'July', 'Aug': 'August',
-        'Sep': 'September', 'Oct': 'October', 'Nov': 'November', 'Dec': 'December'
-      };
-      
-      if (monthMap[month]) {
-        return `Week of ${day} ${monthMap[month]}`;
-      } else {
-        // Try to find date in the current/next year
-        const currentYear = new Date().getFullYear();
-        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        const monthIndex = monthNames.findIndex(m => m.toLowerCase().startsWith(month.toLowerCase()));
-        
-        if (monthIndex !== -1) {
-          const date = new Date(currentYear, monthIndex, parseInt(day));
-          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-          const dayName = dayNames[date.getDay()];
-          const dayNumber = date.getDate();
-          const monthName = monthNames[date.getMonth()];
-          
-          return `${dayName} ${dayNumber} ${monthName}`;
-        }
-      }
-    }
-    
-    // Return original label if no pattern matches
-    return weekLabel;
-  };
-
-  const handleSkipWeek = async (weekId: number) => {
-    setProcessingWeekId(weekId);
-    try {
-      await apiRequest('POST', `/api/orders/skip`, { weekId });
-      await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
       toast({
-        title: "Week Skipped",
-        description: "This week has been skipped successfully.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Skip Failed",
-        description: error.message || "Failed to skip week",
+        title: "Error",
+        description: "There was an error logging out. Please try again.",
         variant: "destructive"
       });
-    } finally {
-      setProcessingWeekId(null);
     }
   };
 
-  const handleUnskipWeek = async (weekId: number) => {
-    setProcessingWeekId(weekId);
-    try {
-      await apiRequest('POST', `/api/orders/unskip`, { weekId });
-      await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
-      toast({
-        title: "Week Unskipped",
-        description: "This week has been restored successfully.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Unskip Failed",
-        description: error.message || "Failed to unskip week",
-        variant: "destructive"
-      });
-    } finally {
-      setProcessingWeekId(null);
-    }
-  };
-
-  const openEditDelivery = (week: any) => {
-    setEditingDelivery({
-      weekId: week.weekId,
-      currentMealCount: week.mealCount,
-      currentPortionSize: week.portionSize
-    });
+  // Open delivery editing dialog
+  const openEditDelivery = (weekId: number, mealCount: number, portionSize: string) => {
+    setEditingDelivery({ weekId, currentMealCount: mealCount, currentPortionSize: portionSize });
     setEditForm({
-      mealCount: week.mealCount,
-      portionSize: week.portionSize,
+      mealCount,
+      portionSize: portionSize as 'standard' | 'large',
       applyToFuture: false
     });
   };
 
+  // Open payment method editing dialog
+  const openEditPayment = (weekId: number, orderId: number, currentPaymentMethod: string | null) => {
+    setEditingPayment({ weekId, orderId, currentPaymentMethod });
+    setPaymentForm({
+      paymentMethod: (currentPaymentMethod as 'credit_card' | 'cash' | 'bank_transfer') || 'credit_card',
+      applyToFuture: false
+    });
+  };
+
+  // Handle delivery editing
   const handleEditDelivery = async () => {
     if (!editingDelivery) return;
-    
-    setIsUpdating(true);
+
     try {
-      await apiRequest('PUT', '/api/orders/delivery', {
-        weekId: editingDelivery.weekId,
+      setIsUpdating(true);
+
+      // Update the order with new meal count and portion size
+      await apiRequest('PATCH', `/api/orders/${editingDelivery.weekId}/delivery`, {
         mealCount: editForm.mealCount,
         defaultPortionSize: editForm.portionSize,
         applyToFuture: editForm.applyToFuture
       });
-      
+
+      // Refresh upcoming meals data
       await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
-      
+
       toast({
         title: "Delivery Updated",
         description: editForm.applyToFuture 
-          ? "Delivery preferences updated for this week and all future deliveries."
-          : "Delivery preferences updated for this week only.",
+          ? "Your delivery preferences have been updated for this week and all future weeks."
+          : "Your delivery preferences have been updated for this week."
       });
-      
+
       setEditingDelivery(null);
-    } catch (error: any) {
+    } catch (error) {
       toast({
-        title: "Update Failed",
-        description: error.message || "Failed to update delivery",
+        title: "Error",
+        description: "There was an error updating your delivery. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -366,400 +349,732 @@ const AccountPage = () => {
     }
   };
 
-  const handleEditMeals = async (weekId: number) => {
-    setIsLoadingMeals(true);
+  // Handle payment method editing
+  const handleEditPayment = async () => {
+    if (!editingPayment) return;
+
     try {
-      navigate(`/menu/${weekId}?editing=true`);
+      setIsUpdating(true);
+
+      // Update the payment method for the specific order
+      await apiRequest('PATCH', `/api/orders/${editingPayment.orderId}/payment`, {
+        paymentMethod: paymentForm.paymentMethod,
+        applyToFuture: paymentForm.applyToFuture
+      });
+
+      // Refresh upcoming meals data
+      await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+
+      toast({
+        title: "Payment Method Updated",
+        description: paymentForm.applyToFuture 
+          ? "Your payment method has been updated for this week and all future weeks."
+          : "Your payment method has been updated for this week."
+      });
+
+      setEditingPayment(null);
     } catch (error) {
-      console.error('Navigation error:', error);
+      toast({
+        title: "Error",
+        description: "There was an error updating your payment method. Please try again.",
+        variant: "destructive"
+      });
     } finally {
-      setIsLoadingMeals(false);
+      setIsUpdating(false);
     }
   };
 
-  const getPortionDisplayName = (portion: string) => {
-    switch (portion) {
-      case 'standard': return 'Standard';
-      case 'large': return 'Large';
-      case 'mixed': return 'Mix & Match';
-      default: return portion;
+  // Skip/unskip implementation with immediate local state updates
+  const handleSkipToggle = async (orderId: number, weekId: number, skip: boolean) => {
+    try {
+      // Set loading state
+      setProcessingWeekId(weekId);
+      
+      // Immediately update local state for instant UI feedback
+      setLocalUpcomingMeals((prev: any) => {
+        if (!prev || !prev.upcomingMeals) return prev;
+        
+        return {
+          ...prev,
+          upcomingMeals: prev.upcomingMeals.map((week: any) => {
+            if (week.orderId === orderId) {
+              return {
+                ...week,
+                isSkipped: skip,
+                canSkip: !skip,
+                canUnskip: skip
+              };
+            }
+            return week;
+          })
+        };
+      });
+      
+      // Make API call to the correct endpoint
+      if (skip) {
+        await apiRequest('PATCH', `/api/orders/${orderId}/skip`);
+      } else {
+        await apiRequest('PATCH', `/api/orders/${orderId}/unskip`);
+      }
+      
+      // Invalidate relevant queries to refresh data from server
+      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      
+      // Success message
+      toast({
+        title: skip ? "Delivery Skipped" : "Delivery Restored",
+        description: skip 
+          ? "Your delivery has been skipped. You can unskip it anytime before the order deadline."
+          : "Your delivery has been restored. You can now edit your meal selections."
+      });
+      
+      // Reset loading state
+      setProcessingWeekId(null);
+      
+      // If we unskipped, scroll to the meal selection after a brief delay
+      if (!skip) {
+        setTimeout(() => {
+          document.getElementById(`meal-selection-${weekId}`)?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+        }, 300);
+      }
+    } catch (error) {
+      console.error(`Error ${skip ? 'skipping' : 'unskipping'} delivery:`, error);
+      
+      // Revert local state on error
+      setLocalUpcomingMeals((prev: any) => {
+        if (!prev || !prev.upcomingMeals) return prev;
+        
+        return {
+          ...prev,
+          upcomingMeals: prev.upcomingMeals.map((week: any) => {
+            if (week.orderId === orderId) {
+              return {
+                ...week,
+                isSkipped: !skip,
+                canSkip: skip,
+                canUnskip: !skip
+              };
+            }
+            return week;
+          })
+        };
+      });
+      
+      toast({
+        title: "Error",
+        description: `Failed to ${skip ? 'skip' : 'restore'} delivery. Please try again.`,
+        variant: "destructive"
+      });
+      setProcessingWeekId(null);
     }
   };
 
-  const renderMealItems = (items: any[]) => {
-    if (!items || items.length === 0) {
-      return <p className="text-gray-500 text-sm">No meals selected</p>;
-    }
+  // Fetch meals for the selected week
+  useEffect(() => {
+    const fetchMealsForWeek = async () => {
+      if (!selectedWeekId) return;
 
+      setIsLoadingMeals(true);
+      try {
+        const response: any = await apiRequest('GET', `/api/menu/${selectedWeekId}`);
+        setAvailableMeals(response.meals || []);
+
+        // Get current meal selections for this week from upcoming meals data
+        const currentWeek = displayUpcomingMeals?.upcomingMeals.find(week => week.weekId === selectedWeekId);
+        if (currentWeek) {
+          setMealCount(currentWeek.mealCount);
+
+          // Convert week items to OrderItems
+          const orderItems: OrderItem[] = currentWeek.items.map(item => ({
+            mealId: item.mealId,
+            portionSize: item.portionSize as PortionSize
+          }));
+
+          setSelectedMeals(orderItems);
+        }
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to load meals for this week.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoadingMeals(false);
+      }
+    };
+
+    fetchMealsForWeek();
+  }, [selectedWeekId, upcomingMealsData, toast]);
+
+  // Show loading while authentication is in progress
+  if (isUserLoading) {
     return (
-      <div className="space-y-2">
-        {items.map((item: any, index: number) => (
-          <div key={index} className="flex justify-between items-center text-sm">
-            <span className="font-medium">{item.mealTitle}</span>
-            <div className="flex items-center gap-2 text-gray-600">
-              <span>x{item.quantity}</span>
-              {item.portionSize && item.portionSize !== 'standard' && (
-                <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                  {getPortionDisplayName(item.portionSize)}
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
+      <div className="container mx-auto px-4 py-16">
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mb-4"></div>
+          <p className="text-gray-600">Loading your account...</p>
+        </div>
       </div>
     );
-  };
+  }
 
-  const renderUpcomingMeals = () => {
-    if (!upcomingMeals || !upcomingMeals.upcomingMeals || upcomingMeals.upcomingMeals.length === 0) {
-      return (
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-gray-500 text-center">No upcoming meals found.</p>
-          </CardContent>
-        </Card>
-      );
-    }
-
+  // Only show login prompt if user is definitively not authenticated
+  if (!user) {
     return (
-      <div className="space-y-4">
-        {upcomingMeals.upcomingMeals.map((week: any) => (
-          <Card key={week.weekId} className={week.isSkipped ? "opacity-60" : ""}>
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{formatWeekLabel(week.weekLabel)}</CardTitle>
-                  <CardDescription>
-                    {week.mealCount} meals • {getPortionDisplayName(week.portionSize)}
-                    {week.isSkipped && <span className="ml-2 text-orange-600 font-medium">(Skipped)</span>}
-                  </CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  {!week.isSkipped ? (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditDelivery(week)}
-                      >
-                        Edit Delivery
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditMeals(week.weekId)}
-                        disabled={isLoadingMeals}
-                      >
-                        {isLoadingMeals ? 'Loading...' : 'Edit Meals'}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSkipWeek(week.weekId)}
-                        disabled={processingWeekId === week.weekId}
-                      >
-                        {processingWeekId === week.weekId ? 'Skipping...' : 'Skip Week'}
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleUnskipWeek(week.weekId)}
-                      disabled={processingWeekId === week.weekId}
-                    >
-                      {processingWeekId === week.weekId ? 'Restoring...' : 'Restore Week'}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {!week.isSkipped && renderMealItems(week.meals)}
-            </CardContent>
-          </Card>
-        ))}
+      <div className="container mx-auto px-4 py-16">
+        <div className="flex flex-col items-center justify-center py-12">
+          <h1 className="text-2xl font-bold mb-4">Please Log In</h1>
+          <p className="text-gray-600 mb-6">You need to be logged in to view this page.</p>
+          <Button onClick={() => navigate('/auth')}>Log In</Button>
+        </div>
       </div>
     );
+  }
+
+  // Show profile loading state separately - don't block the entire page
+  const profileData = profile || {
+    name: user.name || '',
+    email: user.email || '',
+    phone: user.phone || '',
+    address: user.address || ''
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">My Account</h1>
-        <Button 
-          variant="outline" 
-          onClick={handleLogout}
-          className="text-gray-600 hover:text-gray-900"
-        >
-          Sign Out
-        </Button>
-      </div>
+    <div className="container mx-auto px-4 py-16">
+      <div className="max-w-6xl mx-auto">
+        <Tabs defaultValue="upcoming" className="space-y-8">
+          <TabsList>
+            <TabsTrigger value="upcoming">Upcoming Meals</TabsTrigger>
+            <TabsTrigger value="orders">Order History</TabsTrigger>
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+          </TabsList>
 
-      <Tabs defaultValue="upcoming" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="upcoming">Upcoming Meals</TabsTrigger>
-          <TabsTrigger value="orders">Order History</TabsTrigger>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-        </TabsList>
+          <TabsContent value="upcoming" className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-primary mb-6">Upcoming Deliveries</h2>
 
-        <TabsContent value="upcoming" className="space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Your Upcoming Meals</h2>
-            {renderUpcomingMeals()}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="orders" className="space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Order History</h2>
-            {!ordersData || !ordersData.orders || ordersData.orders.length === 0 ? (
-              <Card>
-                <CardContent className="p-6">
-                  <p className="text-gray-500 text-center">No orders found.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {ordersData?.orders?.map((order: Order) => (
-                  <Card key={order.id}>
-                    <CardContent className="p-6">
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="font-semibold">Order #{order.id}</h3>
-                          <p className="text-sm text-gray-600">
-                            {order.deliveryDate ? formatDate(new Date(order.deliveryDate)) : 'Date not set'}
-                          </p>
+              {displayUpcomingMeals?.upcomingMeals && displayUpcomingMeals.upcomingMeals.length > 0 ? (
+                <div className="space-y-6">
+                  {/* Week selector */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-8">
+                    {displayUpcomingMeals.upcomingMeals.map((week) => (
+                      <button
+                        key={week.weekId}
+                        onClick={() => setSelectedWeekId(week.weekId)}
+                        className={`py-4 px-2 text-center rounded-md transition-colors ${
+                          selectedWeekId === week.weekId 
+                            ? 'border-2 border-primary bg-primary/5' 
+                            : 'border border-gray-200 hover:bg-gray-50'
+                        } ${week.isSkipped ? 'opacity-50' : ''}`}
+                      >
+                        <div className="font-medium">
+                          {formatWeekLabel(week.weekLabel)}
                         </div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(order.status || 'pending')}`}>
-                          {order.status?.charAt(0).toUpperCase()}{order.status?.slice(1) || 'Pending'}
-                        </span>
+                        {week.isSkipped && (
+                          <div className="text-sm text-gray-500 mt-1">Skipped</div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Selected week details */}
+                  {selectedWeekId && displayUpcomingMeals.upcomingMeals.map(week => {
+                    if (week.weekId !== selectedWeekId) return null;
+
+                    const deadline = new Date(week.orderDeadline);
+                    const deliveryDate = new Date(week.deliveryDate);
+                    const now = new Date();
+                    const isDeadlinePassed = deadline < now;
+                    
+                    return (
+                      <div key={`details-${week.weekId}`} className="space-y-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-xl">
+                              {week.weekLabel}
+                            </CardTitle>
+                            <CardDescription>
+                              <div className="text-sm mt-2">
+                                <span className="block mb-1">
+                                  <strong>Order By:</strong> {formatDate(deadline, true)}
+                                </span>
+                                <span className="block">
+                                  <strong>Delivery Date:</strong> {formatDate(deliveryDate, true)}
+                                </span>
+                              </div>
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            {isDeadlinePassed ? (
+                              <div className="bg-amber-50 text-amber-700 p-4 rounded-md mb-4">
+                                <p className="font-medium">Order deadline has passed</p>
+                                <p className="text-sm">You can no longer modify this order.</p>
+                              </div>
+                            ) : week.isSkipped ? (
+                              <div className="bg-gray-100 p-4 rounded-md mb-4">
+                                <p className="font-medium">This delivery is skipped</p>
+                                <p className="text-sm">You have chosen to skip this week's delivery.</p>
+                              </div>
+                            ) : null}
+                            
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <p className="font-medium">{week.mealCount} meals · {week.defaultPortionSize} size</p>
+                                <p className="text-sm text-gray-500">
+                                  {week.orderId ? "Order confirmed" : "No order yet"}
+                                </p>
+                              </div>
+                              
+                              <div className="space-x-2">
+                                {!isDeadlinePassed && !week.isSkipped && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => openEditDelivery(week.weekId, week.mealCount, week.defaultPortionSize)}
+                                    className="flex items-center"
+                                  >
+                                    <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                    Edit Delivery
+                                  </Button>
+                                )}
+                                {!isDeadlinePassed && !week.isSkipped && week.orderId && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => openEditPayment(week.weekId, week.orderId, week.paymentMethod)}
+                                    className="flex items-center"
+                                  >
+                                    <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                    </svg>
+                                    Payment
+                                  </Button>
+                                )}
+                                {week.orderId && week.canSkip && !week.isSkipped && (
+                                  <Button 
+                                    variant="outline" 
+                                    disabled={processingWeekId === week.weekId}
+                                    onClick={() => handleSkipToggle(week.orderId as number, week.weekId, true)}
+                                    className="flex items-center"
+                                  >
+                                    {processingWeekId === week.weekId ? (
+                                      <>
+                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Processing...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        Skip Delivery
+                                      </>
+                                    )}
+                                  </Button>
+                                )}
+                                
+                                {week.orderId && week.canUnskip && week.isSkipped && (
+                                  <Button 
+                                    variant="outline" 
+                                    disabled={processingWeekId === week.weekId}
+                                    onClick={() => handleSkipToggle(week.orderId as number, week.weekId, false)}
+                                    className="flex items-center"
+                                  >
+                                    {processingWeekId === week.weekId ? (
+                                      <>
+                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Processing...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                        Unskip Delivery
+                                      </>
+                                    )}
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        {/* Meal selection panel */}
+                        {!week.isSkipped && (
+                          <div id={`meal-selection-${week.weekId}`}>
+                            <FixedMealSelector 
+                              weekId={week.weekId}
+                              orderId={week.orderId}
+                              mealCount={week.mealCount}
+                              items={week.items}
+                              defaultPortionSize={week.defaultPortionSize || 'standard'}
+                            />
+                          </div>
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="profile" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Information</CardTitle>
-              <CardDescription>Manage your account details and delivery information</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!isEditing ? (
-                <div className="space-y-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Name</Label>
-                    <p className="text-gray-900">{profile?.name || 'Not set'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Email</Label>
-                    <p className="text-gray-900">{profile?.email || 'Not set'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Phone</Label>
-                    <p className="text-gray-900">{profile?.phone || 'Not set'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Delivery Address</Label>
-                    <div className="text-gray-900">
-                      {profile?.address ? (
-                        <div>
-                          <p>{profile.address.street}</p>
-                          <p>{profile.address.area}</p>
-                          {profile.address.building && <p>Building: {profile.address.building}</p>}
-                          {profile.address.floor && <p>Floor: {profile.address.floor}</p>}
-                          {profile.address.apartment && <p>Apartment: {profile.address.apartment}</p>}
-                          {profile.address.instructions && <p>Instructions: {profile.address.instructions}</p>}
-                        </div>
-                      ) : (
-                        <p>Not set</p>
-                      )}
-                    </div>
-                  </div>
-                  <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
+                    );
+                  })}
                 </div>
               ) : (
-                <form onSubmit={handleProfileUpdate} className="space-y-4">
-                  <div>
-                    <Label htmlFor="name">Name</Label>
-                    <Input
-                      id="name"
-                      name="name"
-                      defaultValue={profile?.name || ''}
-                      required
-                    />
+                <div className="text-center py-12">
+                  {isLoadingUpcomingMeals ? (
+                    <p>Loading upcoming meals...</p>
+                  ) : (
+                    <p>No upcoming meal deliveries found.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="orders" className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-primary mb-6">Order History</h2>
+              
+              {ordersData?.orders && ordersData.orders.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Order ID</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {ordersData.orders.map((order: Order) => (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-medium">#{order.id}</TableCell>
+                        <TableCell>{formatDate(new Date(order.createdAt))}</TableCell>
+                        <TableCell>
+                          <span className={getStatusClass(order.status)}>
+                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          </span>
+                        </TableCell>
+                        <TableCell>${order.total.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              // Navigate to order details or show modal
+                              toast({
+                                title: "Coming Soon",
+                                description: "Order details view is coming soon."
+                              });
+                            }}
+                          >
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-12">
+                  <p>No order history found.</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="profile" className="space-y-8">
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-primary">Profile</h2>
+                {!isEditing ? (
+                  <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
+                ) : (
+                  <div className="space-x-2">
+                    <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                    <Button onClick={handleSaveProfile} disabled={isUpdating}>
+                      {isUpdating ? "Saving..." : "Save"}
+                    </Button>
                   </div>
-                  <div>
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      defaultValue={profile?.email || ''}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="phone">Phone</Label>
-                    <Input
-                      id="phone"
-                      name="phone"
-                      defaultValue={profile?.phone || ''}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Delivery Address</Label>
+                )}
+              </div>
+              
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="street">Street Address</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Name</Label>
                         <Input
-                          id="street"
-                          name="street"
-                          defaultValue={profile?.address?.street || ''}
-                          required
+                          id="name"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
                         />
                       </div>
-                      <div>
-                        <Label htmlFor="area">Area</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
                         <Input
-                          id="area"
-                          name="area"
-                          defaultValue={profile?.address?.area || ''}
-                          required
+                          id="email"
+                          name="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
                         />
                       </div>
-                      <div>
-                        <Label htmlFor="building">Building (Optional)</Label>
-                        <Input
-                          id="building"
-                          name="building"
-                          defaultValue={profile?.address?.building || ''}
-                        />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input
+                        id="phone"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        disabled={!isEditing}
+                      />
+                    </div>
+                    
+                    {/* Address Fields */}
+                    <div className="border-t pt-4 mt-6">
+                      <h3 className="font-semibold text-lg mb-4">Delivery Address</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="street">Street</Label>
+                          <Input
+                            id="street"
+                            name="street"
+                            value={formData.street}
+                            onChange={handleInputChange}
+                            disabled={!isEditing}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="building">Building</Label>
+                          <Input
+                            id="building"
+                            name="building"
+                            value={formData.building}
+                            onChange={handleInputChange}
+                            disabled={!isEditing}
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <Label htmlFor="floor">Floor (Optional)</Label>
-                        <Input
-                          id="floor"
-                          name="floor"
-                          defaultValue={profile?.address?.floor || ''}
-                        />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="apartment">Apartment/Unit</Label>
+                          <Input
+                            id="apartment"
+                            name="apartment"
+                            value={formData.apartment}
+                            onChange={handleInputChange}
+                            disabled={!isEditing}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="area">Area/District</Label>
+                          <Input
+                            id="area"
+                            name="area"
+                            value={formData.area}
+                            onChange={handleInputChange}
+                            disabled={!isEditing}
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <Label htmlFor="apartment">Apartment (Optional)</Label>
+                      <div className="space-y-2 mt-4">
+                        <Label htmlFor="landmark">Landmark (Optional)</Label>
                         <Input
-                          id="apartment"
-                          name="apartment"
-                          defaultValue={profile?.address?.apartment || ''}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="instructions">Delivery Instructions (Optional)</Label>
-                        <Input
-                          id="instructions"
-                          name="instructions"
-                          defaultValue={profile?.address?.instructions || ''}
+                          id="landmark"
+                          name="landmark"
+                          value={formData.landmark}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
                         />
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button type="submit" disabled={isUpdating}>
-                      {isUpdating ? 'Updating...' : 'Update Profile'}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsEditing(false)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                </CardContent>
+              </Card>
+              
+              <div className="mt-8">
+                <Button variant="outline" className="text-red-500" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
 
-      {/* Edit Delivery Dialog */}
-      <Dialog open={!!editingDelivery} onOpenChange={(open) => !open && setEditingDelivery(null)}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit Delivery Preferences</DialogTitle>
-            <DialogDescription>
-              Change your meal count and portion preferences for this delivery.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="meal-count" className="text-right">
-                Meal Count
-              </Label>
-              <Select
-                value={editForm.mealCount.toString()} 
-                onValueChange={(value) => setEditForm({...editForm, mealCount: parseInt(value)})}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({length: 12}, (_, i) => i + 4).map(count => (
-                    <SelectItem key={count} value={count.toString()}>
-                      {count} meals
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        {/* Edit Delivery Dialog */}
+        <Dialog open={!!editingDelivery} onOpenChange={() => setEditingDelivery(null)}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Edit Delivery Preferences</DialogTitle>
+              <DialogDescription>
+                Change your meal count and portion size for this delivery. You can apply changes to future deliveries too.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="meal-count" className="text-right">
+                  Meal Count
+                </Label>
+                <Select 
+                  value={editForm.mealCount.toString()} 
+                  onValueChange={(value) => setEditForm({...editForm, mealCount: parseInt(value)})}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="4">4 meals</SelectItem>
+                    <SelectItem value="5">5 meals</SelectItem>
+                    <SelectItem value="6">6 meals</SelectItem>
+                    <SelectItem value="7">7 meals</SelectItem>
+                    <SelectItem value="8">8 meals</SelectItem>
+                    <SelectItem value="9">9 meals</SelectItem>
+                    <SelectItem value="10">10 meals</SelectItem>
+                    <SelectItem value="11">11 meals</SelectItem>
+                    <SelectItem value="12">12 meals</SelectItem>
+                    <SelectItem value="13">13 meals</SelectItem>
+                    <SelectItem value="14">14 meals</SelectItem>
+                    <SelectItem value="15">15 meals</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="portion-size" className="text-right">
+                  Portion Size
+                </Label>
+                <Select 
+                  value={editForm.portionSize} 
+                  onValueChange={(value) => setEditForm({...editForm, portionSize: value as 'standard' | 'large' | 'mixed'})}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Standard</SelectItem>
+                    <SelectItem value="large">Large (+99 EGP per meal)</SelectItem>
+                    <SelectItem value="mixed">Mix & Match</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center space-x-2 mt-4">
+                <Checkbox 
+                  id="apply-future"
+                  checked={editForm.applyToFuture}
+                  onCheckedChange={(checked) => setEditForm({...editForm, applyToFuture: !!checked})}
+                />
+                <Label htmlFor="apply-future" className="text-sm">
+                  Apply these changes to all future deliveries
+                </Label>
+              </div>
+
+              {/* Price Display */}
+              {editForm.mealCount > 0 && (
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="text-sm text-gray-600">
+                    New total: <span className="font-semibold text-green-600">
+                      EGP {calculateDeliveryPrice(editForm.mealCount, editForm.portionSize).toFixed(0)}
+                    </span>
+                  </div>
+                  {editForm.portionSize === 'mixed' && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      Base price shown. Individual meal portions can be selected later.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="portion-size" className="text-right">
-                Portion Size
-              </Label>
-              <Select
-                value={editForm.portionSize} 
-                onValueChange={(value) => setEditForm({...editForm, portionSize: value as 'standard' | 'large' | 'mixed'})}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="standard">Standard</SelectItem>
-                  <SelectItem value="large">Large</SelectItem>
-                  <SelectItem value="mixed">Mix & Match</SelectItem>
-                </SelectContent>
-              </Select>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditingDelivery(null)}>
+                Cancel
+              </Button>
+              <Button onClick={handleEditDelivery} disabled={isUpdating}>
+                {isUpdating ? "Updating..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Payment Method Dialog */}
+        <Dialog open={!!editingPayment} onOpenChange={() => setEditingPayment(null)}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Edit Payment Method</DialogTitle>
+              <DialogDescription>
+                Update your payment method for this delivery or all future deliveries.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="paymentMethod">Payment Method</Label>
+                <Select 
+                  value={paymentForm.paymentMethod} 
+                  onValueChange={(value) => setPaymentForm(prev => ({ ...prev, paymentMethod: value as 'credit_card' | 'cash' | 'bank_transfer' }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="credit_card">Credit Card</SelectItem>
+                    <SelectItem value="cash">Cash on Delivery</SelectItem>
+                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="applyToFuture"
+                  checked={paymentForm.applyToFuture}
+                  onCheckedChange={(checked) => setPaymentForm(prev => ({ ...prev, applyToFuture: !!checked }))}
+                />
+                <Label htmlFor="applyToFuture" className="text-sm">
+                  Apply to all future deliveries
+                </Label>
+              </div>
+              
+              {editingPayment && (
+                <div className="bg-gray-50 p-3 rounded-md text-sm">
+                  <p className="font-medium">Current: {editingPayment.currentPaymentMethod || 'Not set'}</p>
+                  <p className="text-gray-600 mt-1">
+                    {paymentForm.applyToFuture 
+                      ? "This will update your payment method for this week and all future weeks."
+                      : "This will only update your payment method for this week."
+                    }
+                  </p>
+                </div>
+              )}
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="apply-future"
-                checked={editForm.applyToFuture}
-                onCheckedChange={(checked) => setEditForm({...editForm, applyToFuture: !!checked})}
-              />
-              <Label htmlFor="apply-future" className="text-sm">
-                Apply to all future deliveries
-              </Label>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setEditingDelivery(null)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleEditDelivery} disabled={isUpdating}>
-              {isUpdating ? 'Updating...' : 'Update Delivery'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditingPayment(null)}>
+                Cancel
+              </Button>
+              <Button onClick={handleEditPayment} disabled={isUpdating}>
+                {isUpdating ? "Updating..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 };

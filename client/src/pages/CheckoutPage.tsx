@@ -102,8 +102,6 @@ const CheckoutPage = () => {
   };
   
   const handleSubmitOrder = async () => {
-    console.log('CheckoutPage - Starting checkout process');
-    
     // Validation
     if (!address.street || !address.area || !address.phone) {
       toast({
@@ -117,7 +115,6 @@ const CheckoutPage = () => {
     setIsSubmitting(true);
     
     try {
-      console.log('CheckoutPage - Calling checkout API');
       await apiRequest('POST', '/api/orders/checkout', {
         orderId: pendingOrder?.id,
         paymentMethod,
@@ -125,7 +122,8 @@ const CheckoutPage = () => {
         deliveryNotes
       });
       
-      console.log('CheckoutPage - Checkout API successful');
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       
       toast({
         title: "Order placed successfully!",
@@ -133,13 +131,9 @@ const CheckoutPage = () => {
         variant: "default"
       });
       
-      // Set a flag in localStorage to indicate successful checkout
-      localStorage.setItem('wagba_checkout_success', 'true');
-      
-      console.log('CheckoutPage - Navigating to /account');
+      // Redirect to account page
       navigate('/account');
     } catch (error) {
-      console.error('CheckoutPage - Checkout error:', error);
       toast({
         title: "Error placing order",
         description: "There was a problem processing your order. Please try again.",

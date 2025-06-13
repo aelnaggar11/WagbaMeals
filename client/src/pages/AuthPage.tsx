@@ -72,12 +72,23 @@ const AuthPage = () => {
       }
       
       // Invalidate queries to refresh auth state
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/user/profile'] });
       
       toast({
         title: "Login successful",
         description: "Welcome back to Wagba!"
       });
+      
+      // Wait for auth state to update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Pre-fetch the user data to ensure authentication is working
+      try {
+        await queryClient.fetchQuery({ queryKey: ['/api/auth/me'] });
+      } catch (error) {
+        console.log('Auth prefetch failed, proceeding anyway:', error);
+      }
       
       // Redirect to return URL if available, otherwise to account page
       if (returnTo) {
@@ -246,11 +257,21 @@ const AuthPage = () => {
           navigate('/checkout');
         }
       } else {
-        // No saved selections, redirect to return URL if available or meal plans as fallback
+        // No saved selections, wait for auth state to update then redirect to account
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Pre-fetch the user data to ensure authentication is working
+        try {
+          await queryClient.fetchQuery({ queryKey: ['/api/auth/me'] });
+        } catch (error) {
+          console.log('Auth prefetch failed, proceeding anyway:', error);
+        }
+        
+        // Redirect to return URL if available or account page
         if (returnTo) {
           navigate(returnTo);
         } else {
-          navigate('/meal-plans');
+          navigate('/account');
         }
       }
     } catch (error) {

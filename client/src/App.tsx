@@ -1,4 +1,4 @@
-import { Route, Switch, useLocation } from "wouter";
+import { Route, Switch } from "wouter";
 import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import Home from "@/pages/Home";
@@ -17,8 +17,18 @@ import { User, Admin } from "@shared/schema";
 import { Loader2 } from "lucide-react";
 
 function App() {
-  // Use wouter's location hook instead of manual tracking
-  const [location, navigate] = useLocation();
+  // Get current location for protected route handling
+  const [location, setLocation] = useState(window.location.pathname);
+  
+  // Listen for location changes
+  useEffect(() => {
+    const handleRouteChange = () => {
+      setLocation(window.location.pathname);
+    };
+    
+    window.addEventListener('popstate', handleRouteChange);
+    return () => window.removeEventListener('popstate', handleRouteChange);
+  }, []);
   
   // User authentication query with proper 401 handling
   const { data: user, isLoading: userLoading } = useQuery<User | null>({
@@ -48,14 +58,29 @@ function App() {
     retry: 1
   });
   
-  // Handle auth redirects for admin routes only (user routes handled by components)
+  // Handle auth redirects
   useEffect(() => {
+    const isUserRoute = 
+      location.startsWith('/account') || 
+      location.startsWith('/checkout');
     const isAdminRoute = location.startsWith('/admin');
       
-    if (!adminLoading && !admin && isAdminRoute && location !== '/admin/login') {
-      navigate('/admin/login');
+    // Redirect authenticated users away from auth page to their account
+    if (!userLoading && user && location === '/auth') {
+      window.location.href = '/account';
+      return;
     }
-  }, [admin, adminLoading, location, navigate]);
+    
+    // Redirect unauthenticated users from protected routes to auth
+    if (!userLoading && !user && isUserRoute) {
+      window.location.href = '/auth';
+    }
+    
+    // Admin redirects
+    if (!adminLoading && !admin && isAdminRoute && location !== '/admin/login') {
+      window.location.href = '/admin/login';
+    }
+  }, [user, admin, userLoading, adminLoading, location]);
   
   // Show loading spinner for protected routes
   if ((userLoading && (location.startsWith('/account') || location.startsWith('/checkout'))) ||
