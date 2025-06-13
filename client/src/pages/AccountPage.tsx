@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Order, User, Meal, OrderItem, PortionSize } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -22,6 +25,18 @@ const AccountPage = () => {
   
   // Single state variable to track which week is being processed
   const [processingWeekId, setProcessingWeekId] = useState<number | null>(null);
+  
+  // Delivery editing state
+  const [editingDelivery, setEditingDelivery] = useState<{
+    weekId: number;
+    currentMealCount: number;
+    currentPortionSize: string;
+  } | null>(null);
+  const [editForm, setEditForm] = useState({
+    mealCount: 0,
+    portionSize: 'standard' as 'standard' | 'large',
+    applyToFuture: false
+  });
 
   // Helper function to format week dates as "Sat 5 July"
   const formatWeekLabel = (weekLabel: string) => {
@@ -250,6 +265,52 @@ const AccountPage = () => {
     }
   };
 
+  // Open delivery editing dialog
+  const openEditDelivery = (weekId: number, mealCount: number, portionSize: string) => {
+    setEditingDelivery({ weekId, currentMealCount: mealCount, currentPortionSize: portionSize });
+    setEditForm({
+      mealCount,
+      portionSize: portionSize as 'standard' | 'large',
+      applyToFuture: false
+    });
+  };
+
+  // Handle delivery editing
+  const handleEditDelivery = async () => {
+    if (!editingDelivery) return;
+
+    try {
+      setIsUpdating(true);
+
+      // Update the order with new meal count and portion size
+      await apiRequest('PATCH', `/api/orders/${editingDelivery.weekId}/delivery`, {
+        mealCount: editForm.mealCount,
+        defaultPortionSize: editForm.portionSize,
+        applyToFuture: editForm.applyToFuture
+      });
+
+      // Refresh upcoming meals data
+      await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+
+      toast({
+        title: "Delivery Updated",
+        description: editForm.applyToFuture 
+          ? "Your delivery preferences have been updated for this week and all future weeks."
+          : "Your delivery preferences have been updated for this week."
+      });
+
+      setEditingDelivery(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "There was an error updating your delivery. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   // Skip/unskip implementation with immediate local state updates
   const handleSkipToggle = async (orderId: number, weekId: number, skip: boolean) => {
     try {
@@ -468,13 +529,26 @@ const AccountPage = () => {
                             
                             <div className="flex justify-between items-center">
                               <div>
-                                <p className="font-medium">{week.mealCount} meals</p>
+                                <p className="font-medium">{week.mealCount} meals · {week.defaultPortionSize} size</p>
                                 <p className="text-sm text-gray-500">
                                   {week.orderId ? "Order confirmed" : "No order yet"}
                                 </p>
                               </div>
                               
                               <div className="space-x-2">
+                                {!isDeadlinePassed && !week.isSkipped && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => openEditDelivery(week.weekId, week.mealCount, week.defaultPortionSize)}
+                                    className="flex items-center"
+                                  >
+                                    <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                    Edit
+                                  </Button>
+                                )}
                                 {week.orderId && week.canSkip && !week.isSkipped && (
                                   <Button 
                                     variant="outline" 
@@ -734,6 +808,78 @@ const AccountPage = () => {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Edit Delivery Dialog */}
+        <Dialog open={!!editingDelivery} onOpenChange={() => setEditingDelivery(null)}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Edit Delivery Preferences</DialogTitle>
+              <DialogDescription>
+                Change your meal count and portion size for this delivery. You can apply changes to future deliveries too.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="meal-count" className="text-right">
+                  Meal Count
+                </Label>
+                <Select 
+                  value={editForm.mealCount.toString()} 
+                  onValueChange={(value) => setEditForm({...editForm, mealCount: parseInt(value)})}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 meals</SelectItem>
+                    <SelectItem value="7">7 meals</SelectItem>
+                    <SelectItem value="10">10 meals</SelectItem>
+                    <SelectItem value="14">14 meals</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="portion-size" className="text-right">
+                  Portion Size
+                </Label>
+                <Select 
+                  value={editForm.portionSize} 
+                  onValueChange={(value) => setEditForm({...editForm, portionSize: value as 'standard' | 'large'})}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Standard</SelectItem>
+                    <SelectItem value="large">Large (+99 EGP per meal)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center space-x-2 mt-4">
+                <Checkbox 
+                  id="apply-future"
+                  checked={editForm.applyToFuture}
+                  onCheckedChange={(checked) => setEditForm({...editForm, applyToFuture: !!checked})}
+                />
+                <Label htmlFor="apply-future" className="text-sm">
+                  Apply these changes to all future deliveries
+                </Label>
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditingDelivery(null)}>
+                Cancel
+              </Button>
+              <Button onClick={handleEditDelivery} disabled={isUpdating}>
+                {isUpdating ? "Updating..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
