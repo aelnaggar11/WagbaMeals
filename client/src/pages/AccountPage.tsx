@@ -126,12 +126,12 @@ const AccountPage = () => {
   };
   
   // Get authenticated user
-  const { data: user } = useQuery({
+  const { data: user, isLoading: isUserLoading } = useQuery({
     queryKey: ['/api/auth/me'],
   });
   
   // Get user profile
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: isProfileLoading } = useQuery({
     queryKey: ['/api/user/profile'],
     enabled: !!user
   });
@@ -510,7 +510,20 @@ const AccountPage = () => {
     fetchMealsForWeek();
   }, [selectedWeekId, upcomingMealsData, toast]);
 
-  if (!user || !profile) {
+  // Show loading while authentication is in progress
+  if (isUserLoading) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mb-4"></div>
+          <p className="text-gray-600">Loading your account...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Only show login prompt if user is definitively not authenticated
+  if (!user) {
     return (
       <div className="container mx-auto px-4 py-16">
         <div className="flex flex-col items-center justify-center py-12">
@@ -521,6 +534,14 @@ const AccountPage = () => {
       </div>
     );
   }
+
+  // Show profile loading state separately - don't block the entire page
+  const profileData = profile || {
+    name: user.name || '',
+    email: user.email || '',
+    phone: user.phone || '',
+    address: user.address || ''
+  };
 
   return (
     <div className="container mx-auto px-4 py-16">
