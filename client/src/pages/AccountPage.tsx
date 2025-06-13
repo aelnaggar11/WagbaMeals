@@ -38,6 +38,24 @@ const AccountPage = () => {
     applyToFuture: false
   });
 
+  // Calculate pricing for delivery editing
+  const calculateDeliveryPrice = (mealCount: number, portionSize: string) => {
+    const pricing: { [key: number]: number } = {
+      4: 249, 5: 239, 6: 239, 7: 219, 8: 219, 9: 219,
+      10: 199, 11: 199, 12: 199, 13: 199, 14: 199, 15: 199
+    };
+    
+    const basePrice = pricing[mealCount] || 249;
+    
+    if (portionSize === 'large') {
+      return (basePrice + 99) * mealCount;
+    } else if (portionSize === 'mixed') {
+      return basePrice * mealCount; // Base price for mixed (portions selected individually)
+    }
+    
+    return basePrice * mealCount;
+  };
+
   // Helper function to format week dates as "Sat 5 July"
   const formatWeekLabel = (weekLabel: string) => {
     // Handle cross-month formats like "Jun 28-Jul 4, 2025"

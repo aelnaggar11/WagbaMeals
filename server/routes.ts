@@ -1142,14 +1142,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Meal count and portion size are required' });
       }
 
-      // Validate meal count
-      const validMealCounts = [5, 7, 10, 14];
-      if (!validMealCounts.includes(parseInt(mealCount))) {
-        return res.status(400).json({ message: 'Invalid meal count' });
+      // Validate meal count (4-15 meals allowed)
+      const mealCountNum = parseInt(mealCount);
+      if (isNaN(mealCountNum) || mealCountNum < 4 || mealCountNum > 15) {
+        return res.status(400).json({ message: 'Meal count must be between 4 and 15' });
       }
 
       // Validate portion size
-      if (!['standard', 'large'].includes(defaultPortionSize)) {
+      if (!['standard', 'large', 'mixed'].includes(defaultPortionSize)) {
         return res.status(400).json({ message: 'Invalid portion size' });
       }
 
@@ -1170,10 +1170,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!order) {
         // Create new order if it doesn't exist
-        const pricePerMeal = getPriceForMealCount(parseInt(mealCount));
-        const largePortionAdditional = defaultPortionSize === 'large' ? 99 : 0;
-        const itemPrice = pricePerMeal + largePortionAdditional;
-        const subtotal = itemPrice * parseInt(mealCount);
+        const pricePerMeal = getPriceForMealCount(mealCountNum);
+        let itemPrice = pricePerMeal;
+        
+        // For mixed portion size, use base standard price
+        if (defaultPortionSize === 'large') {
+          itemPrice = pricePerMeal + 99;
+        } else if (defaultPortionSize === 'mixed') {
+          // For mixed, use standard price as base (user will specify individual portions later)
+          itemPrice = pricePerMeal;
+        }
+        
+        const subtotal = itemPrice * mealCountNum;
         const fullPriceTotal = parseInt(mealCount) * 249;
         const discount = Math.max(0, fullPriceTotal - subtotal);
 
@@ -1188,10 +1196,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       } else {
         // Update existing order
-        const pricePerMeal = getPriceForMealCount(parseInt(mealCount));
-        const largePortionAdditional = defaultPortionSize === 'large' ? 99 : 0;
-        const itemPrice = pricePerMeal + largePortionAdditional;
-        const subtotal = itemPrice * parseInt(mealCount);
+        const pricePerMeal = getPriceForMealCount(mealCountNum);
+        let itemPrice = pricePerMeal;
+        
+        // For mixed portion size, use base standard price
+        if (defaultPortionSize === 'large') {
+          itemPrice = pricePerMeal + 99;
+        } else if (defaultPortionSize === 'mixed') {
+          // For mixed, use standard price as base (user will specify individual portions later)
+          itemPrice = pricePerMeal;
+        }
+        
+        const subtotal = itemPrice * mealCountNum;
         const fullPriceTotal = parseInt(mealCount) * 249;
         const discount = Math.max(0, fullPriceTotal - subtotal);
 
@@ -1217,10 +1233,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const futureWeek of futureWeeks) {
           let futureOrder = await storage.getOrderByUserAndWeek(userId, futureWeek.id);
           
-          const pricePerMeal = getPriceForMealCount(parseInt(mealCount));
-          const largePortionAdditional = defaultPortionSize === 'large' ? 99 : 0;
-          const itemPrice = pricePerMeal + largePortionAdditional;
-          const subtotal = itemPrice * parseInt(mealCount);
+          const pricePerMeal = getPriceForMealCount(mealCountNum);
+          let itemPrice = pricePerMeal;
+          
+          // For mixed portion size, use base standard price
+          if (defaultPortionSize === 'large') {
+            itemPrice = pricePerMeal + 99;
+          } else if (defaultPortionSize === 'mixed') {
+            // For mixed, use standard price as base (user will specify individual portions later)
+            itemPrice = pricePerMeal;
+          }
+          
+          const subtotal = itemPrice * mealCountNum;
           const fullPriceTotal = parseInt(mealCount) * 249;
           const discount = Math.max(0, fullPriceTotal - subtotal);
 
