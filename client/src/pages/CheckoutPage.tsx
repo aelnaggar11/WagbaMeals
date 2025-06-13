@@ -127,7 +127,10 @@ const CheckoutPage = () => {
       
       console.log('CheckoutPage - Checkout API successful, refreshing data');
       
-      // Refresh data but don't invalidate auth state to prevent login loops
+      // Force refresh of auth state to ensure it's current after checkout
+      await queryClient.refetchQueries({ queryKey: ['/api/auth/me'] });
+      
+      // Refresh other data
       await queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
       
@@ -139,8 +142,10 @@ const CheckoutPage = () => {
         variant: "default"
       });
       
+      // Wait for auth state to stabilize before navigation
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       console.log('CheckoutPage - Navigating to /account');
-      // Navigate immediately since user is already authenticated
       navigate('/account');
     } catch (error) {
       console.error('CheckoutPage - Checkout error:', error);

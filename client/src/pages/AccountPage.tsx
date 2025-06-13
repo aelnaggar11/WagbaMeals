@@ -40,19 +40,16 @@ const AccountPage = () => {
     );
   }
   
-  // Temporarily disable auto-redirect to debug authentication issues
-  // TODO: Re-enable after fixing authentication state management
-  /*
+  // Redirect to auth if not authenticated after sufficient wait time
   useEffect(() => {
     if (!isUserLoading && !currentUser) {
       const timeoutId = setTimeout(() => {
         navigate('/auth');
-      }, 2000);
+      }, 3000); // 3 second delay to allow post-checkout auth state to stabilize
       
       return () => clearTimeout(timeoutId);
     }
   }, [currentUser, isUserLoading, navigate]);
-  */
   
   // Show authentication status for debugging
   console.log('AccountPage - Auth State:', {
