@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { User } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +31,18 @@ const AuthPage = () => {
     email: "",
     name: ""
   });
+
+  // Check if user is already authenticated
+  const { data: currentUser, isLoading: isUserLoading } = useQuery<User | null>({
+    queryKey: ['/api/auth/me'],
+    queryFn: async () => {
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
+      if (res.status === 401) return null;
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return res.json();
+    },
+    retry: 1
+  });
   
   // Get the return URL from query params if available
   useEffect(() => {
@@ -38,6 +52,31 @@ const AuthPage = () => {
       setReturnTo(returnToPath);
     }
   }, []);
+
+  // Redirect authenticated users to account page
+  useEffect(() => {
+    if (!isUserLoading && currentUser) {
+      const destination = returnTo || '/account';
+      navigate(destination);
+    }
+  }, [isUserLoading, currentUser, navigate, returnTo]);
+
+  // Show loading state while checking authentication
+  if (isUserLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render auth form if user is already authenticated
+  if (currentUser) {
+    return null;
+  }
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
