@@ -52,8 +52,17 @@ export default function FixedMealSelector({
     enabled: !!weekId,
   });
 
-  // Initialize once with props
+  // Initialize and reset when props change
   useEffect(() => {
+    // Reset when meal count changes or items are cleared
+    if (items.length === 0 && (selectedItems.length > 0 || savedItems.length > 0)) {
+      setSelectedItems([]);
+      setSavedItems([]);
+      setIsSaved(false);
+      setIsInitialized(false);
+    }
+    
+    // Initialize with new items
     if (!isInitialized && items.length > 0) {
       setSelectedItems(items);
       
@@ -65,7 +74,15 @@ export default function FixedMealSelector({
       setIsSaved(items.length > 0);
       setIsInitialized(true);
     }
-  }, [items, isInitialized]);
+    
+    // Force reset when meal count changes but we have existing selections
+    if (isInitialized && items.length === 0 && selectedItems.length > 0) {
+      setSelectedItems([]);
+      setSavedItems([]);
+      setIsSaved(false);
+      setIsInitialized(false);
+    }
+  }, [items, mealCount, isInitialized, selectedItems.length, savedItems.length]);
 
   // Group meals by ID with their portion sizes
   const groupMealsByCount = (items: WeekItem[]) => {
@@ -201,21 +218,19 @@ export default function FixedMealSelector({
       newItems.splice(itemIndex, 1);
       setSelectedItems(newItems);
 
-      // Delete from server if we have an order ID and item ID
-      if (orderId && itemToRemove.id) {
+      // Delete from server if we have an order ID and a valid database ID (not a temporary ID)
+      if (orderId && itemToRemove.id && typeof itemToRemove.id === 'number' && itemToRemove.id < 1000000000000) {
         const response = await fetch(`/api/orders/${orderId}/items/${itemToRemove.id}`, {
           method: 'DELETE',
         });
         
         if (!response.ok) {
-          throw new Error('Failed to remove meal');
+          console.warn('Failed to delete item from server, but continuing with local removal');
         }
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to remove meal. Please try again."
-      });
+      console.warn('Error removing meal from server:', error);
+      // Don't show error toast for server issues since local state is updated
     }
   };
   

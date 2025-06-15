@@ -795,10 +795,11 @@ const AccountPage = () => {
                         {!week.isSkipped && (
                           <div id={`meal-selection-${week.weekId}`}>
                             <FixedMealSelector 
+                              key={`${week.weekId}-${week.mealCount}-${week.items?.length || 0}`}
                               weekId={week.weekId}
                               orderId={week.orderId}
                               mealCount={week.mealCount}
-                              items={week.items}
+                              items={week.items || []}
                               defaultPortionSize={week.defaultPortionSize || 'standard'}
                             />
                           </div>
