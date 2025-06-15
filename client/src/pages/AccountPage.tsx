@@ -151,6 +151,14 @@ const AccountPage = () => {
     return basePrice * mealCount;
   };
 
+  // Helper function to check if a week's deadline has passed
+  const isDeadlinePassed = (orderDeadline: string | null) => {
+    if (!orderDeadline) return false;
+    const now = new Date();
+    const deadline = new Date(orderDeadline);
+    return now > deadline;
+  };
+
   // Helper function to format week dates as "Sat 5 July"
   const formatWeekLabel = (weekLabel: string) => {
     // Handle cross-month formats like "Jun 28-Jul 4, 2025"
@@ -805,13 +813,27 @@ const AccountPage = () => {
                         {/* Meal selection panel */}
                         {!week.isSkipped && (
                           <div id={`meal-selection-${week.weekId}`}>
-                            <FixedMealSelector 
-                              weekId={week.weekId}
-                              orderId={week.orderId}
-                              mealCount={week.mealCount}
-                              items={week.items}
-                              defaultPortionSize={week.defaultPortionSize || 'standard'}
-                            />
+                            {isDeadlinePassed(week.orderDeadline) ? (
+                              <div className="bg-gray-50 p-6 rounded-lg border text-center">
+                                <div className="text-gray-500 mb-2">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                  </svg>
+                                </div>
+                                <p className="text-gray-600 font-medium">Selection deadline has passed</p>
+                                <p className="text-sm text-gray-500 mt-1">
+                                  Meal selections can no longer be modified for this week
+                                </p>
+                              </div>
+                            ) : (
+                              <FixedMealSelector 
+                                weekId={week.weekId}
+                                orderId={week.orderId}
+                                mealCount={week.mealCount}
+                                items={week.items}
+                                defaultPortionSize={week.defaultPortionSize || 'standard'}
+                              />
+                            )}
                           </div>
                         )}
                       </div>

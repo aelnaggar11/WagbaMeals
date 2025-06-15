@@ -95,7 +95,7 @@ export default function FixedMealSelector({
 
   // Helper function to get valid selected items count
   const getValidSelectedCount = (): number => {
-    return selectedItems.filter(item => item.mealId && item.meal && item.meal.id).length;
+    return selectedItems.length;
   };
 
   // Get count of a specific portion size for a meal
