@@ -177,13 +177,29 @@ export default function FixedMealSelector({
           },
           body: JSON.stringify({
             mealId: meal.id,
-            portionSize: "standard"
+            portionSize: initialPortionSize
           }),
         });
         
         if (!response.ok) {
           throw new Error('Failed to add meal');
         }
+        
+        // Get the created item from response and update local state with real ID
+        const createdItem = await response.json();
+        
+        // Update the local state with the real server ID
+        setSelectedItems(prev => {
+          const updated = [...prev];
+          const lastIndex = updated.length - 1;
+          if (updated[lastIndex] && updated[lastIndex].id === newItem.id) {
+            updated[lastIndex] = {
+              ...updated[lastIndex],
+              id: createdItem.id
+            };
+          }
+          return updated;
+        });
       }
     } catch (error) {
       toast({
@@ -278,6 +294,14 @@ export default function FixedMealSelector({
   }
 
   const meals = (data as any)?.meals || [];
+
+  // Debug logging
+  console.log('FixedMealSelector state:', {
+    selectedItemsLength: selectedItems.length,
+    mealCount,
+    isSaved,
+    itemsFromProps: items.length
+  });
 
   return (
     <div>
@@ -400,6 +424,7 @@ export default function FixedMealSelector({
                 disabled={selectedItems.length !== mealCount}
                 className="flex items-center gap-2"
                 size="sm"
+                title={selectedItems.length !== mealCount ? `Need ${mealCount} meals, have ${selectedItems.length}` : 'Save your selection'}
               >
                 <Save size={16} />
                 Save Selection
