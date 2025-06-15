@@ -376,13 +376,7 @@ const AccountPage = () => {
                 mealCount: editForm.mealCount,
                 portionSize: editForm.portionSize,
                 defaultPortionSize: editForm.portionSize,
-                items: shouldResetItems ? 
-                  Array(editForm.mealCount).fill(null).map((_, index) => ({
-                    id: `temp-${Date.now()}-${index}`,
-                    mealId: null,
-                    portionSize: editForm.portionSize === 'mixed' ? 'standard' : editForm.portionSize,
-                    meal: { title: 'Select your meal', id: null }
-                  })) :
+                items: shouldResetItems ? [] :
                   week.items.map((item: any) => ({
                     ...item,
                     portionSize: editForm.portionSize === 'mixed' ? item.portionSize : editForm.portionSize

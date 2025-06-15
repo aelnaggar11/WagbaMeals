@@ -54,15 +54,18 @@ export default function FixedMealSelector({
 
   // Initialize and re-initialize when props change
   useEffect(() => {
-    // Reset state when items change (handles delivery updates)
-    setSelectedItems(items);
+    // Filter out invalid items (items with null mealId or meal)
+    const validItems = items.filter(item => item.mealId && item.meal && item.meal.id);
     
-    // Group the items by meal ID for display
-    const grouped = groupMealsByCount(items);
+    // Reset state with only valid items
+    setSelectedItems(validItems);
+    
+    // Group the valid items by meal ID for display
+    const grouped = groupMealsByCount(validItems);
     setSavedItems(grouped);
     
-    // If we have items, consider the selection as saved
-    setIsSaved(items.length > 0);
+    // Only consider selection as saved if we have valid items
+    setIsSaved(validItems.length > 0);
     setIsInitialized(true);
   }, [items, weekId, mealCount]); // Include weekId and mealCount as dependencies
 
@@ -120,11 +123,7 @@ export default function FixedMealSelector({
         queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       }
     } catch (error) {
-      // Revert local state on error
-      const revertedItems = [...selectedItems];
-      revertedItems[itemIndex] = { ...item, portionSize: item.portionSize };
-      setSelectedItems(revertedItems);
-
+      console.error('Error updating portion size:', error);
       toast({
         title: "Error",
         description: "Failed to update portion size. Please try again.",
