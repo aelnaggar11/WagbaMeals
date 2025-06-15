@@ -415,6 +415,61 @@ const AccountPage = () => {
                 {/* Left Sidebar - Weekly Navigation */}
                 <div className="lg:col-span-1 space-y-6">
                   <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Upcoming Deliveries</CardTitle>
+                      <CardDescription>Select a week to manage your meals</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {isLoadingUpcomingMeals ? (
+                        <div className="text-center py-4">
+                          <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                          <p className="text-sm text-gray-600">Loading deliveries...</p>
+                        </div>
+                      ) : availableWeeks.length > 0 ? (
+                        availableWeeks.map((week: any) => {
+                          const isDeadlinePassed = isOrderDeadlinePassed(week.weekLabel);
+                          const isSelected = week.weekId === selectedWeekId;
+                          
+                          return (
+                            <div
+                              key={week.weekId}
+                              className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                                isSelected 
+                                  ? 'border-primary bg-primary/5' 
+                                  : 'border-gray-200 hover:border-gray-300'
+                              }`}
+                              onClick={() => setSelectedWeekId(week.weekId)}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-medium text-sm flex items-center gap-2">
+                                    {formatWeekLabel(week.weekLabel)}
+                                    {isDeadlinePassed && <Lock className="h-3 w-3 text-gray-400" />}
+                                  </p>
+                                  <p className="text-xs text-gray-600">
+                                    {week.mealCount} meals • {week.portionSize}
+                                  </p>
+                                </div>
+                                <Badge 
+                                  variant={week.isSkipped ? "secondary" : week.orderId ? "default" : "outline"}
+                                  className="text-xs"
+                                >
+                                  {week.isSkipped ? "Skipped" : week.orderId ? "Active" : "Pending"}
+                                </Badge>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="text-center py-4">
+                          <Package className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                          <p className="text-sm text-gray-600">No upcoming deliveries</p>
+                          <Link href="/meal-plans">
+                            <Button size="sm" className="mt-2">Browse Plans</Button>
+                          </Link>
+                        </div>
+                      )}
+                    </CardContent>
                   </Card>
                 </div>
 
