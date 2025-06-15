@@ -489,9 +489,6 @@ export default function FixedMealSelector({
                                     <SelectValue placeholder={defaultPortionSize === 'mixed' ? "Choose size" : item.portionSize} />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {defaultPortionSize === 'mixed' && (
-                                      <SelectItem value="" disabled>Choose size</SelectItem>
-                                    )}
                                     <SelectItem value="standard">Standard</SelectItem>
                                     <SelectItem value="large">Large (+99 EGP)</SelectItem>
                                   </SelectContent>
