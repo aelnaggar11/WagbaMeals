@@ -400,10 +400,7 @@ const AccountPage = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">My Account</h1>
-            <p className="text-gray-600">Manage your meal deliveries and account settings</p>
-          </div>
+          
 
           <Tabs defaultValue="upcoming" className="space-y-6">
             <TabsList className="grid w-full grid-cols-3">
