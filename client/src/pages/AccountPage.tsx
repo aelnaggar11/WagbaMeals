@@ -443,9 +443,11 @@ const AccountPage = () => {
                               <div className="font-medium">
                                 {formatWeekLabel(week.weekLabel)}
                               </div>
-                              <div className="text-xs mt-1">
-                                {week.isSkipped ? 'Skipped' : week.orderId ? 'Order confirmed' : 'Available'}
-                              </div>
+                              {week.isSkipped && (
+                                <div className="text-xs mt-1">
+                                  Skipped
+                                </div>
+                              )}
                             </button>
                           );
                         })}
@@ -468,9 +470,11 @@ const AccountPage = () => {
                           {/* Order Status */}
                           <div className="flex items-center gap-4">
                             <span className="text-lg font-semibold">{selectedWeek.mealCount} meals</span>
-                            <Badge variant={selectedWeek.isSkipped ? "secondary" : "default"}>
-                              {selectedWeek.isSkipped ? "Skipped" : "Order confirmed"}
-                            </Badge>
+                            {selectedWeek.isSkipped && (
+                              <Badge variant="secondary">
+                                Skipped
+                              </Badge>
+                            )}
                             {!isOrderDeadlinePassed(selectedWeek.weekLabel) && (
                               <Button
                                 variant="outline"
