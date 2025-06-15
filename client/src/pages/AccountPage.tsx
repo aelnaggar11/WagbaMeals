@@ -152,7 +152,7 @@ const AccountPage = () => {
   };
 
   // Helper function to check if a week's deadline has passed
-  const isDeadlinePassed = (orderDeadline: string | null) => {
+  const checkDeadlinePassed = (orderDeadline: string | null) => {
     if (!orderDeadline) return false;
     const now = new Date();
     const deadline = new Date(orderDeadline);
@@ -686,7 +686,7 @@ const AccountPage = () => {
                     const deadline = new Date(week.orderDeadline);
                     const deliveryDate = new Date(week.deliveryDate);
                     const now = new Date();
-                    const isDeadlinePassed = deadline < now;
+                    const deadlineHasPassed = deadline < now;
 
                     return (
                       <div key={`details-${week.weekId}`} className="space-y-6">
@@ -707,7 +707,7 @@ const AccountPage = () => {
                             </CardDescription>
                           </CardHeader>
                           <CardContent>
-                            {isDeadlinePassed ? (
+                            {deadlineHasPassed ? (
                               <div className="bg-amber-50 text-amber-700 p-4 rounded-md mb-4">
                                 <p className="font-medium">Order deadline has passed</p>
                                 <p className="text-sm">You can no longer modify this order.</p>
@@ -728,7 +728,7 @@ const AccountPage = () => {
                               </div>
 
                               <div className="space-x-2">
-                                {!isDeadlinePassed && !week.isSkipped && (
+                                {!deadlineHasPassed && !week.isSkipped && (
                                   <Button 
                                     variant="outline" 
                                     size="sm"
@@ -741,7 +741,7 @@ const AccountPage = () => {
                                     Edit Delivery
                                   </Button>
                                 )}
-                                {!isDeadlinePassed && !week.isSkipped && week.orderId && (
+                                {!deadlineHasPassed && !week.isSkipped && week.orderId && (
                                   <Button 
                                     variant="outline" 
                                     size="sm"
