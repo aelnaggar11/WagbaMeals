@@ -1234,12 +1234,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const fullPriceTotal = parseInt(mealCount) * 249;
         const discount = Math.max(0, fullPriceTotal - subtotal);
 
+        // Clear existing meal selections when meal count changes
+        const currentOrderItems = await storage.getOrderItems(order.id);
+        if (currentOrderItems.length > 0 && order.mealCount !== mealCountNum) {
+          // Remove all existing order items to force fresh selection
+          for (const item of currentOrderItems) {
+            await storage.removeOrderItem(item.id);
+          }
+        }
+
         order = await storage.updateOrder(order.id, {
           mealCount: parseInt(mealCount),
           defaultPortionSize,
           subtotal,
           discount,
-          total: subtotal
+          total: subtotal,
+          status: 'selecting' // Reset status to require fresh meal selection
         });
       }
 

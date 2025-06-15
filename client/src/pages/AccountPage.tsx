@@ -353,7 +353,7 @@ const AccountPage = () => {
     });
   };
 
-  // Handle delivery editing
+  // Handle delivery editing with real-time updates
   const handleEditDelivery = async () => {
     if (!editingDelivery) return;
 
@@ -367,17 +367,56 @@ const AccountPage = () => {
         applyToFuture: editForm.applyToFuture
       });
 
-      // Refresh upcoming meals data
+      // Immediately update local state for real-time UI feedback
+      setLocalUpcomingMeals((prev: any) => {
+        if (!prev || !prev.upcomingMeals) return prev;
+
+        return {
+          ...prev,
+          upcomingMeals: prev.upcomingMeals.map((week: any) => {
+            if (week.weekId === editingDelivery.weekId) {
+              return {
+                ...week,
+                mealCount: editForm.mealCount.toString(),
+                defaultPortionSize: editForm.portionSize,
+                // Clear existing meal selections when count changes
+                selectedMealCount: 0,
+                hasIncompleteSelection: true
+              };
+            }
+            // Apply to future weeks if requested
+            if (editForm.applyToFuture && week.weekId > editingDelivery.weekId) {
+              return {
+                ...week,
+                mealCount: editForm.mealCount.toString(),
+                defaultPortionSize: editForm.portionSize
+              };
+            }
+            return week;
+          })
+        };
+      });
+
+      // Refresh upcoming meals data from server
       await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
 
       toast({
         title: "Delivery Updated",
         description: editForm.applyToFuture 
-          ? "Your delivery preferences have been updated for this week and all future weeks."
-          : "Your delivery preferences have been updated for this week."
+          ? "Your delivery preferences have been updated for this week and all future weeks. Please select your meals again."
+          : "Your delivery preferences have been updated for this week. Please select your meals again."
       });
 
       setEditingDelivery(null);
+
+      // Scroll to meal selection for the updated week
+      setTimeout(() => {
+        document.getElementById(`meal-selection-${editingDelivery.weekId}`)?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }, 500);
+
     } catch (error) {
       toast({
         title: "Error",
