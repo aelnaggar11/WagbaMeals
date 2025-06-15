@@ -813,7 +813,7 @@ const AccountPage = () => {
                         {/* Meal selection panel */}
                         {!week.isSkipped && (
                           <div id={`meal-selection-${week.weekId}`}>
-                            {isDeadlinePassed(week.orderDeadline) ? (
+                            {checkDeadlinePassed(week.orderDeadline) ? (
                               <div className="bg-gray-50 p-6 rounded-lg border text-center">
                                 <div className="text-gray-500 mb-2">
                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
