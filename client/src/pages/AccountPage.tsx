@@ -353,12 +353,46 @@ const AccountPage = () => {
     });
   };
 
-  // Handle delivery editing
+  // Handle delivery editing with immediate UI updates
   const handleEditDelivery = async () => {
     if (!editingDelivery) return;
 
     try {
       setIsUpdating(true);
+
+      // Immediately update local state for instant UI feedback
+      setLocalUpcomingMeals((prev: any) => {
+        if (!prev || !prev.upcomingMeals) return prev;
+
+        return {
+          ...prev,
+          upcomingMeals: prev.upcomingMeals.map((week: any) => {
+            if (week.weekId === editingDelivery.weekId) {
+              // If meal count changed, clear existing items and create new placeholders
+              const shouldResetItems = week.mealCount !== editForm.mealCount;
+              
+              return {
+                ...week,
+                mealCount: editForm.mealCount,
+                portionSize: editForm.portionSize,
+                defaultPortionSize: editForm.portionSize,
+                items: shouldResetItems ? 
+                  Array(editForm.mealCount).fill(null).map((_, index) => ({
+                    id: `temp-${Date.now()}-${index}`,
+                    mealId: null,
+                    portionSize: editForm.portionSize === 'mixed' ? 'standard' : editForm.portionSize,
+                    meal: { title: 'Select your meal', id: null }
+                  })) :
+                  week.items.map((item: any) => ({
+                    ...item,
+                    portionSize: editForm.portionSize === 'mixed' ? item.portionSize : editForm.portionSize
+                  }))
+              };
+            }
+            return week;
+          })
+        };
+      });
 
       // Update the order with new meal count and portion size
       await apiRequest('PATCH', `/api/orders/${editingDelivery.weekId}/delivery`, {
@@ -367,7 +401,7 @@ const AccountPage = () => {
         applyToFuture: editForm.applyToFuture
       });
 
-      // Refresh upcoming meals data
+      // Refresh upcoming meals data to sync with server
       await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
 
       toast({
@@ -379,6 +413,25 @@ const AccountPage = () => {
 
       setEditingDelivery(null);
     } catch (error) {
+      // Revert local state on error
+      setLocalUpcomingMeals((prev: any) => {
+        if (!prev || !prev.upcomingMeals) return prev;
+        return {
+          ...prev,
+          upcomingMeals: prev.upcomingMeals.map((week: any) => {
+            if (week.weekId === editingDelivery.weekId) {
+              return {
+                ...week,
+                mealCount: editingDelivery.currentMealCount,
+                portionSize: editingDelivery.currentPortionSize,
+                defaultPortionSize: editingDelivery.currentPortionSize
+              };
+            }
+            return week;
+          })
+        };
+      });
+
       toast({
         title: "Error",
         description: "There was an error updating your delivery. Please try again.",

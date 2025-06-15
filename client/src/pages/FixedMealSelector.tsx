@@ -52,20 +52,19 @@ export default function FixedMealSelector({
     enabled: !!weekId,
   });
 
-  // Initialize once with props
+  // Initialize and re-initialize when props change
   useEffect(() => {
-    if (!isInitialized && items.length > 0) {
-      setSelectedItems(items);
-      
-      // Group the items by meal ID for display
-      const grouped = groupMealsByCount(items);
-      setSavedItems(grouped);
-      
-      // If we have items, consider the selection as saved
-      setIsSaved(items.length > 0);
-      setIsInitialized(true);
-    }
-  }, [items, isInitialized]);
+    // Reset state when items change (handles delivery updates)
+    setSelectedItems(items);
+    
+    // Group the items by meal ID for display
+    const grouped = groupMealsByCount(items);
+    setSavedItems(grouped);
+    
+    // If we have items, consider the selection as saved
+    setIsSaved(items.length > 0);
+    setIsInitialized(true);
+  }, [items, weekId, mealCount]); // Include weekId and mealCount as dependencies
 
   // Group meals by ID with their portion sizes
   const groupMealsByCount = (items: WeekItem[]) => {
@@ -115,11 +114,21 @@ export default function FixedMealSelector({
         if (!response.ok) {
           throw new Error('Failed to update portion size');
         }
+
+        // Invalidate parent queries to sync state
+        queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       }
     } catch (error) {
+      // Revert local state on error
+      const revertedItems = [...selectedItems];
+      revertedItems[itemIndex] = { ...item, portionSize: item.portionSize };
+      setSelectedItems(revertedItems);
+
       toast({
         title: "Error",
-        description: "Failed to update portion size. Please try again."
+        description: "Failed to update portion size. Please try again.",
+        variant: "destructive"
       });
     }
   };
