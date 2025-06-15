@@ -1559,6 +1559,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Order not found' });
       }
 
+      // CRITICAL: Check meal count limit to prevent data corruption
+      const currentOrderItems = await storage.getOrderItems(orderId);
+      if (currentOrderItems.length >= order.mealCount) {
+        return res.status(400).json({ 
+          message: `Cannot add more meals. Order limit is ${order.mealCount} meals and you already have ${currentOrderItems.length} meals selected.` 
+        });
+      }
+
       // Auto-skip preceding weeks for first-time users
       await autoSkipPrecedingWeeks(req.session.userId, order.weekId);
 
