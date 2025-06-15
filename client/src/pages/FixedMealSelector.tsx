@@ -145,11 +145,20 @@ export default function FixedMealSelector({
   // Helper function to add a portion of specific size for a meal
   const handleAddPortion = async (mealId: number, portionSize: string) => {
     if (selectedItems.length >= parseInt(mealCount.toString())) {
+      toast({
+        title: "Maximum meals reached",
+        description: `You can only select ${mealCount} meals for this week.`
+      });
       return; // Already at max meals
     }
 
-    const meal = meals.find((m: any) => m.id === mealId);
-    if (!meal) return;
+    // Get meals from the query data
+    const mealsData = (data as any)?.meals || [];
+    const meal = mealsData.find((m: any) => m.id === mealId);
+    if (!meal) {
+      console.error('Meal not found:', mealId);
+      return;
+    }
 
     try {
       if (orderId) {
@@ -172,6 +181,8 @@ export default function FixedMealSelector({
           }]);
           // Invalidate queries to refresh data
           queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+        } else {
+          throw new Error('Failed to add portion to order');
         }
       } else {
         // Local state only
@@ -198,11 +209,14 @@ export default function FixedMealSelector({
       item.mealId === mealId && item.portionSize === portionSize
     );
     
-    if (!itemToRemove) return;
+    if (!itemToRemove) {
+      console.warn('No item found to remove for meal:', mealId, 'portion:', portionSize);
+      return;
+    }
 
     try {
-      if (orderId && typeof itemToRemove.id === 'number') {
-        // Remove from existing order
+      if (orderId && typeof itemToRemove.id === 'number' && itemToRemove.id < 1000000000000) {
+        // Remove from existing order (only if it's a real database ID, not temporary)
         const response = await fetch(`/api/orders/${orderId}/items/${itemToRemove.id}`, {
           method: 'DELETE'
         });
@@ -211,9 +225,11 @@ export default function FixedMealSelector({
           setSelectedItems(prev => prev.filter(item => item.id !== itemToRemove.id));
           // Invalidate queries to refresh data
           queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+        } else {
+          throw new Error('Failed to remove portion from order');
         }
       } else {
-        // Local state only
+        // Local state only (or temporary ID)
         setSelectedItems(prev => prev.filter(item => item.id !== itemToRemove.id));
       }
     } catch (error) {
@@ -238,9 +254,9 @@ export default function FixedMealSelector({
     try {
       // Determine initial portion size based on subscription type
       let initialPortionSize = "standard";
-      if (defaultPortionSize === 'mixed') {
-        // For mixed subscriptions, require user to choose
-        initialPortionSize = "";
+      if (defaultPortionSize === 'mixed' || defaultPortionSize === 'mix') {
+        // For mixed subscriptions, default to standard but allow user to change
+        initialPortionSize = "standard";
       } else if (defaultPortionSize === 'large') {
         initialPortionSize = "large";
       }
