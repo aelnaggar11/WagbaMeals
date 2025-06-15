@@ -21,12 +21,13 @@ const AccountPage = () => {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
 
-  // All state declarations must be at the top level
+  // All state declarations must be at the top level - NEVER move these or add conditions
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [processingWeekId, setProcessingWeekId] = useState<number | null>(null);
   const [selectedWeekId, setSelectedWeekId] = useState<number | null>(null);
   const [viewingOrderId, setViewingOrderId] = useState<number | null>(null);
+  const [localUpcomingMeals, setLocalUpcomingMeals] = useState<any>(null);
 
   // Delivery editing state
   const [editingDelivery, setEditingDelivery] = useState<{
@@ -52,7 +53,7 @@ const AccountPage = () => {
     landmark: ""
   });
 
-  // Get current user with proper loading state handling
+  // ALL QUERIES MUST BE CALLED UNCONDITIONALLY
   const { data: currentUser, isLoading: isUserLoading } = useQuery<User | null>({
     queryKey: ['/api/auth/me'],
     queryFn: async () => {
@@ -64,33 +65,164 @@ const AccountPage = () => {
     retry: 1
   });
 
-  // Get user profile
   const { data: profile, isLoading: isProfileLoading } = useQuery({
     queryKey: ['/api/user/profile'],
     enabled: !!currentUser
   });
 
-  // Get order history
   const { data: ordersData } = useQuery<{ orders: any[] }>({
     queryKey: ['/api/orders'],
     enabled: !!currentUser
   });
 
-  // Get upcoming meals with local state for immediate updates
   const { data: upcomingMealsData, isLoading: isLoadingUpcomingMeals } = useQuery({
     queryKey: ['/api/user/upcoming-meals'],
     enabled: !!currentUser
   });
 
-  // Local state to override server data for immediate UI updates
-  const [localUpcomingMeals, setLocalUpcomingMeals] = useState<any>(null);
+  // ALL MUTATIONS MUST BE CALLED UNCONDITIONALLY
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest('PATCH', '/api/user/profile', data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully."
+      });
+      setIsEditing(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/user/profile'] });
+    },
+    onError: () => {
+      toast({
+        title: "Update failed",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
 
-  // Handle authentication and navigation
+  const skipOrderMutation = useMutation({
+    mutationFn: async (orderId: number) => {
+      return apiRequest('PATCH', `/api/orders/${orderId}/skip`);
+    },
+    onSuccess: (data, orderId) => {
+      toast({
+        title: "Order skipped",
+        description: "Your order has been skipped for this week."
+      });
+      setProcessingWeekId(null);
+
+      if (localUpcomingMeals?.upcomingMeals) {
+        const updatedMeals = { ...localUpcomingMeals };
+        const weekToUpdate = updatedMeals.upcomingMeals.find((week: any) => week.orderId === orderId);
+        if (weekToUpdate) {
+          weekToUpdate.isSkipped = true;
+        }
+        setLocalUpcomingMeals(updatedMeals);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+    },
+    onError: () => {
+      toast({
+        title: "Skip failed",
+        description: "Failed to skip order. Please try again.",
+        variant: "destructive"
+      });
+      setProcessingWeekId(null);
+    }
+  });
+
+  const unskipOrderMutation = useMutation({
+    mutationFn: async (orderId: number) => {
+      return apiRequest('PATCH', `/api/orders/${orderId}/unskip`);
+    },
+    onSuccess: (data, orderId) => {
+      toast({
+        title: "Order restored",
+        description: "Your order has been restored for this week."
+      });
+      setProcessingWeekId(null);
+
+      if (localUpcomingMeals?.upcomingMeals) {
+        const updatedMeals = { ...localUpcomingMeals };
+        const weekToUpdate = updatedMeals.upcomingMeals.find((week: any) => week.orderId === orderId);
+        if (weekToUpdate) {
+          weekToUpdate.isSkipped = false;
+        }
+        setLocalUpcomingMeals(updatedMeals);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+    },
+    onError: () => {
+      toast({
+        title: "Restore failed",
+        description: "Failed to restore order. Please try again.",
+        variant: "destructive"
+      });
+      setProcessingWeekId(null);
+    }
+  });
+
+  // ALL EFFECTS MUST BE CALLED UNCONDITIONALLY BEFORE ANY EARLY RETURNS
   useEffect(() => {
     if (!isUserLoading && !currentUser) {
       navigate('/auth?returnTo=' + encodeURIComponent(location));
     }
   }, [isUserLoading, currentUser, navigate, location]);
+
+  useEffect(() => {
+    if ((upcomingMealsData as any)?.upcomingMeals && (upcomingMealsData as any).upcomingMeals.length > 0) {
+      if (!localUpcomingMeals) {
+        setLocalUpcomingMeals(upcomingMealsData);
+      }
+
+      if (!selectedWeekId) {
+        const firstDeliveryWeek = (upcomingMealsData as any).upcomingMeals.find((week: any) => 
+          week.orderId && !week.isSkipped
+        );
+
+        const weekToSelect = firstDeliveryWeek 
+          ? firstDeliveryWeek.weekId 
+          : (upcomingMealsData as any).upcomingMeals[0].weekId;
+
+        setSelectedWeekId(weekToSelect);
+      }
+    }
+  }, [upcomingMealsData, selectedWeekId, localUpcomingMeals]);
+
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        name: (profile as any).name || "",
+        email: (profile as any).email || "",
+        phone: (profile as any).phone || "",
+        street: "",
+        building: "",
+        apartment: "",
+        area: "",
+        landmark: ""
+      });
+
+      if ((profile as any).address) {
+        try {
+          const addressObj = JSON.parse((profile as any).address);
+          setFormData(prev => ({
+            ...prev,
+            street: addressObj.street || "",
+            building: addressObj.building || "",
+            apartment: addressObj.apartment || "",
+            area: addressObj.area || "",
+            landmark: addressObj.landmark || ""
+          }));
+        } catch (e) {
+          console.error("Failed to parse address:", e);
+        }
+      }
+    }
+  }, [profile]);
 
   // Show loading state while checking authentication
   if (isUserLoading) {
@@ -148,169 +280,35 @@ const AccountPage = () => {
       }
     }
 
-    // Check if it's already in a different format and try to parse it
-    // Handle formats like "May 19-25, 2025" or similar
-    const rangeMatch = weekLabel.match(/(\w+)\s+(\d+)-(\d+),?\s*(\d+)/);
-    if (rangeMatch) {
-      const [, monthName, startDay, endDay, year] = rangeMatch;
-      // Assume the end day (Saturday) is the delivery day
+    // Handle formats like "June 28-July 4, 2025" (cross-month ranges)
+    const crossMonthMatch = weekLabel.match(/(\w+)\s+(\d+)-(\w+)\s+(\d+),?\s*(\d+)/);
+    if (crossMonthMatch) {
+      const [, startMonthName, startDay, endMonthName, endDay, year] = crossMonthMatch;
+      // Use the end day and month (Saturday delivery date)
+      return `Sat ${endDay} ${endMonthName}`;
+    }
+
+    // Handle formats like "May 19-25, 2025" (same month ranges)
+    const sameMonthMatch = weekLabel.match(/(\w+)\s+(\d+)-(\d+),?\s*(\d+)/);
+    if (sameMonthMatch) {
+      const [, monthName, startDay, endDay, year] = sameMonthMatch;
+      // Use the end day (Saturday delivery date)
       return `Sat ${endDay} ${monthName}`;
+    }
+
+    // Handle simple formats like "July 4, 2025"
+    const simpleMatch = weekLabel.match(/(\w+)\s+(\d+),?\s*(\d+)/);
+    if (simpleMatch) {
+      const [, monthName, day, year] = simpleMatch;
+      return `Sat ${day} ${monthName}`;
     }
 
     // Return original label if no pattern matches
     return weekLabel;
   };
 
-  // Set initial selected week when data is loaded and sync local state
-  useEffect(() => {
-    if ((upcomingMealsData as any)?.upcomingMeals && (upcomingMealsData as any).upcomingMeals.length > 0) {
-      // Initialize local state with server data if not already set
-      if (!localUpcomingMeals) {
-        setLocalUpcomingMeals(upcomingMealsData);
-      }
-
-      // Set initial selected week to the first week with a confirmed order (first delivery)
-      if (!selectedWeekId) {
-        // Find the first week that has an order and is not skipped
-        const firstDeliveryWeek = (upcomingMealsData as any).upcomingMeals.find((week: any) => 
-          week.orderId && !week.isSkipped
-        );
-
-        // If we found a week with a delivery, use that; otherwise use the first available week
-        const weekToSelect = firstDeliveryWeek 
-          ? firstDeliveryWeek.weekId 
-          : (upcomingMealsData as any).upcomingMeals[0].weekId;
-
-        setSelectedWeekId(weekToSelect);
-      }
-    }
-  }, [upcomingMealsData, selectedWeekId, localUpcomingMeals]);
-
   // Use local state if available, otherwise fall back to server data
   const displayUpcomingMeals = localUpcomingMeals || upcomingMealsData;
-
-  // Update form data when profile data is loaded
-  useEffect(() => {
-    if (profile) {
-      setFormData({
-        name: (profile as any).name || "",
-        email: (profile as any).email || "",
-        phone: (profile as any).phone || "",
-        street: "",
-        building: "",
-        apartment: "",
-        area: "",
-        landmark: ""
-      });
-
-      // Parse address if available
-      if ((profile as any).address) {
-        try {
-          const addressObj = JSON.parse((profile as any).address);
-          setFormData(prev => ({
-            ...prev,
-            street: addressObj.street || "",
-            building: addressObj.building || "",
-            apartment: addressObj.apartment || "",
-            area: addressObj.area || "",
-            landmark: addressObj.landmark || ""
-          }));
-        } catch (e) {
-          console.error("Failed to parse address:", e);
-        }
-      }
-    }
-  }, [profile]);
-
-  // Mutation for updating profile
-  const updateProfileMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return apiRequest('PATCH', '/api/user/profile', data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully."
-      });
-      setIsEditing(false);
-      queryClient.invalidateQueries({ queryKey: ['/api/user/profile'] });
-    },
-    onError: () => {
-      toast({
-        title: "Update failed",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive"
-      });
-    }
-  });
-
-  // Mutation for skipping an order
-  const skipOrderMutation = useMutation({
-    mutationFn: async (orderId: number) => {
-      return apiRequest('PATCH', `/api/orders/${orderId}/skip`);
-    },
-    onSuccess: (data, orderId) => {
-      toast({
-        title: "Order skipped",
-        description: "Your order has been skipped for this week."
-      });
-      setProcessingWeekId(null);
-
-      // Update local state immediately
-      if (localUpcomingMeals?.upcomingMeals) {
-        const updatedMeals = { ...localUpcomingMeals };
-        const weekToUpdate = updatedMeals.upcomingMeals.find((week: any) => week.orderId === orderId);
-        if (weekToUpdate) {
-          weekToUpdate.isSkipped = true;
-        }
-        setLocalUpcomingMeals(updatedMeals);
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
-    },
-    onError: () => {
-      toast({
-        title: "Skip failed",
-        description: "Failed to skip order. Please try again.",
-        variant: "destructive"
-      });
-      setProcessingWeekId(null);
-    }
-  });
-
-  // Mutation for unskipping an order
-  const unskipOrderMutation = useMutation({
-    mutationFn: async (orderId: number) => {
-      return apiRequest('PATCH', `/api/orders/${orderId}/unskip`);
-    },
-    onSuccess: (data, orderId) => {
-      toast({
-        title: "Order restored",
-        description: "Your order has been restored for this week."
-      });
-      setProcessingWeekId(null);
-
-      // Update local state immediately
-      if (localUpcomingMeals?.upcomingMeals) {
-        const updatedMeals = { ...localUpcomingMeals };
-        const weekToUpdate = updatedMeals.upcomingMeals.find((week: any) => week.orderId === orderId);
-        if (weekToUpdate) {
-          weekToUpdate.isSkipped = false;
-        }
-        setLocalUpcomingMeals(updatedMeals);
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
-    },
-    onError: () => {
-      toast({
-        title: "Restore failed",
-        description: "Failed to restore order. Please try again.",
-        variant: "destructive"
-      });
-      setProcessingWeekId(null);
-    }
-  });
 
   // Check if the order deadline has passed
   const isOrderDeadlinePassed = (weekLabel: string) => {
