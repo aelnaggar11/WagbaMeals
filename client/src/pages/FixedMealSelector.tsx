@@ -64,8 +64,9 @@ export default function FixedMealSelector({
     const grouped = groupMealsByCount(validItems);
     setSavedItems(grouped);
     
-    // Only consider selection as saved if we have valid items
-    setIsSaved(validItems.length > 0);
+    // Only consider selection as saved if we have valid items AND they match the expected meal count
+    const hasCompleteSelection = validItems.length > 0 && validItems.length === mealCount;
+    setIsSaved(hasCompleteSelection);
     setIsInitialized(true);
   }, [items, weekId, mealCount]); // Include weekId and mealCount as dependencies
 
@@ -90,6 +91,11 @@ export default function FixedMealSelector({
   // Get the count of a particular meal in selections
   const getMealCount = (mealId: number): number => {
     return selectedItems.filter(item => item.mealId === mealId).length;
+  };
+
+  // Helper function to get valid selected items count
+  const getValidSelectedCount = (): number => {
+    return selectedItems.filter(item => item.mealId && item.meal && item.meal.id).length;
   };
 
   // Update portion size for a specific meal item
@@ -395,11 +401,11 @@ export default function FixedMealSelector({
             <h3 className="text-lg font-semibold">Select Your Meals</h3>
             <div className="flex items-center gap-3">
               <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-medium">
-                {selectedItems.length} of {mealCount} selected
+                {getValidSelectedCount()} of {mealCount} selected
               </span>
               <Button 
                 onClick={handleSave}
-                disabled={selectedItems.length !== mealCount}
+                disabled={getValidSelectedCount() !== mealCount}
                 className="flex items-center gap-2"
                 size="sm"
               >

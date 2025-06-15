@@ -380,7 +380,10 @@ const AccountPage = () => {
                   week.items.map((item: any) => ({
                     ...item,
                     portionSize: editForm.portionSize === 'mixed' ? item.portionSize : editForm.portionSize
-                  }))
+                  })),
+                // Force meal selection status reset when meal count changes
+                isMealSelectionComplete: shouldResetItems ? false : week.isMealSelectionComplete,
+                hasValidMealSelections: shouldResetItems ? false : (week.items?.length === editForm.mealCount)
               };
             }
             return week;
