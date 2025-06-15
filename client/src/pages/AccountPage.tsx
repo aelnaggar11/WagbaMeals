@@ -8,13 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { User as UserIcon, MapPin, Calendar, Clock, ChevronLeft, ChevronRight, Check, X, Edit, Package, Loader2, Lock } from "lucide-react";
-import AccountPageMealSelector from "@/components/AccountPageMealSelector";
+import { User as UserIcon, MapPin, Calendar, Clock, ChevronLeft, ChevronRight, Check, X, Edit, Package, Loader2, Lock, CreditCard, Settings, Eye } from "lucide-react";
 import MealSelectionPanel from "@/components/MealSelectionPanel";
 
 const AccountPage = () => {
@@ -24,10 +24,9 @@ const AccountPage = () => {
   // All state declarations must be at the top level
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isLoadingMeals, setIsLoadingMeals] = useState(false);
-
-  // Single state variable to track which week is being processed
   const [processingWeekId, setProcessingWeekId] = useState<number | null>(null);
+  const [selectedWeekId, setSelectedWeekId] = useState<number | null>(null);
+  const [viewingOrderId, setViewingOrderId] = useState<number | null>(null);
 
   // Delivery editing state
   const [editingDelivery, setEditingDelivery] = useState<{
@@ -40,12 +39,6 @@ const AccountPage = () => {
     portionSize: 'standard' as 'standard' | 'large' | 'mixed',
     applyToFuture: false
   });
-
-  // Available meals
-  const [availableMeals, setAvailableMeals] = useState<Meal[]>([]);
-  const [selectedMeals, setSelectedMeals] = useState<OrderItem[]>([]);
-  const [selectedWeekId, setSelectedWeekId] = useState<number | null>(null);
-  const [mealCount, setMealCount] = useState(0);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -412,200 +405,369 @@ const AccountPage = () => {
             <p className="text-gray-600">Manage your meal deliveries and account settings</p>
           </div>
 
-          {/* Main Content */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            {/* Left Sidebar - Weekly Navigation */}
-            <div className="lg:col-span-1 space-y-6">
-              {/* Profile Card */}
+          <Tabs defaultValue="upcoming" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="upcoming">Upcoming Orders</TabsTrigger>
+              <TabsTrigger value="past">Past Orders</TabsTrigger>
+              <TabsTrigger value="account">Account Details</TabsTrigger>
+            </TabsList>
+
+            {/* Upcoming Orders Tab */}
+            <TabsContent value="upcoming" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left Sidebar - Weekly Navigation */}
+                <div className="lg:col-span-1 space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Upcoming Deliveries</CardTitle>
+                      <CardDescription>Select a week to manage your meals</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {isLoadingUpcomingMeals ? (
+                        <div className="text-center py-4">
+                          <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                          <p className="text-sm text-gray-600">Loading deliveries...</p>
+                        </div>
+                      ) : availableWeeks.length > 0 ? (
+                        availableWeeks.map((week: any) => {
+                          const isDeadlinePassed = isOrderDeadlinePassed(week.weekLabel);
+                          const isSelected = week.weekId === selectedWeekId;
+                          
+                          return (
+                            <div
+                              key={week.weekId}
+                              className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                                isSelected 
+                                  ? 'border-primary bg-primary/5' 
+                                  : 'border-gray-200 hover:border-gray-300'
+                              }`}
+                              onClick={() => setSelectedWeekId(week.weekId)}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-medium text-sm flex items-center gap-2">
+                                    {formatWeekLabel(week.weekLabel)}
+                                    {isDeadlinePassed && <Lock className="h-3 w-3 text-gray-400" />}
+                                  </p>
+                                  <p className="text-xs text-gray-600">
+                                    {week.mealCount} meals • {week.portionSize}
+                                  </p>
+                                </div>
+                                <Badge 
+                                  variant={week.isSkipped ? "secondary" : week.orderId ? "default" : "outline"}
+                                  className="text-xs"
+                                >
+                                  {week.isSkipped ? "Skipped" : week.orderId ? "Active" : "Pending"}
+                                </Badge>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="text-center py-4">
+                          <Package className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                          <p className="text-sm text-gray-600">No upcoming deliveries</p>
+                          <Link href="/meal-plans">
+                            <Button size="sm" className="mt-2">Browse Plans</Button>
+                          </Link>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Main Content Area */}
+                <div className="lg:col-span-2 space-y-6">
+                  {selectedWeek ? (
+                    <div className="space-y-6">
+                      {/* Week Header with Navigation */}
+                      <Card>
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={goToPreviousWeek}
+                                disabled={currentWeekIndex <= 0}
+                              >
+                                <ChevronLeft className="h-4 w-4" />
+                              </Button>
+                              <div>
+                                <CardTitle className="text-xl flex items-center gap-2">
+                                  {formatWeekLabel(selectedWeek.weekLabel)}
+                                  {isOrderDeadlinePassed(selectedWeek.weekLabel) && (
+                                    <Lock className="h-5 w-5 text-gray-400" />
+                                  )}
+                                </CardTitle>
+                                <CardDescription>
+                                  {selectedWeek.mealCount} meals • {selectedWeek.portionSize} portions • 
+                                  EGP {calculateDeliveryPrice(selectedWeek.mealCount, selectedWeek.portionSize)}
+                                </CardDescription>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={goToNextWeek}
+                                disabled={currentWeekIndex >= availableWeeks.length - 1}
+                              >
+                                <ChevronRight className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            
+                            <div className="flex gap-2">
+                              {selectedWeek.orderId && !isOrderDeadlinePassed(selectedWeek.weekLabel) && (
+                                selectedWeek.isSkipped ? (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleUnskipOrder(selectedWeek.orderId)}
+                                    disabled={processingWeekId === selectedWeek.orderId}
+                                  >
+                                    {processingWeekId === selectedWeek.orderId ? (
+                                      <>
+                                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                        Processing...
+                                      </>
+                                    ) : (
+                                      'Restore Order'
+                                    )}
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleSkipOrder(selectedWeek.orderId)}
+                                    disabled={processingWeekId === selectedWeek.orderId}
+                                  >
+                                    {processingWeekId === selectedWeek.orderId ? (
+                                      <>
+                                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                        Processing...
+                                      </>
+                                    ) : (
+                                      'Skip Week'
+                                    )}
+                                  </Button>
+                                )
+                              )}
+                              
+                              {!isOrderDeadlinePassed(selectedWeek.weekLabel) && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditDelivery(selectedWeek)}
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit Delivery
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </CardHeader>
+                      </Card>
+
+                      {/* Order Status */}
+                      <Card>
+                        <CardContent className="pt-6">
+                          <div className="flex items-center gap-4">
+                            <Badge 
+                              variant={selectedWeek.isSkipped ? "secondary" : selectedWeek.orderId ? "default" : "outline"}
+                              className="text-sm"
+                            >
+                              {selectedWeek.isSkipped ? "Skipped" : selectedWeek.orderId ? "Confirmed" : "Not Ordered"}
+                            </Badge>
+                            {selectedWeek.paymentMethod && (
+                              <Badge variant="outline" className="text-sm">
+                                Payment: {selectedWeek.paymentMethod.replace('_', ' ')}
+                              </Badge>
+                            )}
+                            {isOrderDeadlinePassed(selectedWeek.weekLabel) && (
+                              <Badge variant="secondary" className="text-sm">
+                                Order Locked
+                              </Badge>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Meal Selection */}
+                      {selectedWeek.orderId && !selectedWeek.isSkipped && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Selected Meals</CardTitle>
+                            <CardDescription>
+                              {isOrderDeadlinePassed(selectedWeek.weekLabel) 
+                                ? "Your meal selections are locked as the order deadline has passed"
+                                : "Manage your meal selections for this week"
+                              }
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <MealSelectionPanel
+                              weekId={selectedWeek.weekId}
+                              orderId={selectedWeek.orderId}
+                              mealCount={selectedWeek.mealCount}
+                              canEdit={!isOrderDeadlinePassed(selectedWeek.weekLabel)}
+                              isSkipped={selectedWeek.isSkipped}
+                              selectedItems={selectedWeek.meals || []}
+                            />
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* No Order State */}
+                      {!selectedWeek.orderId && (
+                        <Card>
+                          <CardContent className="text-center py-8">
+                            <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">No order for this week</h3>
+                            <p className="text-gray-600 mb-4">You haven't placed an order for this week yet.</p>
+                            <Link href="/meal-plans">
+                              <Button>Create Order</Button>
+                            </Link>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  ) : (
+                    <Card>
+                      <CardContent className="text-center py-12">
+                        <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">Select a week</h3>
+                        <p className="text-gray-600">Choose a week from the sidebar to manage your meal deliveries.</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Past Orders Tab */}
+            <TabsContent value="past" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-                      <UserIcon className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">{profile?.name || 'User'}</CardTitle>
-                      <CardDescription>{profile?.email}</CardDescription>
-                    </div>
-                  </div>
+                  <CardTitle>Order History</CardTitle>
+                  <CardDescription>View your previous orders and meal selections</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => setIsEditing(!isEditing)}
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    {isEditing ? 'Cancel Edit' : 'Edit Profile'}
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Weekly Schedule */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Upcoming Deliveries</CardTitle>
-                  <CardDescription>Select a week to manage your meals</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {isLoadingUpcomingMeals ? (
-                    <div className="text-center py-4">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-                      <p className="text-sm text-gray-600">Loading deliveries...</p>
+                  {ordersData?.orders && ordersData.orders.length > 0 ? (
+                    <div className="space-y-4">
+                      {ordersData.orders
+                        .filter((order: any) => order.status === 'confirmed' || order.status === 'delivered')
+                        .map((order: any) => (
+                          <Card key={order.id} className="border-l-4 border-l-primary">
+                            <CardHeader>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <CardTitle className="text-lg">Order #{order.id}</CardTitle>
+                                  <CardDescription>
+                                    Week {order.weekId} • Ordered on {new Date(order.createdAt).toLocaleDateString()}
+                                  </CardDescription>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant={order.status === 'delivered' ? 'default' : 'secondary'}>
+                                    {order.status}
+                                  </Badge>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => setViewingOrderId(order.id)}
+                                  >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    View Details
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-600">Meal Count</p>
+                                  <p className="text-lg">{order.mealCount} meals</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-600">Total Price</p>
+                                  <p className="text-lg font-semibold">EGP {order.totalPrice}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-600">Payment Method</p>
+                                  <p className="text-lg">{order.paymentMethod || 'Not specified'}</p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
                     </div>
-                  ) : availableWeeks.length > 0 ? (
-                    availableWeeks.map((week: any) => {
-                      const isDeadlinePassed = isOrderDeadlinePassed(week.weekLabel);
-                      const isSelected = week.weekId === selectedWeekId;
-                      
-                      return (
-                        <div
-                          key={week.weekId}
-                          className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                            isSelected 
-                              ? 'border-primary bg-primary/5' 
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                          onClick={() => setSelectedWeekId(week.weekId)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium text-sm flex items-center gap-2">
-                                {formatWeekLabel(week.weekLabel)}
-                                {isDeadlinePassed && <Lock className="h-3 w-3 text-gray-400" />}
-                              </p>
-                              <p className="text-xs text-gray-600">
-                                {week.mealCount} meals • {week.portionSize}
-                              </p>
-                            </div>
-                            <Badge 
-                              variant={week.isSkipped ? "secondary" : week.orderId ? "default" : "outline"}
-                              className="text-xs"
-                            >
-                              {week.isSkipped ? "Skipped" : week.orderId ? "Active" : "Pending"}
-                            </Badge>
-                          </div>
-                        </div>
-                      );
-                    })
                   ) : (
-                    <div className="text-center py-4">
-                      <Package className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-600">No upcoming deliveries</p>
+                    <div className="text-center py-12">
+                      <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No order history</h3>
+                      <p className="text-gray-600 mb-4">Your completed orders will appear here.</p>
                       <Link href="/meal-plans">
-                        <Button size="sm" className="mt-2">Browse Plans</Button>
+                        <Button>Browse Meal Plans</Button>
                       </Link>
                     </div>
                   )}
                 </CardContent>
               </Card>
-            </div>
+            </TabsContent>
 
-            {/* Main Content Area */}
-            <div className="lg:col-span-2 space-y-6">
-              {isEditing ? (
-                /* Profile Editing Form */
+            {/* Account Details Tab */}
+            <TabsContent value="account" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Profile Information */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Edit Profile</CardTitle>
-                    <CardDescription>Update your personal information and delivery address</CardDescription>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Profile Information</CardTitle>
+                        <CardDescription>Your personal details and contact information</CardDescription>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsEditing(!isEditing)}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        {isEditing ? 'Cancel' : 'Edit'}
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    {isProfileLoading ? (
-                      <div className="text-center py-4">
-                        <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Loading profile...</p>
-                      </div>
-                    ) : (
+                    {isEditing ? (
                       <form onSubmit={handleUpdateProfile} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="name">Full Name</Label>
-                            <Input
-                              id="name"
-                              name="name"
-                              value={formData.name}
-                              onChange={handleInputChange}
-                              required
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                              id="email"
-                              name="email"
-                              type="email"
-                              value={formData.email}
-                              onChange={handleInputChange}
-                              required
-                            />
-                          </div>
-                          <div className="md:col-span-2">
-                            <Label htmlFor="phone">Phone Number</Label>
-                            <Input
-                              id="phone"
-                              name="phone"
-                              value={formData.phone}
-                              onChange={handleInputChange}
-                            />
-                          </div>
+                        <div>
+                          <Label htmlFor="name">Full Name</Label>
+                          <Input
+                            id="name"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleInputChange}
+                            required
+                          />
                         </div>
-
-                        <Separator />
-
-                        <div className="space-y-4">
-                          <h3 className="text-lg font-medium">Delivery Address</h3>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="street">Street</Label>
-                              <Input
-                                id="street"
-                                name="street"
-                                value={formData.street}
-                                onChange={handleInputChange}
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="building">Building</Label>
-                              <Input
-                                id="building"
-                                name="building"
-                                value={formData.building}
-                                onChange={handleInputChange}
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="apartment">Apartment</Label>
-                              <Input
-                                id="apartment"
-                                name="apartment"
-                                value={formData.apartment}
-                                onChange={handleInputChange}
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="area">Area</Label>
-                              <Input
-                                id="area"
-                                name="area"
-                                value={formData.area}
-                                onChange={handleInputChange}
-                              />
-                            </div>
-                            <div className="md:col-span-2">
-                              <Label htmlFor="landmark">Landmark</Label>
-                              <Input
-                                id="landmark"
-                                name="landmark"
-                                value={formData.landmark}
-                                onChange={handleInputChange}
-                              />
-                            </div>
-                          </div>
+                        <div>
+                          <Label htmlFor="email">Email</Label>
+                          <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            required
+                          />
                         </div>
-
-                        <div className="flex gap-2 pt-4">
+                        <div>
+                          <Label htmlFor="phone">Phone Number</Label>
+                          <Input
+                            id="phone"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                        <div className="flex gap-2">
                           <Button type="submit" disabled={isUpdating}>
                             {isUpdating ? (
                               <>
@@ -621,174 +783,161 @@ const AccountPage = () => {
                           </Button>
                         </div>
                       </form>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+                            <UserIcon className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{(profile as any)?.name || 'User'}</p>
+                            <p className="text-sm text-gray-600">{(profile as any)?.email}</p>
+                          </div>
+                        </div>
+                        <Separator />
+                        <div className="space-y-2">
+                          <div>
+                            <p className="text-sm font-medium text-gray-600">Phone</p>
+                            <p>{(profile as any)?.phone || 'Not provided'}</p>
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
-              ) : selectedWeek ? (
-                /* Selected Week Details */
-                <div className="space-y-6">
-                  {/* Week Header with Navigation */}
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={goToPreviousWeek}
-                            disabled={currentWeekIndex <= 0}
-                          >
-                            <ChevronLeft className="h-4 w-4" />
-                          </Button>
-                          <div>
-                            <CardTitle className="text-xl flex items-center gap-2">
-                              {formatWeekLabel(selectedWeek.weekLabel)}
-                              {isOrderDeadlinePassed(selectedWeek.weekLabel) && (
-                                <Lock className="h-5 w-5 text-gray-400" />
-                              )}
-                            </CardTitle>
-                            <CardDescription>
-                              {selectedWeek.mealCount} meals • {selectedWeek.portionSize} portions • 
-                              EGP {calculateDeliveryPrice(selectedWeek.mealCount, selectedWeek.portionSize)}
-                            </CardDescription>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={goToNextWeek}
-                            disabled={currentWeekIndex >= availableWeeks.length - 1}
-                          >
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          {selectedWeek.orderId && !isOrderDeadlinePassed(selectedWeek.weekLabel) && (
-                            selectedWeek.isSkipped ? (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleUnskipOrder(selectedWeek.orderId)}
-                                disabled={processingWeekId === selectedWeek.orderId}
-                              >
-                                {processingWeekId === selectedWeek.orderId ? (
-                                  <>
-                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                    Processing...
-                                  </>
-                                ) : (
-                                  'Restore Order'
-                                )}
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleSkipOrder(selectedWeek.orderId)}
-                                disabled={processingWeekId === selectedWeek.orderId}
-                              >
-                                {processingWeekId === selectedWeek.orderId ? (
-                                  <>
-                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                    Processing...
-                                  </>
-                                ) : (
-                                  'Skip Week'
-                                )}
-                              </Button>
-                            )
-                          )}
-                          
-                          {!isOrderDeadlinePassed(selectedWeek.weekLabel) && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditDelivery(selectedWeek)}
-                            >
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit Delivery
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </CardHeader>
-                  </Card>
 
-                  {/* Order Status */}
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center gap-4">
-                        <Badge 
-                          variant={selectedWeek.isSkipped ? "secondary" : selectedWeek.orderId ? "default" : "outline"}
-                          className="text-sm"
-                        >
-                          {selectedWeek.isSkipped ? "Skipped" : selectedWeek.orderId ? "Confirmed" : "Not Ordered"}
-                        </Badge>
-                        {selectedWeek.paymentMethod && (
-                          <Badge variant="outline" className="text-sm">
-                            Payment: {selectedWeek.paymentMethod.replace('_', ' ')}
-                          </Badge>
-                        )}
-                        {isOrderDeadlinePassed(selectedWeek.weekLabel) && (
-                          <Badge variant="secondary" className="text-sm">
-                            Order Locked
-                          </Badge>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Meal Selection */}
-                  {selectedWeek.orderId && !selectedWeek.isSkipped && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Selected Meals</CardTitle>
-                        <CardDescription>
-                          {isOrderDeadlinePassed(selectedWeek.weekLabel) 
-                            ? "Your meal selections are locked as the order deadline has passed"
-                            : "Manage your meal selections for this week"
-                          }
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <MealSelectionPanel
-                          weekId={selectedWeek.weekId}
-                          orderId={selectedWeek.orderId}
-                          mealCount={selectedWeek.mealCount}
-                          canEdit={!isOrderDeadlinePassed(selectedWeek.weekLabel)}
-                          isSkipped={selectedWeek.isSkipped}
-                          selectedItems={selectedWeek.meals || []}
-                        />
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* No Order State */}
-                  {!selectedWeek.orderId && (
-                    <Card>
-                      <CardContent className="text-center py-8">
-                        <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">No order for this week</h3>
-                        <p className="text-gray-600 mb-4">You haven't placed an order for this week yet.</p>
-                        <Link href="/meal-plans">
-                          <Button>Create Order</Button>
-                        </Link>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              ) : (
-                /* No Week Selected */
+                {/* Delivery Address */}
                 <Card>
-                  <CardContent className="text-center py-12">
-                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Select a week</h3>
-                    <p className="text-gray-600">Choose a week from the sidebar to manage your meal deliveries.</p>
+                  <CardHeader>
+                    <CardTitle>Delivery Address</CardTitle>
+                    <CardDescription>Where your meals will be delivered</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isEditing ? (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="street">Street</Label>
+                            <Input
+                              id="street"
+                              name="street"
+                              value={formData.street}
+                              onChange={handleInputChange}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="building">Building</Label>
+                            <Input
+                              id="building"
+                              name="building"
+                              value={formData.building}
+                              onChange={handleInputChange}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="apartment">Apartment</Label>
+                            <Input
+                              id="apartment"
+                              name="apartment"
+                              value={formData.apartment}
+                              onChange={handleInputChange}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="area">Area</Label>
+                            <Input
+                              id="area"
+                              name="area"
+                              value={formData.area}
+                              onChange={handleInputChange}
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <Label htmlFor="landmark">Landmark</Label>
+                            <Input
+                              id="landmark"
+                              name="landmark"
+                              value={formData.landmark}
+                              onChange={handleInputChange}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-start gap-2">
+                          <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
+                          <div>
+                            <p className="text-sm">
+                              {formData.street && formData.building 
+                                ? `${formData.street}, ${formData.building}${formData.apartment ? `, Apt ${formData.apartment}` : ''}`
+                                : 'No address provided'
+                              }
+                            </p>
+                            {formData.area && <p className="text-sm text-gray-600">{formData.area}</p>}
+                            {formData.landmark && <p className="text-sm text-gray-600">Near {formData.landmark}</p>}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
-              )}
-            </div>
-          </div>
+
+                {/* Subscription Settings */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Subscription Settings</CardTitle>
+                    <CardDescription>Your default meal preferences</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Default Meal Count</p>
+                          <p className="text-lg">6 meals</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Default Portion Size</p>
+                          <p className="text-lg">Standard</p>
+                        </div>
+                      </div>
+                      <Separator />
+                      <Button variant="outline" className="w-full">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Update Subscription
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Payment Methods */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Payment Methods</CardTitle>
+                    <CardDescription>Manage your payment options</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <CreditCard className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="font-medium">Credit Card</p>
+                            <p className="text-sm text-gray-600">Default payment method</p>
+                          </div>
+                        </div>
+                        <Badge variant="default">Default</Badge>
+                      </div>
+                      <Button variant="outline" className="w-full">
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Add Payment Method
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
@@ -865,6 +1014,71 @@ const AccountPage = () => {
               setEditingDelivery(null);
             }}>
               Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Order Details Dialog */}
+      <Dialog open={!!viewingOrderId} onOpenChange={() => setViewingOrderId(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Order Details</DialogTitle>
+            <DialogDescription>
+              View the details of your past order
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {viewingOrderId && ordersData?.orders && (
+              (() => {
+                const order = ordersData.orders.find((o: any) => o.id === viewingOrderId);
+                if (!order) return <p>Order not found</p>;
+                
+                return (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Order ID</p>
+                        <p className="text-lg">#{order.id}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Status</p>
+                        <Badge variant={order.status === 'delivered' ? 'default' : 'secondary'}>
+                          {order.status}
+                        </Badge>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Week</p>
+                        <p className="text-lg">Week {order.weekId}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Order Date</p>
+                        <p className="text-lg">{new Date(order.createdAt).toLocaleDateString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Meal Count</p>
+                        <p className="text-lg">{order.mealCount} meals</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Total Price</p>
+                        <p className="text-lg font-semibold">EGP {order.totalPrice}</p>
+                      </div>
+                    </div>
+                    <Separator />
+                    <div>
+                      <h4 className="font-medium mb-2">Payment Information</h4>
+                      <p className="text-sm text-gray-600">
+                        Payment Method: {order.paymentMethod || 'Not specified'}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewingOrderId(null)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
