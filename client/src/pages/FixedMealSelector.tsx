@@ -422,84 +422,76 @@ export default function FixedMealSelector({
           
           {savedItems.length > 0 ? (
             <div className="space-y-4">
-              {savedItems.map((group: any, index: number) => (
-                <div key={index} className="border rounded-lg overflow-hidden">
-                  <div className="flex items-center p-4">
-                    <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden mr-4">
-                      {group.meal.imageUrl && (
-                        <img 
-                          src={group.meal.imageUrl} 
-                          alt={group.meal.title} 
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium text-lg">{group.meal.title}</h4>
-                          <div className="flex items-center mt-1 text-sm text-gray-600">
-                            <span>{group.meal.calories || 0} cal</span>
-                            <span className="mx-2">•</span>
-                            <span>{group.meal.protein || 0}g protein</span>
-                          </div>
-                        </div>
-                        
-                        {/* Quantity badge */}
-                        {group.items.length > 1 && (
-                          <Badge variant="secondary" className="mr-4">
-                            x{group.items.length}
-                          </Badge>
+              {savedItems.map((group: any, index: number) => {
+                // Calculate portion size totals for mix & match
+                const portionTotals = group.items.reduce((acc: any, item: WeekItem) => {
+                  const size = item.portionSize || 'standard';
+                  acc[size] = (acc[size] || 0) + 1;
+                  return acc;
+                }, {});
+
+                return (
+                  <div key={index} className="border rounded-lg overflow-hidden">
+                    <div className="flex items-center p-4">
+                      <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden mr-4">
+                        {group.meal.imageUrl && (
+                          <img 
+                            src={group.meal.imageUrl} 
+                            alt={group.meal.title} 
+                            className="w-full h-full object-cover"
+                          />
                         )}
                       </div>
                       
-                      {/* Portion size controls - only show for Mix & Match subscriptions */}
-                      {(defaultPortionSize === 'mixed' || defaultPortionSize === 'mix') && (
-                        <div className="mt-3 space-y-2">
-                          {group.items.map((mealItem: WeekItem, itemIndex: number) => {
-                            const actualIndex = selectedItems.findIndex(item => item.id === mealItem.id);
-                            return (
-                              <div key={mealItem.id} className="flex items-center justify-between text-sm">
-                                <span className="text-gray-600">
-                                  {group.items.length > 1 ? `Meal ${itemIndex + 1}:` : 'Portion:'}
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  <Select
-                                    value={mealItem.portionSize || "standard"}
-                                    onValueChange={(value) => handlePortionSizeChange(actualIndex, value)}
-                                  >
-                                    <SelectTrigger className="w-24 h-7 text-xs">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="standard">Standard</SelectItem>
-                                      <SelectItem value="large">Large</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                  {mealItem.portionSize === 'large' && (
-                                    <span className="text-xs text-green-600 font-medium">+99 EGP</span>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium text-lg">{group.meal.title}</h4>
+                            <div className="flex items-center mt-1 text-sm text-gray-600">
+                              <span>{group.meal.calories || 0} cal</span>
+                              <span className="mx-2">•</span>
+                              <span>{group.meal.protein || 0}g protein</span>
+                            </div>
+                          </div>
+                          
+                          {/* Total quantity badge */}
+                          <Badge variant="secondary" className="mr-4">
+                            x{group.items.length}
+                          </Badge>
+                        </div>
+                        
+                        {/* Portion size summary - only show for Mix & Match subscriptions */}
+                        {(defaultPortionSize === 'mixed' || defaultPortionSize === 'mix') && (
+                          <div className="mt-3">
+                            <div className="text-sm text-gray-600">
+                              <span className="font-medium">Portions: </span>
+                              {Object.entries(portionTotals).map(([size, count], idx) => (
+                                <span key={size}>
+                                  {idx > 0 && ', '}
+                                  {count}x {size.charAt(0).toUpperCase() + size.slice(1)}
+                                  {size === 'large' && (
+                                    <span className="text-green-600 font-medium"> (+99 EGP each)</span>
                                   )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                      
-                      {/* Show default portion size for Standard/Large subscriptions */}
-                      {defaultPortionSize !== 'mixed' && defaultPortionSize !== 'mix' && (
-                        <div className="mt-2 text-sm text-gray-600">
-                          All meals: {defaultPortionSize === 'large' ? 'Large' : 'Standard'} portion
-                          {defaultPortionSize === 'large' && (
-                            <span className="ml-2 text-green-600 font-medium">+99 EGP each</span>
-                          )}
-                        </div>
-                      )}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Show default portion size for Standard/Large subscriptions */}
+                        {defaultPortionSize !== 'mixed' && defaultPortionSize !== 'mix' && (
+                          <div className="mt-2 text-sm text-gray-600">
+                            All meals: {defaultPortionSize === 'large' ? 'Large' : 'Standard'} portion
+                            {defaultPortionSize === 'large' && (
+                              <span className="ml-2 text-green-600 font-medium">+99 EGP each</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-8">
