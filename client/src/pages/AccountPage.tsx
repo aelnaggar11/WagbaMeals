@@ -545,7 +545,7 @@ const AccountPage = () => {
             </TabsContent>
 
             <TabsContent value="orders" className="space-y-4">
-              {ordersData?.orders?.length > 0 ? (
+              {ordersData?.orders && ordersData.orders.length > 0 ? (
                 <div className="space-y-4">
                   {ordersData.orders.map((order: any) => (
                     <Card key={order.id}>

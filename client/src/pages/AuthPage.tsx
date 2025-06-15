@@ -110,31 +110,15 @@ const AuthPage = () => {
         localStorage.setItem('wagba_auth_token', response.token);
       }
       
-      // Invalidate queries to refresh auth state
-      await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/user/profile'] });
-      
       toast({
         title: "Login successful",
         description: "Welcome back to Wagba!"
       });
       
-      // Wait for auth state to update
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Pre-fetch the user data to ensure authentication is working
-      try {
-        await queryClient.fetchQuery({ queryKey: ['/api/auth/me'] });
-      } catch (error) {
-        console.log('Auth prefetch failed, proceeding anyway:', error);
-      }
-      
-      // Redirect to return URL if available, otherwise to account page
-      if (returnTo) {
-        navigate(returnTo);
-      } else {
-        navigate('/account');
-      }
+      // Use a small delay then force browser redirect for clean auth state
+      setTimeout(() => {
+        window.location.href = returnTo || '/account';
+      }, 100);
     } catch (error) {
       toast({
         title: "Login failed",
