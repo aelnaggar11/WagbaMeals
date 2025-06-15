@@ -464,12 +464,8 @@ const AccountPage = () => {
                         <div className="space-y-6">
                           {/* Week Header */}
                           <div>
-                            <h2 className="text-xl font-bold text-gray-900 mb-2">
-                              {formatWeekLabel(selectedWeek.weekLabel)}
-                            </h2>
                             <div className="flex items-center gap-4 text-sm text-gray-600">
                               <span>Order By: Wednesday 25 June 2025</span>
-                              <span>Delivery Date: Saturday 12 July 2025</span>
                             </div>
                           </div>
 
@@ -492,6 +488,11 @@ const AccountPage = () => {
                                   <>
                                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                                     Processing...
+                                  </>
+                                ) : selectedWeek.isSkipped ? (
+                                  <>
+                                    <Check className="h-4 w-4 mr-2" />
+                                    Unskip Delivery
                                   </>
                                 ) : (
                                   <>
