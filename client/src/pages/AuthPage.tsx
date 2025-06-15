@@ -339,7 +339,9 @@ const AuthPage = () => {
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
+                    onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
                     placeholder="Enter your email address"
+                    disabled={isSubmitting}
                   />
                 </div>
                 <div className="space-y-2">
@@ -350,7 +352,9 @@ const AuthPage = () => {
                     type="password"
                     value={formData.password}
                     onChange={handleInputChange}
+                    onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
                     placeholder="Enter your password"
+                    disabled={isSubmitting}
                   />
                 </div>
                 <div className="text-right">
@@ -391,7 +395,9 @@ const AuthPage = () => {
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
+                    onKeyPress={(e) => e.key === 'Enter' && handleRegister()}
                     placeholder="Enter your email address"
+                    disabled={isSubmitting}
                     required
                   />
                 </div>
@@ -403,7 +409,9 @@ const AuthPage = () => {
                     type="password"
                     value={formData.password}
                     onChange={handleInputChange}
+                    onKeyPress={(e) => e.key === 'Enter' && handleRegister()}
                     placeholder="Choose a password (min. 6 characters)"
+                    disabled={isSubmitting}
                     required
                   />
                 </div>
