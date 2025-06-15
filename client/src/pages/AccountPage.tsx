@@ -922,4 +922,4 @@ const AccountPage = () => {
   );
 };
 
-export default AccountPage;```typescript
+export default AccountPage;
