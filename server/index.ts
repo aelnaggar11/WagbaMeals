@@ -249,28 +249,37 @@ async function initializeServer() {
       console.warn("Continuing with API-only mode");
     }
 
-    // Start the server
-    const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
+    // Start the server with port fallback
+    let port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
     const host = process.env.HOST || "0.0.0.0";
     
-    server.listen({
-      port,
-      host,
-      reusePort: true,
-    }, () => {
-      log(`Server started successfully on ${host}:${port}`);
-      log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    });
+    const startServer = (attemptPort: number, maxAttempts: number = 10): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        const serverInstance = server.listen({
+          port: attemptPort,
+          host,
+        }, () => {
+          log(`Server started successfully on ${host}:${attemptPort}`);
+          log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+          resolve();
+        });
 
-    // Handle server errors
-    server.on('error', (error: any) => {
-      if (error.code === 'EADDRINUSE') {
-        console.error(`Port ${port} is already in use`);
-      } else {
-        console.error(`Server error: ${error.message}`);
-      }
-      process.exit(1);
-    });
+        serverInstance.on('error', (error: any) => {
+          if (error.code === 'EADDRINUSE') {
+            if (maxAttempts > 1) {
+              log(`Port ${attemptPort} is in use, trying ${attemptPort + 1}...`);
+              startServer(attemptPort + 1, maxAttempts - 1).then(resolve).catch(reject);
+            } else {
+              reject(new Error(`No available ports found after trying ${port} to ${attemptPort}`));
+            }
+          } else {
+            reject(error);
+          }
+        });
+      });
+    };
+
+    await startServer(port);
 
     // Graceful shutdown handlers
     const gracefulShutdown = (signal: string) => {
