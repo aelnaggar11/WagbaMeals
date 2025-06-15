@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { User } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,18 +29,6 @@ const AuthPage = () => {
     email: "",
     name: ""
   });
-
-  // Check if user is already authenticated
-  const { data: currentUser, isLoading: isUserLoading } = useQuery<User | null>({
-    queryKey: ['/api/auth/me'],
-    queryFn: async () => {
-      const res = await fetch('/api/auth/me', { credentials: 'include' });
-      if (res.status === 401) return null;
-      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
-      return res.json();
-    },
-    retry: 1
-  });
   
   // Get the return URL from query params if available
   useEffect(() => {
@@ -52,31 +38,6 @@ const AuthPage = () => {
       setReturnTo(returnToPath);
     }
   }, []);
-
-  // Redirect authenticated users to account page
-  useEffect(() => {
-    if (!isUserLoading && currentUser) {
-      const destination = returnTo || '/account';
-      navigate(destination);
-    }
-  }, [isUserLoading, currentUser, navigate, returnTo]);
-
-  // Show loading state while checking authentication
-  if (isUserLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Don't render auth form if user is already authenticated
-  if (currentUser) {
-    return null;
-  }
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -110,16 +71,31 @@ const AuthPage = () => {
         localStorage.setItem('wagba_auth_token', response.token);
       }
       
-      // Clear any cached auth data to ensure fresh state
-      queryClient.removeQueries({ queryKey: ['/api/auth/me'] });
+      // Invalidate queries to refresh auth state
+      await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/user/profile'] });
       
       toast({
         title: "Login successful",
         description: "Welcome back to Wagba!"
       });
       
-      // Immediately redirect without delay to prevent interference
-      window.location.replace(returnTo || '/account');
+      // Wait for auth state to update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Pre-fetch the user data to ensure authentication is working
+      try {
+        await queryClient.fetchQuery({ queryKey: ['/api/auth/me'] });
+      } catch (error) {
+        console.log('Auth prefetch failed, proceeding anyway:', error);
+      }
+      
+      // Redirect to return URL if available, otherwise to account page
+      if (returnTo) {
+        navigate(returnTo);
+      } else {
+        navigate('/account');
+      }
     } catch (error) {
       toast({
         title: "Login failed",
@@ -363,9 +339,7 @@ const AuthPage = () => {
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
                     placeholder="Enter your email address"
-                    disabled={isSubmitting}
                   />
                 </div>
                 <div className="space-y-2">
@@ -376,9 +350,7 @@ const AuthPage = () => {
                     type="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
                     placeholder="Enter your password"
-                    disabled={isSubmitting}
                   />
                 </div>
                 <div className="text-right">
@@ -419,9 +391,7 @@ const AuthPage = () => {
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    onKeyPress={(e) => e.key === 'Enter' && handleRegister()}
                     placeholder="Enter your email address"
-                    disabled={isSubmitting}
                     required
                   />
                 </div>
@@ -433,9 +403,7 @@ const AuthPage = () => {
                     type="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    onKeyPress={(e) => e.key === 'Enter' && handleRegister()}
                     placeholder="Choose a password (min. 6 characters)"
-                    disabled={isSubmitting}
                     required
                   />
                 </div>
