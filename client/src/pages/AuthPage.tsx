@@ -110,15 +110,16 @@ const AuthPage = () => {
         localStorage.setItem('wagba_auth_token', response.token);
       }
       
+      // Clear any cached auth data to ensure fresh state
+      queryClient.removeQueries({ queryKey: ['/api/auth/me'] });
+      
       toast({
         title: "Login successful",
         description: "Welcome back to Wagba!"
       });
       
-      // Use a small delay then force browser redirect for clean auth state
-      setTimeout(() => {
-        window.location.href = returnTo || '/account';
-      }, 100);
+      // Immediately redirect without delay to prevent interference
+      window.location.replace(returnTo || '/account');
     } catch (error) {
       toast({
         title: "Login failed",

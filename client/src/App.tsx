@@ -76,9 +76,9 @@ function App() {
       location.startsWith('/account') || 
       location.startsWith('/checkout');
     const isAdminRoute = location.startsWith('/admin');
+    const isAuthRoute = location.startsWith('/auth');
       
     // Only redirect unauthenticated users from protected routes to auth
-    // Don't redirect authenticated users away from auth page - let AuthPage handle it
     if (!userLoading && !user && isUserRoute) {
       const timeoutId = setTimeout(() => {
         window.location.href = '/auth?returnTo=' + encodeURIComponent(location);
