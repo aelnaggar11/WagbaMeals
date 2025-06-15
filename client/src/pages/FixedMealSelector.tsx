@@ -115,11 +115,13 @@ export default function FixedMealSelector({
         // Add a meal with the specified portion size
         await handleAddMeal(meal, portionSize);
       } else {
-        // Remove a meal with the specified portion size
-        const itemToRemove = selectedItems.find(item => 
+        // Remove a meal with the specified portion size - find the last added one
+        const itemsToRemove = selectedItems.filter(item => 
           item.mealId === mealId && item.portionSize === portionSize
         );
-        if (itemToRemove) {
+        if (itemsToRemove.length > 0) {
+          // Remove the last added item (highest ID for temporary items, or any for persisted items)
+          const itemToRemove = itemsToRemove[itemsToRemove.length - 1];
           await handleRemoveMeal(meal, itemToRemove);
         }
       }
@@ -254,23 +256,36 @@ export default function FixedMealSelector({
     
     if (itemIndex === -1) return;
 
+    // Check if this is a temporary item (client-side only) or a persisted item
+    const isTemporaryItem = !itemToRemove.id || itemToRemove.id > 1000000000000;
+
     try {
-      // Update local state (remove just one instance)
+      // Update local state immediately (optimistic update)
       const newItems = [...selectedItems];
       newItems.splice(itemIndex, 1);
       setSelectedItems(newItems);
 
-      // Delete from server if we have an order ID and item ID
-      if (orderId && itemToRemove.id) {
+      // Only attempt server deletion for persisted items
+      if (orderId && !isTemporaryItem) {
         const response = await fetch(`/api/orders/${orderId}/items/${itemToRemove.id}`, {
           method: 'DELETE',
         });
         
         if (!response.ok) {
-          throw new Error('Failed to remove meal');
+          // If deletion fails, revert the local state
+          setSelectedItems(selectedItems);
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || 'Failed to remove meal from server');
         }
       }
+      
+      // Invalidate queries to sync state only for persisted items
+      if (!isTemporaryItem) {
+        queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      }
     } catch (error) {
+      console.error('Error removing meal:', error);
       toast({
         title: "Error",
         description: "Failed to remove meal. Please try again."
