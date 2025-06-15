@@ -123,7 +123,7 @@ const AccountPage = () => {
 
   // Helper function to format week label
   const formatWeekLabel = (weekLabel: string) => {
-    // Check if the label matches the format "DD/MM/YYYY"
+    // Check if the label matches the format "DD/MM/YYYY" (delivery date)
     const dateMatch = weekLabel.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
     if (dateMatch) {
       const [, dayStr, monthStr, yearStr] = dateMatch;
@@ -137,16 +137,24 @@ const AccountPage = () => {
       const month = monthMap[monthStr];
       if (month !== undefined) {
         const date = new Date(parseInt(yearStr), month, parseInt(dayStr));
-        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
                            'July', 'August', 'September', 'October', 'November', 'December'];
 
-        const dayName = dayNames[date.getDay()];
         const dayNumber = date.getDate();
         const monthName = monthNames[date.getMonth()];
 
-        return `${dayName} ${dayNumber} ${monthName}`;
+        // Always format as Saturday delivery date
+        return `Sat ${dayNumber} ${monthName}`;
       }
+    }
+
+    // Check if it's already in a different format and try to parse it
+    // Handle formats like "May 19-25, 2025" or similar
+    const rangeMatch = weekLabel.match(/(\w+)\s+(\d+)-(\d+),?\s*(\d+)/);
+    if (rangeMatch) {
+      const [, monthName, startDay, endDay, year] = rangeMatch;
+      // Assume the end day (Saturday) is the delivery day
+      return `Sat ${endDay} ${monthName}`;
     }
 
     // Return original label if no pattern matches
@@ -459,7 +467,7 @@ const AccountPage = () => {
                           {/* Week Header */}
                           <div>
                             <h2 className="text-xl font-bold text-gray-900 mb-2">
-                              {formatWeekLabel(selectedWeek.weekLabel).replace(/(\w+) (\d+) (\w+)/, '$1 $2-$1 $2, 2025')}
+                              {formatWeekLabel(selectedWeek.weekLabel)}
                             </h2>
                             <div className="flex items-center gap-4 text-sm text-gray-600">
                               <span>Order By: Wednesday 25 June 2025</span>
