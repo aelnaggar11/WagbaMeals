@@ -674,22 +674,13 @@ const AccountPage = () => {
                     return (
                       <div key={`details-${week.weekId}`} className="space-y-6">
                         <Card>
-                          <CardHeader>
-                            <CardTitle className="text-xl">
-                              {week.weekLabel}
-                            </CardTitle>
-                            <CardDescription>
-                              <div className="text-sm mt-2">
-                                <span className="block mb-1">
-                                  <strong>Order By:</strong> {formatDate(deadline)}
-                                </span>
-                                <span className="block">
-                                  <strong>Delivery Date:</strong> {formatDate(deliveryDate)}
-                                </span>
-                              </div>
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
+                          <CardContent className="pt-6">
+                            <div className="mb-4">
+                              <p className="text-sm text-gray-600">
+                                <strong>Order By:</strong> {formatDate(deadline)}
+                              </p>
+                            </div>
+
                             {isDeadlinePassed ? (
                               <div className="bg-amber-50 text-amber-700 p-4 rounded-md mb-4">
                                 <p className="font-medium">Order deadline has passed</p>
@@ -724,19 +715,7 @@ const AccountPage = () => {
                                     Edit Delivery
                                   </Button>
                                 )}
-                                {!isDeadlinePassed && !week.isSkipped && week.orderId && (
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => openEditPayment(week.weekId, week.orderId, week.paymentMethod)}
-                                    className="flex items-center"
-                                  >
-                                    <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                    </svg>
-                                    Payment
-                                  </Button>
-                                )}
+
                                 {week.orderId && week.canSkip && !week.isSkipped && (
                                   <Button 
                                     variant="outline" 
