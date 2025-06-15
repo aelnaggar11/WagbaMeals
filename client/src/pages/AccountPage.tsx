@@ -380,6 +380,7 @@ const AccountPage = () => {
                 mealCount: editForm.mealCount.toString(),
                 defaultPortionSize: editForm.portionSize,
                 // Clear existing meal selections when count changes
+                items: [], // Force empty items array to reset component
                 selectedMealCount: 0,
                 hasIncompleteSelection: true
               };
@@ -389,7 +390,8 @@ const AccountPage = () => {
               return {
                 ...week,
                 mealCount: editForm.mealCount.toString(),
-                defaultPortionSize: editForm.portionSize
+                defaultPortionSize: editForm.portionSize,
+                items: [] // Clear items for future weeks too
               };
             }
             return week;

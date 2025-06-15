@@ -52,18 +52,17 @@ export default function FixedMealSelector({
     enabled: !!weekId,
   });
 
-  // Initialize and reset when props change
+  // Reset component state when items change
   useEffect(() => {
-    // Reset when meal count changes or items are cleared
-    if (items.length === 0 && (selectedItems.length > 0 || savedItems.length > 0)) {
+    // Always reset state when items prop changes
+    if (items.length === 0) {
+      // Clear everything when no items
       setSelectedItems([]);
       setSavedItems([]);
       setIsSaved(false);
       setIsInitialized(false);
-    }
-    
-    // Initialize with new items
-    if (!isInitialized && items.length > 0) {
+    } else {
+      // Initialize with provided items
       setSelectedItems(items);
       
       // Group the items by meal ID for display
@@ -71,18 +70,10 @@ export default function FixedMealSelector({
       setSavedItems(grouped);
       
       // If we have items, consider the selection as saved
-      setIsSaved(items.length > 0);
+      setIsSaved(true);
       setIsInitialized(true);
     }
-    
-    // Force reset when meal count changes but we have existing selections
-    if (isInitialized && items.length === 0 && selectedItems.length > 0) {
-      setSelectedItems([]);
-      setSavedItems([]);
-      setIsSaved(false);
-      setIsInitialized(false);
-    }
-  }, [items, mealCount, isInitialized, selectedItems.length, savedItems.length]);
+  }, [items, mealCount]); // Include mealCount to reset when it changes
 
   // Group meals by ID with their portion sizes
   const groupMealsByCount = (items: WeekItem[]) => {
