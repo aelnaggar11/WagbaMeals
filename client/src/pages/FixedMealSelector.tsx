@@ -137,6 +137,79 @@ export default function FixedMealSelector({
     return selectedItems.filter(item => item.mealId === mealId);
   };
 
+  // Helper function to get count of portions for a specific meal and portion size
+  const getPortionCount = (mealId: number, portionSize: string) => {
+    return selectedItems.filter(item => item.mealId === mealId && item.portionSize === portionSize).length;
+  };
+
+  // Helper function to add a portion of specific size for a meal
+  const handleAddPortion = async (mealId: number, portionSize: string) => {
+    if (selectedItems.length >= parseInt(mealCount.toString())) {
+      return; // Already at max meals
+    }
+
+    const meal = meals.find(m => m.id === mealId);
+    if (!meal) return;
+
+    try {
+      if (orderId) {
+        // Add to existing order
+        const response = await apiRequest(`/api/orders/${orderId}/items`, {
+          method: 'POST',
+          body: JSON.stringify({ mealId, portionSize })
+        });
+        
+        if (response.ok) {
+          const newItem = await response.json();
+          setSelectedItems(prev => [...prev, {
+            id: newItem.id,
+            mealId,
+            portionSize,
+            meal
+          }]);
+        }
+      } else {
+        // Local state only
+        const newItem: WeekItem = {
+          id: Date.now() + Math.random(), // Temporary ID
+          mealId,
+          portionSize,
+          meal
+        };
+        setSelectedItems(prev => [...prev, newItem]);
+      }
+    } catch (error) {
+      console.error('Error adding portion:', error);
+    }
+  };
+
+  // Helper function to remove a portion of specific size for a meal
+  const handleRemovePortion = async (mealId: number, portionSize: string) => {
+    const itemToRemove = selectedItems.find(item => 
+      item.mealId === mealId && item.portionSize === portionSize
+    );
+    
+    if (!itemToRemove) return;
+
+    try {
+      if (orderId && typeof itemToRemove.id === 'number') {
+        // Remove from existing order
+        const response = await apiRequest(`/api/orders/${orderId}/items/${itemToRemove.id}`, {
+          method: 'DELETE'
+        });
+        
+        if (response.ok) {
+          setSelectedItems(prev => prev.filter(item => item.id !== itemToRemove.id));
+        }
+      } else {
+        // Local state only
+        setSelectedItems(prev => prev.filter(item => item.id !== itemToRemove.id));
+      }
+    } catch (error) {
+      console.error('Error removing portion:', error);
+    }
+  };
+
   // Add a meal to the selection
   const handleAddMeal = async (meal: Meal) => {
     if (selectedItems.length >= mealCount) {
@@ -481,34 +554,72 @@ export default function FixedMealSelector({
                       </div>
                     </div>
                     
-                    {/* Individual portion size controls for selected meals - only show for Mix & Match */}
-                    {isSelected && (defaultPortionSize === 'mixed' || defaultPortionSize === 'mix') && (
+                    {/* Mix & Match portion size counters - simplified UX */}
+                    {(defaultPortionSize === 'mixed' || defaultPortionSize === 'mix') && (
                       <div className="border-t bg-gray-50 p-4">
-                        <Label className="text-sm font-medium mb-3 block">Portion Sizes:</Label>
-                        <div className="space-y-2">
-                          {getSelectedItemsForMeal(meal.id).map((item, itemIndex) => {
-                            const globalItemIndex = selectedItems.findIndex(si => si.id === item.id);
-                            return (
-                              <div key={item.id} className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">Meal {itemIndex + 1}:</span>
-                                <Select
-                                  value={item.portionSize}
-                                  onValueChange={(value) => handlePortionSizeChange(globalItemIndex, value)}
-                                >
-                                  <SelectTrigger className="w-40">
-                                    <SelectValue placeholder={defaultPortionSize === 'mixed' ? "Choose size" : item.portionSize} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {defaultPortionSize === 'mixed' && (
-                                      <SelectItem value="" disabled>Choose size</SelectItem>
-                                    )}
-                                    <SelectItem value="standard">Standard</SelectItem>
-                                    <SelectItem value="large">Large (+99 EGP)</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            );
-                          })}
+                        <Label className="text-sm font-medium mb-3 block">Choose Portion Sizes:</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* Standard Portion Counter */}
+                          <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                            <div>
+                              <div className="font-medium text-sm">Standard</div>
+                              <div className="text-xs text-gray-500">Regular portion</div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full"
+                                disabled={getPortionCount(meal.id, 'standard') === 0}
+                                onClick={() => handleRemovePortion(meal.id, 'standard')}
+                              >
+                                <MinusCircle size={16} />
+                              </Button>
+                              <span className="w-8 text-center font-medium">
+                                {getPortionCount(meal.id, 'standard')}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full"
+                                disabled={selectedItems.length >= parseInt(mealCount.toString())}
+                                onClick={() => handleAddPortion(meal.id, 'standard')}
+                              >
+                                <PlusCircle size={16} />
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Large Portion Counter */}
+                          <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                            <div>
+                              <div className="font-medium text-sm">Large</div>
+                              <div className="text-xs text-gray-500">+99 EGP each</div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full"
+                                disabled={getPortionCount(meal.id, 'large') === 0}
+                                onClick={() => handleRemovePortion(meal.id, 'large')}
+                              >
+                                <MinusCircle size={16} />
+                              </Button>
+                              <span className="w-8 text-center font-medium">
+                                {getPortionCount(meal.id, 'large')}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full"
+                                disabled={selectedItems.length >= parseInt(mealCount.toString())}
+                                onClick={() => handleAddPortion(meal.id, 'large')}
+                              >
+                                <PlusCircle size={16} />
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )}
