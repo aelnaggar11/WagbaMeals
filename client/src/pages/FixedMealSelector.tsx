@@ -243,10 +243,11 @@ export default function FixedMealSelector({
   
   // Save the current meal selection
   const handleSave = () => {
-    if (selectedItems.length !== mealCount) {
+    const requiredMealCount = parseInt(mealCount.toString());
+    if (selectedItems.length !== requiredMealCount) {
       toast({
         title: "Wrong number of meals",
-        description: `Please select exactly ${mealCount} meals before saving.`,
+        description: `Please select exactly ${requiredMealCount} meals before saving.`,
         variant: "destructive"
       });
       return;
@@ -294,14 +295,6 @@ export default function FixedMealSelector({
   }
 
   const meals = (data as any)?.meals || [];
-
-  // Debug logging
-  console.log('FixedMealSelector state:', {
-    selectedItemsLength: selectedItems.length,
-    mealCount,
-    isSaved,
-    itemsFromProps: items.length
-  });
 
   return (
     <div>
@@ -421,10 +414,10 @@ export default function FixedMealSelector({
               </span>
               <Button 
                 onClick={handleSave}
-                disabled={selectedItems.length !== mealCount}
+                disabled={selectedItems.length !== parseInt(mealCount.toString())}
                 className="flex items-center gap-2"
                 size="sm"
-                title={selectedItems.length !== mealCount ? `Need ${mealCount} meals, have ${selectedItems.length}` : 'Save your selection'}
+                title={selectedItems.length !== parseInt(mealCount.toString()) ? `Need ${mealCount} meals, have ${selectedItems.length}` : 'Save your selection'}
               >
                 <Save size={16} />
                 Save Selection
