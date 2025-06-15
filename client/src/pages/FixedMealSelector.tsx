@@ -148,14 +148,17 @@ export default function FixedMealSelector({
       return; // Already at max meals
     }
 
-    const meal = meals.find(m => m.id === mealId);
+    const meal = meals.find((m: any) => m.id === mealId);
     if (!meal) return;
 
     try {
       if (orderId) {
         // Add to existing order
-        const response = await apiRequest(`/api/orders/${orderId}/items`, {
+        const response = await fetch(`/api/orders/${orderId}/items`, {
           method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({ mealId, portionSize })
         });
         
@@ -167,6 +170,8 @@ export default function FixedMealSelector({
             portionSize,
             meal
           }]);
+          // Invalidate queries to refresh data
+          queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
         }
       } else {
         // Local state only
@@ -180,6 +185,10 @@ export default function FixedMealSelector({
       }
     } catch (error) {
       console.error('Error adding portion:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add meal portion. Please try again."
+      });
     }
   };
 
@@ -194,12 +203,14 @@ export default function FixedMealSelector({
     try {
       if (orderId && typeof itemToRemove.id === 'number') {
         // Remove from existing order
-        const response = await apiRequest(`/api/orders/${orderId}/items/${itemToRemove.id}`, {
+        const response = await fetch(`/api/orders/${orderId}/items/${itemToRemove.id}`, {
           method: 'DELETE'
         });
         
         if (response.ok) {
           setSelectedItems(prev => prev.filter(item => item.id !== itemToRemove.id));
+          // Invalidate queries to refresh data
+          queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
         }
       } else {
         // Local state only
@@ -207,6 +218,10 @@ export default function FixedMealSelector({
       }
     } catch (error) {
       console.error('Error removing portion:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove meal portion. Please try again."
+      });
     }
   };
 
