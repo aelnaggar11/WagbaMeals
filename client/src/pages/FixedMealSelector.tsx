@@ -98,6 +98,41 @@ export default function FixedMealSelector({
     return selectedItems.filter(item => item.mealId && item.meal && item.meal.id).length;
   };
 
+  // Get count of a specific portion size for a meal
+  const getPortionCount = (mealId: number, portionSize: string): number => {
+    return selectedItems.filter(item => 
+      item.mealId === mealId && item.portionSize === portionSize
+    ).length;
+  };
+
+  // Handle portion count changes for Mix & Match
+  const handlePortionCountChange = async (mealId: number, portionSize: string, change: number) => {
+    const meal = (data as any)?.meals?.find((m: Meal) => m.id === mealId);
+    if (!meal) return;
+
+    try {
+      if (change > 0) {
+        // Add a meal with the specified portion size
+        await handleAddMeal(meal, portionSize);
+      } else {
+        // Remove a meal with the specified portion size
+        const itemToRemove = selectedItems.find(item => 
+          item.mealId === mealId && item.portionSize === portionSize
+        );
+        if (itemToRemove) {
+          await handleRemoveMeal(meal, itemToRemove);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating portion count:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update meal selection. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Update portion size for a specific meal item
   const handlePortionSizeChange = async (itemIndex: number, newPortionSize: string) => {
     try {
@@ -144,7 +179,7 @@ export default function FixedMealSelector({
   };
 
   // Add a meal to the selection
-  const handleAddMeal = async (meal: Meal) => {
+  const handleAddMeal = async (meal: Meal, specifiedPortionSize?: string) => {
     if (selectedItems.length >= mealCount) {
       toast({
         title: "Maximum meals reached",
@@ -154,13 +189,15 @@ export default function FixedMealSelector({
     }
 
     try {
-      // Determine initial portion size based on subscription type
-      let initialPortionSize = "standard";
-      if (defaultPortionSize === 'mixed') {
-        // For mixed subscriptions, require user to choose
-        initialPortionSize = "";
-      } else if (defaultPortionSize === 'large') {
-        initialPortionSize = "large";
+      // Determine initial portion size based on subscription type or specified portion
+      let initialPortionSize = specifiedPortionSize || "standard";
+      if (!specifiedPortionSize) {
+        if (defaultPortionSize === 'mixed') {
+          // For mixed subscriptions, default to standard if not specified
+          initialPortionSize = "standard";
+        } else if (defaultPortionSize === 'large') {
+          initialPortionSize = "large";
+        }
       }
 
       // Create a new item
@@ -202,12 +239,20 @@ export default function FixedMealSelector({
 
 
   // Remove a meal from the selection
-  const handleRemoveMeal = async (meal: Meal) => {
-    // Find the first occurrence of this meal in our selection
-    const itemIndex = selectedItems.findIndex(item => item.mealId === meal.id);
-    if (itemIndex === -1) return;
+  const handleRemoveMeal = async (meal: Meal, specificItem?: WeekItem) => {
+    // If a specific item is provided, remove that one; otherwise find the first occurrence
+    let itemToRemove: WeekItem;
+    let itemIndex: number;
     
-    const itemToRemove = selectedItems[itemIndex];
+    if (specificItem) {
+      itemIndex = selectedItems.findIndex(item => item.id === specificItem.id);
+      itemToRemove = specificItem;
+    } else {
+      itemIndex = selectedItems.findIndex(item => item.mealId === meal.id);
+      itemToRemove = selectedItems[itemIndex];
+    }
+    
+    if (itemIndex === -1) return;
 
     try {
       // Update local state (remove just one instance)
@@ -471,31 +516,66 @@ export default function FixedMealSelector({
                       </div>
                     </div>
                     
-                    {/* Individual portion size controls for selected meals - only show for Mix & Match */}
+                    {/* Portion size counters for Mix & Match */}
                     {isSelected && (defaultPortionSize === 'mixed' || defaultPortionSize === 'mix') && (
                       <div className="border-t bg-gray-50 p-4">
                         <Label className="text-sm font-medium mb-3 block">Portion Sizes:</Label>
-                        <div className="space-y-2">
-                          {getSelectedItemsForMeal(meal.id).map((item, itemIndex) => {
-                            const globalItemIndex = selectedItems.findIndex(si => si.id === item.id);
-                            return (
-                              <div key={item.id} className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">Meal {itemIndex + 1}:</span>
-                                <Select
-                                  value={item.portionSize}
-                                  onValueChange={(value) => handlePortionSizeChange(globalItemIndex, value)}
-                                >
-                                  <SelectTrigger className="w-40">
-                                    <SelectValue placeholder={defaultPortionSize === 'mixed' ? "Choose size" : item.portionSize} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="standard">Standard</SelectItem>
-                                    <SelectItem value="large">Large (+99 EGP)</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            );
-                          })}
+                        <div className="space-y-3">
+                          {/* Standard portion counter */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">Standard portions:</span>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePortionCountChange(meal.id, 'standard', -1)}
+                                disabled={getPortionCount(meal.id, 'standard') === 0}
+                                className="w-8 h-8 p-0"
+                              >
+                                <MinusCircle size={16} />
+                              </Button>
+                              <span className="w-8 text-center font-medium">
+                                {getPortionCount(meal.id, 'standard')}
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePortionCountChange(meal.id, 'standard', 1)}
+                                disabled={getValidSelectedCount() >= mealCount}
+                                className="w-8 h-8 p-0"
+                              >
+                                <PlusCircle size={16} />
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {/* Large portion counter */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">Large portions (+99 EGP each):</span>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePortionCountChange(meal.id, 'large', -1)}
+                                disabled={getPortionCount(meal.id, 'large') === 0}
+                                className="w-8 h-8 p-0"
+                              >
+                                <MinusCircle size={16} />
+                              </Button>
+                              <span className="w-8 text-center font-medium">
+                                {getPortionCount(meal.id, 'large')}
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePortionCountChange(meal.id, 'large', 1)}
+                                disabled={getValidSelectedCount() >= mealCount}
+                                className="w-8 h-8 p-0"
+                              >
+                                <PlusCircle size={16} />
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )}
