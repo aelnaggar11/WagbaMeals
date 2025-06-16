@@ -97,10 +97,8 @@ const AccountPage = () => {
   // Set initial selected week when data is loaded and sync local state
   useEffect(() => {
     if ((upcomingMealsData as any)?.upcomingMeals && (upcomingMealsData as any).upcomingMeals.length > 0) {
-      // Initialize local state with server data if not already set
-      if (!localUpcomingMeals) {
-        setLocalUpcomingMeals(upcomingMealsData);
-      }
+      // Always update local state with fresh server data to prevent stale cache
+      setLocalUpcomingMeals(upcomingMealsData);
 
       // Set initial selected week to the first week with a confirmed order (first delivery)
       if (!selectedWeekId) {
@@ -117,7 +115,27 @@ const AccountPage = () => {
         setSelectedWeekId(weekToSelect);
       }
     }
-  }, [upcomingMealsData, selectedWeekId, localUpcomingMeals]);
+  }, [upcomingMealsData, selectedWeekId]);
+
+  // Refresh meal selections when switching weeks to prevent stale data
+  useEffect(() => {
+    if (selectedWeekId && upcomingMealsData) {
+      // Find the current week data from the fresh server data
+      const currentWeek = (upcomingMealsData as any).upcomingMeals.find((week: any) => week.weekId === selectedWeekId);
+      if (currentWeek) {
+        // Update meal count and selected meals from fresh server data
+        setMealCount(currentWeek.mealCount);
+        
+        // Convert week items to OrderItems using fresh data
+        const orderItems: OrderItem[] = currentWeek.items.map((item: any) => ({
+          mealId: item.mealId,
+          portionSize: item.portionSize as PortionSize
+        }));
+        
+        setSelectedMeals(orderItems);
+      }
+    }
+  }, [selectedWeekId, upcomingMealsData]);
 
   // Update form data when profile data is loaded
   useEffect(() => {
