@@ -140,6 +140,11 @@ const AccountPage = () => {
   useEffect(() => {
     if (selectedWeekId) {
       console.log('Week changed to:', selectedWeekId, 'forcing data refresh...');
+      
+      // Immediately clear meal selections to prevent showing stale data
+      setSelectedMeals([]);
+      setMealCount(0);
+      
       // Remove cached data completely and force fresh fetch
       queryClient.removeQueries({ queryKey: ['/api/user/upcoming-meals'] });
       // Trigger immediate refetch
@@ -150,8 +155,10 @@ const AccountPage = () => {
   // Sync meal selections when fresh data arrives
   useEffect(() => {
     if (selectedWeekId && upcomingMealsData) {
+      console.log('Syncing meal selections for week:', selectedWeekId, 'with fresh data');
       const currentWeek = (upcomingMealsData as any).upcomingMeals.find((week: any) => week.weekId === selectedWeekId);
       if (currentWeek) {
+        console.log('Found current week data:', currentWeek.items.length, 'items');
         setMealCount(currentWeek.mealCount);
         
         const orderItems: OrderItem[] = currentWeek.items.map((item: any) => ({
@@ -160,6 +167,9 @@ const AccountPage = () => {
         }));
         
         setSelectedMeals(orderItems);
+        console.log('Updated meal selections:', orderItems.length, 'meals');
+      } else {
+        console.log('No data found for week:', selectedWeekId);
       }
     }
   }, [upcomingMealsData, selectedWeekId]);
