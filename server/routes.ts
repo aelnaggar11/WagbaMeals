@@ -990,26 +990,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const orderDeadlinePassed = new Date(week.orderDeadline) <= now;
 
         // If no order exists, create one with user's default meal count and portion preference
+        // BUT only if this week wasn't intentionally skipped during onboarding
         if (!order) {
           // Get user's default meal count and portion size from their most recent order
           const userOrders = await storage.getOrdersByUser(req.session.userId!);
           const defaultMealCount = userOrders.length > 0 ? userOrders[userOrders.length - 1].mealCount : 4;
           const defaultPortionSize = userOrders.length > 0 ? userOrders[userOrders.length - 1].defaultPortionSize : 'standard';
 
-          order = await storage.createOrder({
-            userId: req.session.userId!,
-            weekId: week.id,
-            status: 'not_selected',
-            mealCount: defaultMealCount,
-            defaultPortionSize: defaultPortionSize,
-            subtotal: 0,
-            discount: 0,
-            total: 0,
-            deliveryDate: week.deliveryDate.toISOString(),
-            deliveryAddress: null,
-            deliveryNotes: null,
-            paymentMethod: null
-          });
+          // Check if user has any confirmed orders (not a first-time user)
+          const hasConfirmedOrders = userOrders.some(order => order.status === 'confirmed');
+          
+          // If this is a first-time user, check if this week should be auto-skipped
+          if (!hasConfirmedOrders) {
+            // Find the earliest non-skipped order to determine user's intended start week
+            const nonSkippedOrders = userOrders.filter(order => order.status !== 'skipped');
+            if (nonSkippedOrders.length > 0) {
+              const earliestSelectedWeek = Math.min(...nonSkippedOrders.map(order => order.weekId));
+              
+              // If this week is before the user's selected start week, skip it
+              if (week.id < earliestSelectedWeek) {
+                order = await storage.createOrder({
+                  userId: req.session.userId!,
+                  weekId: week.id,
+                  status: 'skipped',
+                  mealCount: defaultMealCount,
+                  defaultPortionSize: defaultPortionSize,
+                  subtotal: 0,
+                  discount: 0,
+                  total: 0,
+                  deliveryDate: week.deliveryDate.toISOString(),
+                  deliveryAddress: null,
+                  deliveryNotes: null,
+                  paymentMethod: null
+                });
+              } else {
+                // Create normal not_selected order
+                order = await storage.createOrder({
+                  userId: req.session.userId!,
+                  weekId: week.id,
+                  status: 'not_selected',
+                  mealCount: defaultMealCount,
+                  defaultPortionSize: defaultPortionSize,
+                  subtotal: 0,
+                  discount: 0,
+                  total: 0,
+                  deliveryDate: week.deliveryDate.toISOString(),
+                  deliveryAddress: null,
+                  deliveryNotes: null,
+                  paymentMethod: null
+                });
+              }
+            } else {
+              // No non-skipped orders found, create normal order
+              order = await storage.createOrder({
+                userId: req.session.userId!,
+                weekId: week.id,
+                status: 'not_selected',
+                mealCount: defaultMealCount,
+                defaultPortionSize: defaultPortionSize,
+                subtotal: 0,
+                discount: 0,
+                total: 0,
+                deliveryDate: week.deliveryDate.toISOString(),
+                deliveryAddress: null,
+                deliveryNotes: null,
+                paymentMethod: null
+              });
+            }
+          } else {
+            // Existing user, create normal not_selected order
+            order = await storage.createOrder({
+              userId: req.session.userId!,
+              weekId: week.id,
+              status: 'not_selected',
+              mealCount: defaultMealCount,
+              defaultPortionSize: defaultPortionSize,
+              subtotal: 0,
+              discount: 0,
+              total: 0,
+              deliveryDate: week.deliveryDate.toISOString(),
+              deliveryAddress: null,
+              deliveryNotes: null,
+              paymentMethod: null
+            });
+          }
         }
 
         // Get the detailed meal information for each order item
