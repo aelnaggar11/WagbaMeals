@@ -46,6 +46,17 @@ const AuthPage = () => {
       [name]: value
     }));
   };
+
+  const handleKeyPress = (e: React.KeyboardEvent, action: 'login' | 'register') => {
+    if (e.key === 'Enter' && !isSubmitting) {
+      e.preventDefault();
+      if (action === 'login') {
+        handleLogin();
+      } else {
+        handleRegister();
+      }
+    }
+  };
   
   const handleLogin = async () => {
     // Validation
@@ -339,6 +350,7 @@ const AuthPage = () => {
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
+                    onKeyPress={(e) => handleKeyPress(e, 'login')}
                     placeholder="Enter your email address"
                   />
                 </div>
@@ -350,6 +362,7 @@ const AuthPage = () => {
                     type="password"
                     value={formData.password}
                     onChange={handleInputChange}
+                    onKeyPress={(e) => handleKeyPress(e, 'login')}
                     placeholder="Enter your password"
                   />
                 </div>
@@ -391,6 +404,7 @@ const AuthPage = () => {
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
+                    onKeyPress={(e) => handleKeyPress(e, 'register')}
                     placeholder="Enter your email address"
                     required
                   />
@@ -403,6 +417,7 @@ const AuthPage = () => {
                     type="password"
                     value={formData.password}
                     onChange={handleInputChange}
+                    onKeyPress={(e) => handleKeyPress(e, 'register')}
                     placeholder="Choose a password (min. 6 characters)"
                     required
                   />

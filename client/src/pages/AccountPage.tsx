@@ -110,16 +110,16 @@ const AccountPage = () => {
       // Always update local state with fresh server data to prevent stale cache
       setLocalUpcomingMeals(upcomingMealsData);
 
-      // Set initial selected week to the first week with a confirmed order (first delivery)
+      // Set initial selected week to the first week that is NOT skipped
       if (!selectedWeekId) {
-        // Find the first week that has an order and is not skipped
-        const firstDeliveryWeek = (upcomingMealsData as any).upcomingMeals.find((week: any) => 
-          week.orderId && !week.isSkipped
+        // Find the first week that is not skipped
+        const firstActiveWeek = (upcomingMealsData as any).upcomingMeals.find((week: any) => 
+          !week.isSkipped
         );
 
-        // If we found a week with a delivery, use that; otherwise use the first available week
-        const weekToSelect = firstDeliveryWeek 
-          ? firstDeliveryWeek.weekId 
+        // If we found an active week, use that; otherwise use the first available week
+        const weekToSelect = firstActiveWeek 
+          ? firstActiveWeek.weekId 
           : (upcomingMealsData as any).upcomingMeals[0].weekId;
 
         setSelectedWeekId(weekToSelect);
@@ -140,7 +140,7 @@ const AccountPage = () => {
         }
       }
     }
-  }, [upcomingMealsData, selectedWeekId]);
+  }, [upcomingMealsData]);
 
 
 
