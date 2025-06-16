@@ -538,42 +538,7 @@ const AccountPage = () => {
     }
   };
 
-  // Fetch meals for the selected week
-  useEffect(() => {
-    const fetchMealsForWeek = async () => {
-      if (!selectedWeekId) return;
 
-      setIsLoadingMeals(true);
-      try {
-        const response: any = await apiRequest('GET', `/api/menu/${selectedWeekId}`);
-        setAvailableMeals(response.meals || []);
-
-        // Get current meal selections for this week from upcoming meals data
-        const currentWeek = displayUpcomingMeals?.upcomingMeals.find((week: any) => week.weekId === selectedWeekId);
-        if (currentWeek) {
-          setMealCount(currentWeek.mealCount);
-
-          // Convert week items to OrderItems
-          const orderItems: OrderItem[] = currentWeek.items.map((item: any) => ({
-            mealId: item.mealId,
-            portionSize: item.portionSize as PortionSize
-          }));
-
-          setSelectedMeals(orderItems);
-        }
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to load meals for this week.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoadingMeals(false);
-      }
-    };
-
-    fetchMealsForWeek();
-  }, [selectedWeekId, upcomingMealsData, toast]);
 
   // Show loading while authentication is in progress
   if (isUserLoading) {
