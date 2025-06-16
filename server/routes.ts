@@ -1604,8 +1604,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         total: newSubtotal
       });
 
-      // Mark order as selected since user has added meal items
-      if (order.status === 'not_selected') {
+      // Check if order is now complete and update status accordingly
+      const updatedOrderItems = await storage.getOrderItems(orderId);
+      const isOrderComplete = updatedOrderItems.length >= order.mealCount;
+      
+      // Mark order as selected if it's complete and not already selected/skipped
+      if (isOrderComplete && !['selected', 'skipped'].includes(order.status)) {
         await storage.markOrderAsSelected(orderId);
       }
 
