@@ -291,6 +291,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const discount = fullPriceTotal - subtotal;
           const total = subtotal;
 
+          // Auto-skip all weeks before the selected first delivery week for new users
+          await autoSkipPrecedingWeeks(user.id, selections.weekId);
+
           // Create the order using the temporarily stored selections
           const order = await storage.createOrder({
             userId: user.id,
