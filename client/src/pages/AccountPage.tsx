@@ -120,41 +120,11 @@ const AccountPage = () => {
     }
   }, [upcomingMealsData, selectedWeekId]);
 
-  // Force refresh data when switching weeks by invalidating cache and fetching fresh data
+  // Force refresh data when switching weeks 
   useEffect(() => {
     if (selectedWeekId) {
-      // Clear cache and force fresh data fetch
-      queryClient.removeQueries({ queryKey: ['/api/user/upcoming-meals'] });
-      
-      // Fetch fresh data with cache busting
-      const fetchFreshData = async () => {
-        try {
-          const timestamp = Date.now();
-          const freshData = await apiRequest('GET', `/api/user/upcoming-meals?t=${timestamp}`);
-          
-          // Update the query cache with fresh data
-          queryClient.setQueryData(['/api/user/upcoming-meals'], freshData);
-          
-          // Update meal selections with fresh data
-          if (freshData?.upcomingMeals) {
-            const currentWeek = freshData.upcomingMeals.find((week: any) => week.weekId === selectedWeekId);
-            if (currentWeek) {
-              setMealCount(currentWeek.mealCount);
-              
-              const orderItems: OrderItem[] = currentWeek.items.map((item: any) => ({
-                mealId: item.mealId,
-                portionSize: item.portionSize as PortionSize
-              }));
-              
-              setSelectedMeals(orderItems);
-            }
-          }
-        } catch (error) {
-          console.error('Failed to fetch fresh upcoming meals data:', error);
-        }
-      };
-      
-      fetchFreshData();
+      // Force invalidate and refetch fresh data when switching weeks
+      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
     }
   }, [selectedWeekId, queryClient]);
 
