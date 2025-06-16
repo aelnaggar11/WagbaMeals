@@ -106,6 +106,12 @@ const AccountPage = () => {
 
   // Auto-select first non-skipped week when data loads
   useEffect(() => {
+    console.log('Auto-selection check:', {
+      hasData: !!(upcomingMealsData as any)?.upcomingMeals,
+      dataLength: (upcomingMealsData as any)?.upcomingMeals?.length,
+      selectedWeekId: selectedWeekId
+    });
+    
     if ((upcomingMealsData as any)?.upcomingMeals && (upcomingMealsData as any).upcomingMeals.length > 0 && !selectedWeekId) {
       console.log('Auto-selecting first available week...');
       
@@ -122,7 +128,7 @@ const AccountPage = () => {
         ? firstActiveWeek.weekId 
         : (upcomingMealsData as any).upcomingMeals[0].weekId;
 
-      console.log('Auto-selected week:', weekToSelect);
+      console.log('Auto-selected week:', weekToSelect, 'from weeks:', (upcomingMealsData as any).upcomingMeals.map((w: any) => ({ id: w.weekId, skipped: w.isSkipped })));
       
       // Set the selected week and immediately sync its meal data
       setSelectedWeekId(weekToSelect);
@@ -138,10 +144,10 @@ const AccountPage = () => {
         }));
         
         setSelectedMeals(orderItems);
-        console.log('Auto-loaded meal selections:', orderItems.length, 'meals');
+        console.log('Auto-loaded meal selections:', orderItems.length, 'meals for week', weekToSelect);
       }
     }
-  }, [upcomingMealsData, selectedWeekId]);
+  }, [upcomingMealsData]);
 
 
 
