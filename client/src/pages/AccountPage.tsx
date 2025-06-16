@@ -104,43 +104,44 @@ const AccountPage = () => {
     }
   }, [isUserLoading, currentUser, navigate, location]);
 
-  // Set initial selected week when data is loaded and sync local state
+  // Auto-select first non-skipped week when data loads
   useEffect(() => {
-    if ((upcomingMealsData as any)?.upcomingMeals && (upcomingMealsData as any).upcomingMeals.length > 0) {
-      // Always update local state with fresh server data to prevent stale cache
+    if ((upcomingMealsData as any)?.upcomingMeals && (upcomingMealsData as any).upcomingMeals.length > 0 && !selectedWeekId) {
+      console.log('Auto-selecting first available week...');
+      
+      // Always update local state with fresh server data
       setLocalUpcomingMeals(upcomingMealsData);
 
-      // Set initial selected week to the first week that is NOT skipped
-      if (!selectedWeekId) {
-        // Find the first week that is not skipped
-        const firstActiveWeek = (upcomingMealsData as any).upcomingMeals.find((week: any) => 
-          !week.isSkipped
-        );
+      // Find the first week that is not skipped
+      const firstActiveWeek = (upcomingMealsData as any).upcomingMeals.find((week: any) => 
+        !week.isSkipped
+      );
 
-        // If we found an active week, use that; otherwise use the first available week
-        const weekToSelect = firstActiveWeek 
-          ? firstActiveWeek.weekId 
-          : (upcomingMealsData as any).upcomingMeals[0].weekId;
+      // If we found an active week, use that; otherwise use the first available week
+      const weekToSelect = firstActiveWeek 
+        ? firstActiveWeek.weekId 
+        : (upcomingMealsData as any).upcomingMeals[0].weekId;
 
-        setSelectedWeekId(weekToSelect);
-      }
-
-      // Always sync meal selections with fresh data for the currently selected week
-      if (selectedWeekId) {
-        const currentWeek = (upcomingMealsData as any).upcomingMeals.find((week: any) => week.weekId === selectedWeekId);
-        if (currentWeek) {
-          setMealCount(currentWeek.mealCount);
-          
-          const orderItems: OrderItem[] = currentWeek.items.map((item: any) => ({
-            mealId: item.mealId,
-            portionSize: item.portionSize as PortionSize
-          }));
-          
-          setSelectedMeals(orderItems);
-        }
+      console.log('Auto-selected week:', weekToSelect);
+      
+      // Set the selected week and immediately sync its meal data
+      setSelectedWeekId(weekToSelect);
+      
+      // Find and set the meal data for the auto-selected week
+      const selectedWeekData = (upcomingMealsData as any).upcomingMeals.find((week: any) => week.weekId === weekToSelect);
+      if (selectedWeekData) {
+        setMealCount(selectedWeekData.mealCount || 0);
+        
+        const orderItems: OrderItem[] = (selectedWeekData.items || []).map((item: any) => ({
+          mealId: item.mealId,
+          portionSize: item.portionSize as PortionSize
+        }));
+        
+        setSelectedMeals(orderItems);
+        console.log('Auto-loaded meal selections:', orderItems.length, 'meals');
       }
     }
-  }, [upcomingMealsData]);
+  }, [upcomingMealsData, selectedWeekId]);
 
 
 
