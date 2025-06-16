@@ -1256,7 +1256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           subtotal,
           discount,
           total: subtotal,
-          status: 'selecting' // Reset status to require fresh meal selection
+          status: 'not_selected' // Reset status when meal selections are cleared
         });
       }
 
@@ -1604,14 +1604,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         total: newSubtotal
       });
 
-      // Check if order is now complete and update status accordingly
-      const updatedOrderItems = await storage.getOrderItems(orderId);
-      const isOrderComplete = updatedOrderItems.length >= order.mealCount;
-      
-      // Mark order as selected if it's complete and not already selected/skipped
-      if (isOrderComplete && !['selected', 'skipped'].includes(order.status)) {
-        await storage.markOrderAsSelected(orderId);
-      }
+      // Don't automatically change status - this should only happen when user explicitly saves
 
       res.status(201).json(orderItem);
     } catch (error) {
@@ -1714,6 +1707,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: 'Portion size updated successfully' });
     } catch (error) {
       console.error('Error updating portion size:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Save meal selection and mark order as selected
+  app.post('/api/orders/:orderId/save-selection', authMiddleware, async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+
+      // Get the order to verify ownership
+      const order = await storage.getOrder(orderId);
+      if (!order || order.userId !== req.session.userId) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      // Verify order has meals selected
+      const orderItems = await storage.getOrderItems(orderId);
+      if (orderItems.length === 0) {
+        return res.status(400).json({ message: 'No meals selected to save' });
+      }
+
+      // Only allow saving if order is in selecting or not_selected status
+      if (!['selecting', 'not_selected'].includes(order.status)) {
+        return res.status(400).json({ message: 'Cannot save selection for this order status' });
+      }
+
+      // Mark order as selected
+      const updatedOrder = await storage.markOrderAsSelected(orderId);
+
+      res.json({ 
+        message: 'Selection saved successfully',
+        order: updatedOrder 
+      });
+    } catch (error) {
+      console.error('Error saving selection:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });

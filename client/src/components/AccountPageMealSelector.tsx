@@ -119,6 +119,30 @@ export default function AccountPageMealSelector({
     }
   };
 
+  // Save selection handler
+  const handleSaveSelection = async () => {
+    if (!orderId || selectedCount === 0) return;
+
+    try {
+      await apiRequest('POST', `/api/orders/${orderId}/save-selection`);
+
+      // Refresh data
+      await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      await queryClient.refetchQueries({ queryKey: ['/api/user/upcoming-meals'] });
+
+      toast({
+        title: "Selection saved",
+        description: "Your meal selection has been saved successfully."
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save selection. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Debug information
   console.log("Meal selector received items:", items);
   console.log("Meal selector received mealCount:", mealCount);
@@ -204,6 +228,18 @@ export default function AccountPageMealSelector({
           ) : (
             <div className="text-center py-8">
               <p className="text-gray-500">No meals available for this week.</p>
+            </div>
+          )}
+          {/* Save Selection Button */}
+          {selectedCount > 0 && (
+            <div className="mt-6 flex justify-center">
+              <Button 
+                onClick={handleSaveSelection}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2"
+                disabled={selectedCount === 0}
+              >
+                Save Selection ({selectedCount} meal{selectedCount !== 1 ? 's' : ''})
+              </Button>
             </div>
           )}
         </>
