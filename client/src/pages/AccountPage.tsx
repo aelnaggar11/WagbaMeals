@@ -145,12 +145,41 @@ const AccountPage = () => {
       setSelectedMeals([]);
       setMealCount(0);
       
-      // Remove cached data completely and force fresh fetch
+      // Bypass React Query cache entirely and fetch fresh data directly
+      const fetchFreshData = async () => {
+        try {
+          // Add timestamp to ensure fresh request
+          const timestamp = Date.now();
+          const freshData = await apiRequest('GET', `/api/user/upcoming-meals?t=${timestamp}`);
+          
+          // Update React Query cache with fresh data
+          queryClient.setQueryData(['/api/user/upcoming-meals'], freshData);
+          
+          // Immediately apply fresh data for the selected week
+          if (freshData?.upcomingMeals) {
+            const currentWeek = freshData.upcomingMeals.find((week: any) => week.weekId === selectedWeekId);
+            if (currentWeek) {
+              console.log('Immediately applying fresh data for week:', selectedWeekId, currentWeek.items.length, 'items');
+              setMealCount(currentWeek.mealCount);
+              
+              const orderItems: OrderItem[] = currentWeek.items.map((item: any) => ({
+                mealId: item.mealId,
+                portionSize: item.portionSize as PortionSize
+              }));
+              
+              setSelectedMeals(orderItems);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch fresh data:', error);
+        }
+      };
+      
+      // Remove all cached data and fetch fresh
       queryClient.removeQueries({ queryKey: ['/api/user/upcoming-meals'] });
-      // Trigger immediate refetch
-      refetchUpcomingMeals();
+      fetchFreshData();
     }
-  }, [selectedWeekId, queryClient, refetchUpcomingMeals]);
+  }, [selectedWeekId, queryClient]);
 
   // Sync meal selections when fresh data arrives
   useEffect(() => {
