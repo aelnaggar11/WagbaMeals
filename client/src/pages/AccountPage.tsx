@@ -151,24 +151,17 @@ const AccountPage = () => {
 
 
 
-  // Initialize selected week from URL or default to first week
+  // Handle URL week parameter (but don't auto-select if no param)
   useEffect(() => {
-    if (weeksData?.weeks && weeksData.weeks.length > 0 && !selectedWeekId) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const weekParam = urlParams.get('week');
-      
-      if (weekParam) {
-        const weekId = parseInt(weekParam);
-        if (weeksData.weeks.find(w => w.id === weekId)) {
-          setSelectedWeekId(weekId);
-          return;
-        }
-      }
-      
-      // Default to first week
-      setSelectedWeekId(weeksData.weeks[0].id);
+    const urlParams = new URLSearchParams(window.location.search);
+    const weekParam = urlParams.get('week');
+    
+    if (weekParam && !selectedWeekId) {
+      const weekId = parseInt(weekParam);
+      console.log('URL week parameter found:', weekId);
+      setSelectedWeekId(weekId);
     }
-  }, [weeksData, selectedWeekId]);
+  }, [selectedWeekId]);
 
   // Direct week selection with cache bypass
   useEffect(() => {
