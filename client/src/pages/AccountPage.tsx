@@ -163,24 +163,20 @@ const AccountPage = () => {
     }
   }, [selectedWeekId]);
 
-  // Direct week selection with cache bypass
-  useEffect(() => {
-    if (selectedWeekId) {
-      console.log('Week changed to:', selectedWeekId);
-      setIsRefreshingWeekData(true);
-      setSelectedMeals([]);
-      setMealCount(0);
-      
-      // Direct fetch with cache busting
-      fetch(`/api/user/upcoming-meals?t=${Date.now()}`, { 
+  // Refresh data after meal modifications (but not on week switches)
+  const refreshMealData = async () => {
+    try {
+      const response = await fetch(`/api/user/upcoming-meals?t=${Date.now()}`, { 
         credentials: 'include',
         cache: 'no-store',
         headers: { 'Cache-Control': 'no-cache' }
-      })
-      .then(res => res.json())
-      .then(data => {
-        setLocalUpcomingMeals(data);
-        const currentWeek = data.upcomingMeals?.find((week: any) => week.weekId === selectedWeekId);
+      });
+      const freshData = await response.json();
+      setLocalUpcomingMeals(freshData);
+      
+      // Update current week's selections if we have a selected week
+      if (selectedWeekId) {
+        const currentWeek = freshData.upcomingMeals?.find((week: any) => week.weekId === selectedWeekId);
         if (currentWeek) {
           const orderItems: OrderItem[] = (currentWeek.items || []).map((item: any) => ({
             mealId: item.mealId,
@@ -189,11 +185,13 @@ const AccountPage = () => {
           setSelectedMeals(orderItems);
           setMealCount(currentWeek.mealCount || 0);
         }
-        queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
-      })
-      .finally(() => setIsRefreshingWeekData(false));
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+    } catch (error) {
+      console.error('Failed to refresh meal data:', error);
     }
-  }, [selectedWeekId, queryClient]);
+  };
 
   // Update form data when profile data is loaded
   useEffect(() => {
@@ -670,27 +668,14 @@ const AccountPage = () => {
                     {displayUpcomingMeals.upcomingMeals.map((week: any) => (
                       <button
                         key={week.weekId}
-                        onClick={async () => {
-                          console.log('Direct week click:', week.weekId);
-                          setIsRefreshingWeekData(true);
+                        onClick={() => {
+                          console.log('Quick week switch:', week.weekId);
                           setSelectedWeekId(week.weekId);
-                          setSelectedMeals([]);
-                          setMealCount(0);
                           
-                          try {
-                            const response = await fetch(`/api/user/upcoming-meals?bypass=${Date.now()}`, {
-                              credentials: 'include',
-                              cache: 'no-store',
-                              headers: {
-                                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                                'Pragma': 'no-cache',
-                                'Expires': '0'
-                              }
-                            });
-                            const freshData = await response.json();
-                            setLocalUpcomingMeals(freshData);
-                            
-                            const selectedWeek = freshData.upcomingMeals?.find((w: any) => w.weekId === week.weekId);
+                          // Use existing data for immediate response
+                          const currentData = localUpcomingMeals || upcomingMealsData;
+                          if (currentData) {
+                            const selectedWeek = currentData.upcomingMeals?.find((w: any) => w.weekId === week.weekId);
                             if (selectedWeek) {
                               const items = (selectedWeek.items || []).map((item: any) => ({
                                 mealId: item.mealId,
@@ -698,11 +683,8 @@ const AccountPage = () => {
                               }));
                               setSelectedMeals(items);
                               setMealCount(selectedWeek.mealCount || 0);
+                              console.log('Instant week switch completed for week', week.weekId);
                             }
-                          } catch (error) {
-                            console.error('Week selection error:', error);
-                          } finally {
-                            setIsRefreshingWeekData(false);
                           }
                         }}
                         className={`py-4 px-2 text-center rounded-md transition-colors ${
