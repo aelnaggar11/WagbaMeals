@@ -148,18 +148,46 @@ const OrdersManagement = () => {
       queryFn: async () => {
         if (!selectedWeekId) return null;
         const items: any = {};
-        for (const order of weekOrders) {
-          try {
-            const response = await apiRequest('GET', `/api/orders/${order.id}/items`);
-            items[order.id] = await response.json();
-          } catch (error) {
-            console.error(`Failed to fetch items for order ${order.id}`);
-            items[order.id] = [];
+        
+        // Fetch order items in smaller batches to avoid overwhelming the server
+        const batchSize = 5;
+        for (let i = 0; i < weekOrders.length; i += batchSize) {
+          const batch = weekOrders.slice(i, i + batchSize);
+          
+          const batchPromises = batch.map(async (order) => {
+            try {
+              const response = await fetch(`/api/orders/${order.id}/items`, {
+                credentials: 'include'
+              });
+              if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+              }
+              const data = await response.json();
+              return { orderId: order.id, items: data };
+            } catch (error) {
+              // Silently handle failed requests without console errors
+              return { orderId: order.id, items: [] };
+            }
+          });
+          
+          const batchResults = await Promise.allSettled(batchPromises);
+          batchResults.forEach((result) => {
+            if (result.status === 'fulfilled') {
+              items[result.value.orderId] = result.value.items;
+            }
+          });
+          
+          // Small delay between batches to prevent server overload
+          if (i + batchSize < weekOrders.length) {
+            await new Promise(resolve => setTimeout(resolve, 100));
           }
         }
+        
         return items;
       },
       enabled: !!selectedWeekId && weekOrders.length > 0,
+      retry: 1,
+      refetchOnWindowFocus: false
     });
 
     return (

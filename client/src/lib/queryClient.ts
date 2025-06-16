@@ -74,7 +74,7 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: (query) => {
         // Always refetch auth queries on window focus
         const isAuthQuery = query.queryKey[0]?.toString().includes('/auth/');
-        return isAuthQuery;
+        return isAuthQuery ? true : false;
       },
       staleTime: (query) => {
         // Auth queries should always be fresh
