@@ -85,9 +85,10 @@ const AccountPage = () => {
   const { data: upcomingMealsData, isLoading: isLoadingUpcomingMeals, refetch: refetchUpcomingMeals } = useQuery({
     queryKey: ['/api/user/upcoming-meals'],
     enabled: !!currentUser,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     refetchOnMount: true,
-    staleTime: 0
+    staleTime: 0,
+    refetchInterval: false // Disable automatic refetch
   });
 
   // ALL useEffect HOOKS MUST BE DECLARED BEFORE CONDITIONAL LOGIC
@@ -117,16 +118,34 @@ const AccountPage = () => {
 
         setSelectedWeekId(weekToSelect);
       }
+
+      // Always sync meal selections with fresh data for the currently selected week
+      if (selectedWeekId) {
+        const currentWeek = (upcomingMealsData as any).upcomingMeals.find((week: any) => week.weekId === selectedWeekId);
+        if (currentWeek) {
+          setMealCount(currentWeek.mealCount);
+          
+          const orderItems: OrderItem[] = currentWeek.items.map((item: any) => ({
+            mealId: item.mealId,
+            portionSize: item.portionSize as PortionSize
+          }));
+          
+          setSelectedMeals(orderItems);
+        }
+      }
     }
   }, [upcomingMealsData, selectedWeekId]);
 
-  // Force refresh data when switching weeks 
+  // Force complete data refresh when switching weeks 
   useEffect(() => {
     if (selectedWeekId) {
-      // Force invalidate and refetch fresh data when switching weeks
-      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      console.log('Week changed to:', selectedWeekId, 'forcing data refresh...');
+      // Remove cached data completely and force fresh fetch
+      queryClient.removeQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      // Trigger immediate refetch
+      refetchUpcomingMeals();
     }
-  }, [selectedWeekId, queryClient]);
+  }, [selectedWeekId, queryClient, refetchUpcomingMeals]);
 
   // Sync meal selections when fresh data arrives
   useEffect(() => {
