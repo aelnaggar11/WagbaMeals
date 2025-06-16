@@ -13,11 +13,25 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("weekly-menus");
 
   // Check if admin is authenticated
-  const { data: admin } = useQuery<Admin>({
+  const { data: admin, isLoading: adminLoading, error } = useQuery<Admin>({
     queryKey: ['/api/admin/auth/me'],
+    retry: 1,
+    refetchOnWindowFocus: true
   });
 
-  if (!admin) {
+  // Show loading state while checking authentication
+  if (adminLoading) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="flex flex-col items-center justify-center py-12">
+          <p className="text-gray-600">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied only after loading completes and no admin found
+  if (!admin && !adminLoading) {
     return (
       <div className="container mx-auto px-4 py-16">
         <div className="flex flex-col items-center justify-center py-12">
