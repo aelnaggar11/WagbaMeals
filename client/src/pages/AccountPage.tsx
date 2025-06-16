@@ -139,43 +139,56 @@ const AccountPage = () => {
 
 
 
-  // Simple approach: directly trigger refetch when week changes
+  // Initialize selected week from URL or default to first week
+  useEffect(() => {
+    if (weeksData?.weeks && weeksData.weeks.length > 0 && !selectedWeekId) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const weekParam = urlParams.get('week');
+      
+      if (weekParam) {
+        const weekId = parseInt(weekParam);
+        if (weeksData.weeks.find(w => w.id === weekId)) {
+          setSelectedWeekId(weekId);
+          return;
+        }
+      }
+      
+      // Default to first week
+      setSelectedWeekId(weeksData.weeks[0].id);
+    }
+  }, [weeksData, selectedWeekId]);
+
+  // Direct week selection with cache bypass
   useEffect(() => {
     if (selectedWeekId) {
-      console.log('Week changed to:', selectedWeekId, 'refreshing data...');
-      // Set loading state to prevent showing stale data
+      console.log('Week changed to:', selectedWeekId);
       setIsRefreshingWeekData(true);
-      // Clear existing selections immediately
       setSelectedMeals([]);
       setMealCount(0);
-      // Force refetch when week changes
-      refetchUpcomingMeals().finally(() => {
-        setIsRefreshingWeekData(false);
-      });
+      
+      // Direct fetch with cache busting
+      fetch(`/api/user/upcoming-meals?t=${Date.now()}`, { 
+        credentials: 'include',
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      })
+      .then(res => res.json())
+      .then(data => {
+        setLocalUpcomingMeals(data);
+        const currentWeek = data.upcomingMeals?.find((week: any) => week.weekId === selectedWeekId);
+        if (currentWeek) {
+          const orderItems: OrderItem[] = (currentWeek.items || []).map((item: any) => ({
+            mealId: item.mealId,
+            portionSize: item.portionSize as PortionSize
+          }));
+          setSelectedMeals(orderItems);
+          setMealCount(currentWeek.mealCount || 0);
+        }
+        queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      })
+      .finally(() => setIsRefreshingWeekData(false));
     }
-  }, [selectedWeekId, refetchUpcomingMeals]);
-
-  // Sync meal selections when fresh data arrives
-  useEffect(() => {
-    if (selectedWeekId && upcomingMealsData) {
-      console.log('Syncing meal selections for week:', selectedWeekId, 'with fresh data');
-      const currentWeek = (upcomingMealsData as any).upcomingMeals.find((week: any) => week.weekId === selectedWeekId);
-      if (currentWeek) {
-        console.log('Found current week data:', currentWeek.items.length, 'items');
-        setMealCount(currentWeek.mealCount);
-        
-        const orderItems: OrderItem[] = currentWeek.items.map((item: any) => ({
-          mealId: item.mealId,
-          portionSize: item.portionSize as PortionSize
-        }));
-        
-        setSelectedMeals(orderItems);
-        console.log('Updated meal selections:', orderItems.length, 'meals');
-      } else {
-        console.log('No data found for week:', selectedWeekId);
-      }
-    }
-  }, [upcomingMealsData, selectedWeekId]);
+  }, [selectedWeekId, queryClient]);
 
   // Update form data when profile data is loaded
   useEffect(() => {
