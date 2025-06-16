@@ -83,6 +83,11 @@ const AccountPage = () => {
     enabled: !!currentUser
   });
 
+  const { data: weeksData } = useQuery({
+    queryKey: ['/api/weeks'],
+    enabled: !!currentUser
+  });
+
   const { data: upcomingMealsData, isLoading: isLoadingUpcomingMeals, refetch: refetchUpcomingMeals } = useQuery({
     queryKey: ['/api/user/upcoming-meals'],
     enabled: !!currentUser,
@@ -665,7 +670,41 @@ const AccountPage = () => {
                     {displayUpcomingMeals.upcomingMeals.map((week: any) => (
                       <button
                         key={week.weekId}
-                        onClick={() => setSelectedWeekId(week.weekId)}
+                        onClick={async () => {
+                          console.log('Direct week click:', week.weekId);
+                          setIsRefreshingWeekData(true);
+                          setSelectedWeekId(week.weekId);
+                          setSelectedMeals([]);
+                          setMealCount(0);
+                          
+                          try {
+                            const response = await fetch(`/api/user/upcoming-meals?bypass=${Date.now()}`, {
+                              credentials: 'include',
+                              cache: 'no-store',
+                              headers: {
+                                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                                'Pragma': 'no-cache',
+                                'Expires': '0'
+                              }
+                            });
+                            const freshData = await response.json();
+                            setLocalUpcomingMeals(freshData);
+                            
+                            const selectedWeek = freshData.upcomingMeals?.find((w: any) => w.weekId === week.weekId);
+                            if (selectedWeek) {
+                              const items = (selectedWeek.items || []).map((item: any) => ({
+                                mealId: item.mealId,
+                                portionSize: item.portionSize
+                              }));
+                              setSelectedMeals(items);
+                              setMealCount(selectedWeek.mealCount || 0);
+                            }
+                          } catch (error) {
+                            console.error('Week selection error:', error);
+                          } finally {
+                            setIsRefreshingWeekData(false);
+                          }
+                        }}
                         className={`py-4 px-2 text-center rounded-md transition-colors ${
                           selectedWeekId === week.weekId 
                             ? 'border-2 border-primary bg-primary/5' 
