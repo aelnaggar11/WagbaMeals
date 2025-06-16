@@ -168,7 +168,7 @@ export default function AccountPageMealSelector({
         <>
           {menuData && menuData.length > 0 ? (
             <div className="space-y-4">
-              {menuData.map((meal) => {
+              {menuData.map((meal: any) => {
                 const count = getMealCount(meal.id);
                 const isSelected = count > 0;
                 const isMaxReached = items.length >= mealCount;

@@ -1729,7 +1729,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Only allow saving if order is in selecting or not_selected status
-      if (!['selecting', 'not_selected'].includes(order.status)) {
+      if (!order.status || !['selecting', 'not_selected'].includes(order.status)) {
         return res.status(400).json({ message: 'Cannot save selection for this order status' });
       }
 
