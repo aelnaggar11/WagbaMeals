@@ -49,6 +49,7 @@ const AccountPage = () => {
   const [selectedMeals, setSelectedMeals] = useState<OrderItem[]>([]);
   const [selectedWeekId, setSelectedWeekId] = useState<number | null>(null);
   const [mealCount, setMealCount] = useState(0);
+  const [isRefreshingWeekData, setIsRefreshingWeekData] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -142,8 +143,15 @@ const AccountPage = () => {
   useEffect(() => {
     if (selectedWeekId) {
       console.log('Week changed to:', selectedWeekId, 'refreshing data...');
+      // Set loading state to prevent showing stale data
+      setIsRefreshingWeekData(true);
+      // Clear existing selections immediately
+      setSelectedMeals([]);
+      setMealCount(0);
       // Force refetch when week changes
-      refetchUpcomingMeals();
+      refetchUpcomingMeals().finally(() => {
+        setIsRefreshingWeekData(false);
+      });
     }
   }, [selectedWeekId, refetchUpcomingMeals]);
 
@@ -774,14 +782,21 @@ const AccountPage = () => {
                         {/* Meal selection panel */}
                         {!week.isSkipped && (
                           <div id={`meal-selection-${week.weekId}`}>
-                            <FixedMealSelector 
-                              key={`${week.weekId}-${week.mealCount}-${week.items?.length || 0}`}
-                              weekId={week.weekId}
-                              orderId={week.orderId}
-                              mealCount={week.mealCount}
-                              items={week.items || []}
-                              defaultPortionSize={week.defaultPortionSize || 'standard'}
-                            />
+                            {isRefreshingWeekData && selectedWeekId === week.weekId ? (
+                              <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+                                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                                <p className="text-gray-600">Refreshing meal selections...</p>
+                              </div>
+                            ) : (
+                              <FixedMealSelector 
+                                key={`${week.weekId}-${week.mealCount}-${week.items?.length || 0}`}
+                                weekId={week.weekId}
+                                orderId={week.orderId}
+                                mealCount={week.mealCount}
+                                items={week.items || []}
+                                defaultPortionSize={week.defaultPortionSize || 'standard'}
+                              />
+                            )}
                           </div>
                         )}
                       </div>
