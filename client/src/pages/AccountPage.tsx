@@ -20,15 +20,11 @@ const AccountPage = () => {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
 
-  // All state declarations must be at the top level
+  // ALL STATE AND HOOKS MUST BE DECLARED AT THE TOP LEVEL - NO CONDITIONAL HOOKS
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isLoadingMeals, setIsLoadingMeals] = useState(false);
-
-  // Single state variable to track which week is being processed
   const [processingWeekId, setProcessingWeekId] = useState<number | null>(null);
-
-  // Delivery editing state
   const [editingDelivery, setEditingDelivery] = useState<{
     weekId: number;
     currentMealCount: number;
@@ -39,8 +35,6 @@ const AccountPage = () => {
     portionSize: 'standard' as 'standard' | 'large' | 'mixed',
     applyToFuture: false
   });
-
-  // Payment method editing state
   const [editingPayment, setEditingPayment] = useState<{
     weekId: number;
     orderId: number;
@@ -50,47 +44,11 @@ const AccountPage = () => {
     paymentMethod: 'credit_card' as 'credit_card' | 'cash' | 'bank_transfer',
     applyToFuture: false
   });
-
-  // Get current user with proper loading state handling
-  const { data: currentUser, isLoading: isUserLoading } = useQuery<User | null>({
-    queryKey: ['/api/auth/me'],
-    queryFn: async () => {
-      const res = await fetch('/api/auth/me', { credentials: 'include' });
-      if (res.status === 401) return null;
-      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
-      return res.json();
-    },
-    retry: 1
-  });
-
-  // Get user profile
-  const { data: profile, isLoading: isProfileLoading } = useQuery({
-    queryKey: ['/api/user/profile'],
-    enabled: !!currentUser
-  });
-
-  // Get order history
-  const { data: ordersData } = useQuery({
-    queryKey: ['/api/orders'],
-    enabled: !!currentUser
-  });
-
-  // Get upcoming meals with local state for immediate updates
-  const { data: upcomingMealsData, isLoading: isLoadingUpcomingMeals } = useQuery({
-    queryKey: ['/api/user/upcoming-meals'],
-    enabled: !!currentUser
-  });
-
-  // Local state to override server data for immediate UI updates
   const [localUpcomingMeals, setLocalUpcomingMeals] = useState<any>(null);
-
-  // Available meals
   const [availableMeals, setAvailableMeals] = useState<Meal[]>([]);
   const [selectedMeals, setSelectedMeals] = useState<OrderItem[]>([]);
   const [selectedWeekId, setSelectedWeekId] = useState<number | null>(null);
   const [mealCount, setMealCount] = useState(0);
-
-  // Form state
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -102,14 +60,99 @@ const AccountPage = () => {
     landmark: ""
   });
 
-  // Use useEffect for navigation to avoid hook order issues
+  // ALL QUERIES MUST BE DECLARED BEFORE ANY CONDITIONAL LOGIC
+  const { data: currentUser, isLoading: isUserLoading } = useQuery<User | null>({
+    queryKey: ['/api/auth/me'],
+    queryFn: async () => {
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
+      if (res.status === 401) return null;
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return res.json();
+    },
+    retry: 1
+  });
+
+  const { data: profile, isLoading: isProfileLoading } = useQuery({
+    queryKey: ['/api/user/profile'],
+    enabled: !!currentUser
+  });
+
+  const { data: ordersData } = useQuery({
+    queryKey: ['/api/orders'],
+    enabled: !!currentUser
+  });
+
+  const { data: upcomingMealsData, isLoading: isLoadingUpcomingMeals } = useQuery({
+    queryKey: ['/api/user/upcoming-meals'],
+    enabled: !!currentUser
+  });
+
+  // ALL useEffect HOOKS MUST BE DECLARED BEFORE CONDITIONAL LOGIC
   useEffect(() => {
     if (!isUserLoading && !currentUser) {
       navigate('/auth?returnTo=' + encodeURIComponent(location));
     }
   }, [isUserLoading, currentUser, navigate, location]);
 
-  // Show loading state while checking authentication
+  // Set initial selected week when data is loaded and sync local state
+  useEffect(() => {
+    if ((upcomingMealsData as any)?.upcomingMeals && (upcomingMealsData as any).upcomingMeals.length > 0) {
+      // Initialize local state with server data if not already set
+      if (!localUpcomingMeals) {
+        setLocalUpcomingMeals(upcomingMealsData);
+      }
+
+      // Set initial selected week to the first week with a confirmed order (first delivery)
+      if (!selectedWeekId) {
+        // Find the first week that has an order and is not skipped
+        const firstDeliveryWeek = (upcomingMealsData as any).upcomingMeals.find((week: any) => 
+          week.orderId && !week.isSkipped
+        );
+
+        // If we found a week with a delivery, use that; otherwise use the first available week
+        const weekToSelect = firstDeliveryWeek 
+          ? firstDeliveryWeek.weekId 
+          : (upcomingMealsData as any).upcomingMeals[0].weekId;
+
+        setSelectedWeekId(weekToSelect);
+      }
+    }
+  }, [upcomingMealsData, selectedWeekId, localUpcomingMeals]);
+
+  // Update form data when profile data is loaded
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        name: (profile as any).name || "",
+        email: (profile as any).email || "",
+        phone: (profile as any).phone || "",
+        street: "",
+        building: "",
+        apartment: "",
+        area: "",
+        landmark: ""
+      });
+
+      // Parse address if available
+      if ((profile as any).address) {
+        try {
+          const addressObj = JSON.parse((profile as any).address);
+          setFormData(prev => ({
+            ...prev,
+            street: addressObj.street || "",
+            building: addressObj.building || "",
+            apartment: addressObj.apartment || "",
+            area: addressObj.area || "",
+            landmark: addressObj.landmark || ""
+          }));
+        } catch (e) {
+          // Keep default empty values if address parsing fails
+        }
+      }
+    }
+  }, [profile]);
+
+  // NOW SAFE TO HAVE CONDITIONAL RETURNS AFTER ALL HOOKS ARE DECLARED
   if (isUserLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -121,7 +164,6 @@ const AccountPage = () => {
     );
   }
 
-  // Don't render anything while redirecting
   if (!currentUser) {
     return null;
   }
@@ -209,66 +251,8 @@ const AccountPage = () => {
     return weekLabel;
   };
 
-  // Set initial selected week when data is loaded and sync local state
-  useEffect(() => {
-    if ((upcomingMealsData as any)?.upcomingMeals && (upcomingMealsData as any).upcomingMeals.length > 0) {
-      // Initialize local state with server data if not already set
-      if (!localUpcomingMeals) {
-        setLocalUpcomingMeals(upcomingMealsData);
-      }
-
-      // Set initial selected week to the first week with a confirmed order (first delivery)
-      if (!selectedWeekId) {
-        // Find the first week that has an order and is not skipped
-        const firstDeliveryWeek = (upcomingMealsData as any).upcomingMeals.find((week: any) => 
-          week.orderId && !week.isSkipped
-        );
-
-        // If we found a week with a delivery, use that; otherwise use the first available week
-        const weekToSelect = firstDeliveryWeek 
-          ? firstDeliveryWeek.weekId 
-          : (upcomingMealsData as any).upcomingMeals[0].weekId;
-
-        setSelectedWeekId(weekToSelect);
-      }
-    }
-  }, [upcomingMealsData, selectedWeekId, localUpcomingMeals]);
-
   // Use local state if available, otherwise fall back to server data
   const displayUpcomingMeals = localUpcomingMeals || upcomingMealsData;
-
-  // Update form data when profile data is loaded
-  useEffect(() => {
-    if (profile) {
-      setFormData({
-        name: (profile as any).name || "",
-        email: (profile as any).email || "",
-        phone: (profile as any).phone || "",
-        street: "",
-        building: "",
-        apartment: "",
-        area: "",
-        landmark: ""
-      });
-
-      // Parse address if available
-      if ((profile as any).address) {
-        try {
-          const addressObj = JSON.parse((profile as any).address);
-          setFormData(prev => ({
-            ...prev,
-            street: addressObj.street || "",
-            building: addressObj.building || "",
-            apartment: addressObj.apartment || "",
-            area: addressObj.area || "",
-            landmark: addressObj.landmark || ""
-          }));
-        } catch (e) {
-          console.error("Failed to parse address:", e);
-        }
-      }
-    }
-  }, [profile]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
