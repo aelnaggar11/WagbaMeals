@@ -78,8 +78,9 @@ export default function AccountPageMealSelector({
         });
       }
 
-      // Invalidate relevant queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      // Force immediate refresh of upcoming meals data
+      await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      await queryClient.refetchQueries({ queryKey: ['/api/user/upcoming-meals'] });
 
       toast({
         title: "Meal added",
@@ -101,8 +102,9 @@ export default function AccountPageMealSelector({
     try {
       await apiRequest('DELETE', `/api/orders/${orderId}/items/${mealItem.id}`);
 
-      // Invalidate relevant queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      // Force immediate refresh of upcoming meals data
+      await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      await queryClient.refetchQueries({ queryKey: ['/api/user/upcoming-meals'] });
 
       toast({
         title: "Meal removed",

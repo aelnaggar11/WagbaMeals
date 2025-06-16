@@ -85,10 +85,10 @@ const AccountPage = () => {
   const { data: upcomingMealsData, isLoading: isLoadingUpcomingMeals, refetch: refetchUpcomingMeals } = useQuery({
     queryKey: ['/api/user/upcoming-meals'],
     enabled: !!currentUser,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     refetchOnMount: true,
-    staleTime: 0,
-    refetchInterval: false // Disable automatic refetch
+    staleTime: 1000, // Consider data stale after 1 second
+    refetchInterval: false
   });
 
   // ALL useEffect HOOKS MUST BE DECLARED BEFORE CONDITIONAL LOGIC
@@ -136,50 +136,16 @@ const AccountPage = () => {
     }
   }, [upcomingMealsData, selectedWeekId]);
 
-  // Force complete data refresh when switching weeks 
+
+
+  // Simple approach: directly trigger refetch when week changes
   useEffect(() => {
     if (selectedWeekId) {
-      console.log('Week changed to:', selectedWeekId, 'forcing data refresh...');
-      
-      // Immediately clear meal selections to prevent showing stale data
-      setSelectedMeals([]);
-      setMealCount(0);
-      
-      // Bypass React Query cache entirely and fetch fresh data directly
-      const fetchFreshData = async () => {
-        try {
-          // Add timestamp to ensure fresh request
-          const timestamp = Date.now();
-          const freshData = await apiRequest('GET', `/api/user/upcoming-meals?t=${timestamp}`);
-          
-          // Update React Query cache with fresh data
-          queryClient.setQueryData(['/api/user/upcoming-meals'], freshData);
-          
-          // Immediately apply fresh data for the selected week
-          if (freshData?.upcomingMeals) {
-            const currentWeek = freshData.upcomingMeals.find((week: any) => week.weekId === selectedWeekId);
-            if (currentWeek) {
-              console.log('Immediately applying fresh data for week:', selectedWeekId, currentWeek.items.length, 'items');
-              setMealCount(currentWeek.mealCount);
-              
-              const orderItems: OrderItem[] = currentWeek.items.map((item: any) => ({
-                mealId: item.mealId,
-                portionSize: item.portionSize as PortionSize
-              }));
-              
-              setSelectedMeals(orderItems);
-            }
-          }
-        } catch (error) {
-          console.error('Failed to fetch fresh data:', error);
-        }
-      };
-      
-      // Remove all cached data and fetch fresh
-      queryClient.removeQueries({ queryKey: ['/api/user/upcoming-meals'] });
-      fetchFreshData();
+      console.log('Week changed to:', selectedWeekId, 'refreshing data...');
+      // Force refetch when week changes
+      refetchUpcomingMeals();
     }
-  }, [selectedWeekId, queryClient]);
+  }, [selectedWeekId, refetchUpcomingMeals]);
 
   // Sync meal selections when fresh data arrives
   useEffect(() => {
