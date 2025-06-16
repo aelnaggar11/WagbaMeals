@@ -1728,8 +1728,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'No meals selected to save' });
       }
 
-      // Only allow saving if order is in selecting or not_selected status
-      if (!order.status || !['selecting', 'not_selected'].includes(order.status)) {
+      // Only allow saving if order is in not_selected status
+      if (!order.status || order.status !== 'not_selected') {
         return res.status(400).json({ message: 'Cannot save selection for this order status' });
       }
 
