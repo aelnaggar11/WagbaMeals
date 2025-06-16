@@ -67,26 +67,19 @@ const AdminAuthPage = () => {
         localStorage.setItem('wagba_admin_token', adminData.token);
       }
 
-      // Clear all auth-related cache and force fresh data
-      queryClient.removeQueries({ queryKey: ['/api/admin/auth/me'] });
-      
-      // Pre-fetch admin data to ensure it's available before navigation
-      await queryClient.fetchQuery({
-        queryKey: ['/api/admin/auth/me'],
-        queryFn: async () => {
-          const res = await fetch('/api/admin/auth/me', { credentials: 'include' });
-          if (!res.ok) throw new Error('Auth check failed');
-          return res.json();
-        }
-      });
+      // Complete cache reset and immediate data setting
+      queryClient.clear();
+      queryClient.setQueryData(['/api/admin/auth/me'], adminData);
       
       toast({
         title: "Success",
         description: "Admin login successful"
       });
       
-      // Navigate immediately since we've pre-loaded the auth data
-      navigate("/admin/dashboard");
+      // Use a brief delay to ensure cache is updated, then navigate
+      setTimeout(() => {
+        window.location.href = "/admin/dashboard";
+      }, 50);
     } catch (error: any) {
       toast({
         title: "Login Failed",

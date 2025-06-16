@@ -80,3 +80,12 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+// Global cache reset function for authentication state changes
+export const resetAuthCache = () => {
+  queryClient.clear();
+  queryClient.invalidateQueries();
+  // Force immediate refetch of all auth queries
+  queryClient.refetchQueries({ queryKey: ['/api/auth/me'] });
+  queryClient.refetchQueries({ queryKey: ['/api/admin/auth/me'] });
+};
