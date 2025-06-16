@@ -13,11 +13,28 @@ const Dashboard = () => {
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState("weekly-menus");
 
-  // Check if admin is authenticated
+  // Force authentication refresh on component mount
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ['/api/admin/auth/me'] });
+  }, []);
+
+  // Check if admin is authenticated with aggressive refresh settings
   const { data: admin, isLoading: adminLoading, error } = useQuery<Admin>({
     queryKey: ['/api/admin/auth/me'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/auth/me', { 
+        credentials: 'include',
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+      if (res.status === 401) return null;
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return res.json();
+    },
     retry: 1,
-    refetchOnWindowFocus: true
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    staleTime: 0
   });
 
   // Show loading state while checking authentication

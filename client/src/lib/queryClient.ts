@@ -71,8 +71,16 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
+      refetchOnWindowFocus: (query) => {
+        // Always refetch auth queries on window focus
+        const isAuthQuery = query.queryKey[0]?.toString().includes('/auth/');
+        return isAuthQuery;
+      },
+      staleTime: (query) => {
+        // Auth queries should always be fresh
+        const isAuthQuery = query.queryKey[0]?.toString().includes('/auth/');
+        return isAuthQuery ? 0 : Infinity;
+      },
       retry: false,
     },
     mutations: {
