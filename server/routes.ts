@@ -1040,6 +1040,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Disable caching to ensure fresh data when switching weeks
+      res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
+      
       res.json({ upcomingMeals });
     } catch (error) {
       console.error('Error fetching upcoming meals:', error);

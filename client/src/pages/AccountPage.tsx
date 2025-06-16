@@ -82,9 +82,12 @@ const AccountPage = () => {
     enabled: !!currentUser
   });
 
-  const { data: upcomingMealsData, isLoading: isLoadingUpcomingMeals } = useQuery({
+  const { data: upcomingMealsData, isLoading: isLoadingUpcomingMeals, refetch: refetchUpcomingMeals } = useQuery({
     queryKey: ['/api/user/upcoming-meals'],
-    enabled: !!currentUser
+    enabled: !!currentUser,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 0
   });
 
   // ALL useEffect HOOKS MUST BE DECLARED BEFORE CONDITIONAL LOGIC
@@ -117,16 +120,51 @@ const AccountPage = () => {
     }
   }, [upcomingMealsData, selectedWeekId]);
 
-  // Refresh meal selections when switching weeks to prevent stale data
+  // Force refresh data when switching weeks by invalidating cache and fetching fresh data
+  useEffect(() => {
+    if (selectedWeekId) {
+      // Clear cache and force fresh data fetch
+      queryClient.removeQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      
+      // Fetch fresh data with cache busting
+      const fetchFreshData = async () => {
+        try {
+          const timestamp = Date.now();
+          const freshData = await apiRequest('GET', `/api/user/upcoming-meals?t=${timestamp}`);
+          
+          // Update the query cache with fresh data
+          queryClient.setQueryData(['/api/user/upcoming-meals'], freshData);
+          
+          // Update meal selections with fresh data
+          if (freshData?.upcomingMeals) {
+            const currentWeek = freshData.upcomingMeals.find((week: any) => week.weekId === selectedWeekId);
+            if (currentWeek) {
+              setMealCount(currentWeek.mealCount);
+              
+              const orderItems: OrderItem[] = currentWeek.items.map((item: any) => ({
+                mealId: item.mealId,
+                portionSize: item.portionSize as PortionSize
+              }));
+              
+              setSelectedMeals(orderItems);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch fresh upcoming meals data:', error);
+        }
+      };
+      
+      fetchFreshData();
+    }
+  }, [selectedWeekId, queryClient]);
+
+  // Sync meal selections when fresh data arrives
   useEffect(() => {
     if (selectedWeekId && upcomingMealsData) {
-      // Find the current week data from the fresh server data
       const currentWeek = (upcomingMealsData as any).upcomingMeals.find((week: any) => week.weekId === selectedWeekId);
       if (currentWeek) {
-        // Update meal count and selected meals from fresh server data
         setMealCount(currentWeek.mealCount);
         
-        // Convert week items to OrderItems using fresh data
         const orderItems: OrderItem[] = currentWeek.items.map((item: any) => ({
           mealId: item.mealId,
           portionSize: item.portionSize as PortionSize
@@ -135,7 +173,7 @@ const AccountPage = () => {
         setSelectedMeals(orderItems);
       }
     }
-  }, [selectedWeekId, upcomingMealsData]);
+  }, [upcomingMealsData, selectedWeekId]);
 
   // Update form data when profile data is loaded
   useEffect(() => {
