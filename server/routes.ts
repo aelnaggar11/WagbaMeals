@@ -1798,15 +1798,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/orders/:orderId/save-selection', authMiddleware, async (req, res) => {
     try {
       const orderId = parseInt(req.params.orderId);
+      console.log(`Save selection request for order ${orderId} by user ${req.session.userId}`);
 
       // Get the order to verify ownership
       const order = await storage.getOrder(orderId);
       if (!order || order.userId !== req.session.userId) {
+        console.log(`Order ${orderId} not found or access denied`);
         return res.status(404).json({ message: 'Order not found' });
       }
 
       // Verify order has meals selected
       const orderItems = await storage.getOrderItems(orderId);
+      console.log(`Order ${orderId} has ${orderItems.length} items, current status: ${order.status}`);
+      
       if (orderItems.length === 0) {
         return res.status(400).json({ message: 'No meals selected to save' });
       }
@@ -1818,6 +1822,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Mark order as selected
       const updatedOrder = await storage.markOrderAsSelected(orderId);
+      console.log(`Order ${orderId} marked as selected successfully`);
 
       res.json({ 
         message: 'Selection saved successfully',

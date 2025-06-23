@@ -121,10 +121,16 @@ export default function AccountPageMealSelector({
 
   // Save selection handler
   const handleSaveSelection = async () => {
-    if (!orderId || selectedCount === 0) return;
+    if (!orderId || selectedCount === 0) {
+      console.log(`Save blocked: orderId=${orderId}, selectedCount=${selectedCount}`);
+      return;
+    }
+
+    console.log(`Attempting to save selection for order ${orderId} with ${selectedCount} meals`);
 
     try {
-      await apiRequest('POST', `/api/orders/${orderId}/save-selection`);
+      const response = await apiRequest('POST', `/api/orders/${orderId}/save-selection`);
+      console.log('Save selection response:', response);
 
       // Refresh data
       await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
@@ -135,6 +141,7 @@ export default function AccountPageMealSelector({
         description: "Your meal selection has been saved successfully."
       });
     } catch (error) {
+      console.error('Save selection error:', error);
       toast({
         title: "Error",
         description: "Failed to save selection. Please try again.",
@@ -231,12 +238,15 @@ export default function AccountPageMealSelector({
             </div>
           )}
           {/* Save Selection Button */}
-          {selectedCount > 0 && (
+          {selectedCount > 0 && orderId && (
             <div className="mt-6 flex justify-center">
               <Button 
-                onClick={handleSaveSelection}
+                onClick={() => {
+                  console.log('Save Selection button clicked!', { orderId, selectedCount });
+                  handleSaveSelection();
+                }}
                 className="bg-green-600 hover:bg-green-700 text-white px-6 py-2"
-                disabled={selectedCount === 0}
+                disabled={selectedCount === 0 || !orderId}
               >
                 Save Selection ({selectedCount} meal{selectedCount !== 1 ? 's' : ''})
               </Button>
