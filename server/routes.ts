@@ -986,6 +986,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const upcomingMeals = [];
 
       for (const week of upcomingWeeks) {
+        // Double-check that this week is actually upcoming (delivery date hasn't passed)
+        const deliveryDate = new Date(week.deliveryDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        deliveryDate.setHours(0, 0, 0, 0);
+        
+        // Skip weeks that have already passed
+        if (deliveryDate < today) {
+          continue;
+        }
+
         let order = await storage.getOrderByUserAndWeek(req.session.userId!, week.id);
         const orderDeadlinePassed = new Date(week.orderDeadline) <= now;
 
