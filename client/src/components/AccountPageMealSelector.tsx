@@ -274,9 +274,29 @@ export default function AccountPageMealSelector({
         <>
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-semibold">Select Your Meals</h3>
-            <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-medium">
-              {selectedCount} of {maxMeals} selected
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-medium">
+                {selectedCount} of {maxMeals} selected
+              </span>
+              {orderId && (
+                <Button 
+                  onClick={() => {
+                    console.log('Save Selection button clicked!', { orderId, selectedCount, maxMeals });
+                    handleSaveSelection();
+                  }}
+                  className={`text-white ${
+                    selectedCount === maxMeals 
+                      ? 'bg-green-600 hover:bg-green-700' 
+                      : 'bg-gray-400 cursor-not-allowed'
+                  }`}
+                  size="sm"
+                  disabled={selectedCount !== maxMeals || !orderId}
+                  title={selectedCount !== maxMeals ? `Need exactly ${maxMeals} meals, have ${selectedCount}` : 'Save your selection'}
+                >
+                  Save Selection
+                </Button>
+              )}
+            </div>
           </div>
 
           {isLoading ? (
@@ -349,21 +369,7 @@ export default function AccountPageMealSelector({
                   <p className="text-gray-500">No meals available for this week.</p>
                 </div>
               )}
-              {/* Save Selection Button */}
-              {selectedCount > 0 && orderId && (
-                <div className="mt-6 flex justify-center">
-                  <Button 
-                    onClick={() => {
-                      console.log('Save Selection button clicked!', { orderId, selectedCount });
-                      handleSaveSelection();
-                    }}
-                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2"
-                    disabled={selectedCount === 0 || !orderId}
-                  >
-                    Save Selection ({selectedCount} meal{selectedCount !== 1 ? 's' : ''})
-                  </Button>
-                </div>
-              )}
+
             </>
           )}
         </>
