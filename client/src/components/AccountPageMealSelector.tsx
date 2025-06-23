@@ -280,13 +280,13 @@ export default function AccountPageMealSelector({
           </div>
 
           {isLoading ? (
-        <div className="py-8 flex justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-        </div>
-      ) : (
-        <>
-          {menuData && menuData.length > 0 ? (
-            <div className="space-y-4">
+            <div className="py-8 flex justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <>
+              {menuData && menuData.length > 0 ? (
+                <div className="space-y-4">
               {menuData.map((meal: any) => {
                 const count = getMealCount(meal.id);
                 const isSelected = count > 0;
@@ -342,27 +342,29 @@ export default function AccountPageMealSelector({
                     </div>
                   </div>
                 );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No meals available for this week.</p>
-            </div>
-          )}
-          {/* Save Selection Button */}
-          {selectedCount > 0 && orderId && (
-            <div className="mt-6 flex justify-center">
-              <Button 
-                onClick={() => {
-                  console.log('Save Selection button clicked!', { orderId, selectedCount });
-                  handleSaveSelection();
-                }}
-                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2"
-                disabled={selectedCount === 0 || !orderId}
-              >
-                Save Selection ({selectedCount} meal{selectedCount !== 1 ? 's' : ''})
-              </Button>
-            </div>
+                })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No meals available for this week.</p>
+                </div>
+              )}
+              {/* Save Selection Button */}
+              {selectedCount > 0 && orderId && (
+                <div className="mt-6 flex justify-center">
+                  <Button 
+                    onClick={() => {
+                      console.log('Save Selection button clicked!', { orderId, selectedCount });
+                      handleSaveSelection();
+                    }}
+                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2"
+                    disabled={selectedCount === 0 || !orderId}
+                  >
+                    Save Selection ({selectedCount} meal{selectedCount !== 1 ? 's' : ''})
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </>
       )}

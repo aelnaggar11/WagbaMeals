@@ -127,7 +127,8 @@ Wagba is a full-stack meal delivery application focused on weekly meal plans. Th
 - Session persistence across application restarts
 
 ## Changelog
-- June 23, 2025: Fixed order status synchronization - orders automatically update to "selected" when meals are added, ensuring consistency between user and admin views
+- June 23, 2025: Fixed "Save Selection" functionality - implemented proper saved state UI and backend API integration for explicit order status updates
+- June 23, 2025: Corrected meal selector component to show saved/edit states and properly track order status via backend queries
 - June 23, 2025: Fixed week filtering to exclude past delivery dates from account page display
 - June 23, 2025: Corrected order status display in admin dashboard - orders with meals now properly show as "selected"
 - June 16, 2025: Fixed and tested automatic week skipping during onboarding - all weeks before user's selected first delivery are properly auto-skipped
