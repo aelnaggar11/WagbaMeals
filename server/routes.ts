@@ -1806,9 +1806,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'No meals selected to save' });
       }
 
-      // Only allow saving if order is in not_selected status
-      if (!order.status || order.status !== 'not_selected') {
-        return res.status(400).json({ message: 'Cannot save selection for this order status' });
+      // Only allow saving if order is in not_selected or selected status (not skipped)
+      if (order.status === 'skipped') {
+        return res.status(400).json({ message: 'Cannot save selection for skipped orders' });
       }
 
       // Mark order as selected
