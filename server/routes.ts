@@ -1679,9 +1679,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateOrder(orderId, {
         subtotal: newSubtotal,
         discount,
-        total: newSubtotal,
-        status: 'selected' // Automatically mark as selected when meals are added
+        total: newSubtotal
       });
+
+      // Don't automatically change status - only when user clicks "Save Selection"
 
       res.status(201).json(orderItem);
     } catch (error) {
@@ -1712,19 +1713,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Remove the item (we'll need to add this method to storage)
       await storage.removeOrderItem(itemId);
 
-      // Update order totals and status
+      // Update order totals but don't change status automatically
       const remainingItems = await storage.getOrderItems(orderId);
       const newSubtotal = remainingItems.reduce((sum, item) => sum + item.price, 0);
       const fullPriceTotal = order.mealCount * 249;
       const discount = fullPriceTotal - newSubtotal;
-      const newStatus = remainingItems.length > 0 ? 'selected' : 'not_selected';
 
       await storage.updateOrder(orderId, {
         subtotal: newSubtotal,
         discount,
-        total: newSubtotal,
-        status: newStatus
+        total: newSubtotal
       });
+
+      // If no meals remain, reset status to not_selected
+      if (remainingItems.length === 0) {
+        await storage.updateOrder(orderId, { status: 'not_selected' });
+      }
 
       res.json({ message: 'Order item removed successfully' });
     } catch (error) {
@@ -1807,9 +1811,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'No meals selected to save' });
       }
 
-      // Only allow saving if order is in not_selected status
-      if (!order.status || order.status !== 'not_selected') {
-        return res.status(400).json({ message: 'Cannot save selection for this order status' });
+      // Don't allow saving for skipped orders
+      if (order.status === 'skipped') {
+        return res.status(400).json({ message: 'Cannot save selection for skipped orders' });
       }
 
       // Mark order as selected
