@@ -34,6 +34,26 @@ export default function AccountPageMealSelector({
   items = []
 }: AccountPageMealSelectorProps) {
   const { toast } = useToast();
+  const [isSaved, setIsSaved] = useState(false);
+
+  // Check if this order is already saved (has "selected" status)
+  const { data: orderData } = useQuery({
+    queryKey: [`/api/orders/${orderId}`],
+    queryFn: async () => {
+      if (!orderId) return null;
+      return await apiRequest('GET', `/api/orders/${orderId}`);
+    },
+    enabled: !!orderId
+  });
+
+  // Update saved state based on order status
+  useEffect(() => {
+    if (orderData?.status === 'selected') {
+      setIsSaved(true);
+    } else {
+      setIsSaved(false);
+    }
+  }, [orderData?.status]);
 
   // Use React Query to fetch meals for this specific week
   const { data: menuData, isLoading } = useQuery({
@@ -132,8 +152,12 @@ export default function AccountPageMealSelector({
       const response = await apiRequest('POST', `/api/orders/${orderId}/save-selection`);
       console.log('Save selection response:', response);
 
+      // Update local saved state
+      setIsSaved(true);
+
       // Refresh data
       await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      await queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
       await queryClient.refetchQueries({ queryKey: ['/api/user/upcoming-meals'] });
 
       toast({
@@ -150,6 +174,28 @@ export default function AccountPageMealSelector({
     }
   };
 
+  // Switch back to edit mode
+  const handleEdit = () => {
+    setIsSaved(false);
+  };
+
+  // Group meals by ID and count for display
+  const groupMealsByCount = (items: WeekItem[]) => {
+    const groups: { [key: number]: { meal: Meal; items: WeekItem[] } } = {};
+    
+    items.forEach(item => {
+      if (!groups[item.mealId]) {
+        groups[item.mealId] = {
+          meal: item.meal,
+          items: []
+        };
+      }
+      groups[item.mealId].items.push(item);
+    });
+    
+    return Object.values(groups);
+  };
+
   // Debug information
   console.log("Meal selector received items:", items);
   console.log("Meal selector received mealCount:", mealCount);
@@ -160,14 +206,80 @@ export default function AccountPageMealSelector({
   
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-semibold">Select Your Meals</h3>
-        <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-medium">
-          {selectedCount} of {maxMeals} selected
-        </span>
-      </div>
+      {isSaved ? (
+        // Saved view with grouped meals
+        <>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-semibold">Your Selected Meals</h3>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleEdit}
+              className="flex items-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+              Edit Selection
+            </Button>
+          </div>
+          
+          {items.length > 0 ? (
+            <div className="space-y-4">
+              {groupMealsByCount(items).map((group: any, index: number) => (
+                <div key={index} className="border rounded-lg overflow-hidden">
+                  <div className="flex items-center p-4">
+                    <div className="w-20 h-20 bg-gray-100 rounded-md overflow-hidden mr-4">
+                      {group.meal.imageUrl && (
+                        <img 
+                          src={group.meal.imageUrl} 
+                          alt={group.meal.title} 
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
 
-      {isLoading ? (
+                    <div className="flex-1">
+                      <h4 className="font-medium text-lg">{group.meal.title}</h4>
+                      <div className="flex items-center mt-1 text-sm text-gray-600">
+                        <span>{group.meal.calories || 0} cal</span>
+                        <span className="mx-2">•</span>
+                        <span>{group.meal.protein || 0}g protein</span>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="font-medium text-lg">
+                        {group.items.length} meal{group.items.length !== 1 ? 's' : ''}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {group.items.filter((item: WeekItem) => item.portionSize === 'standard').length > 0 && 
+                          `${group.items.filter((item: WeekItem) => item.portionSize === 'standard').length} standard`}
+                        {group.items.filter((item: WeekItem) => item.portionSize === 'large').length > 0 && 
+                          `, ${group.items.filter((item: WeekItem) => item.portionSize === 'large').length} large`}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No meals selected.</p>
+            </div>
+          )}
+        </>
+      ) : (
+        // Edit mode with meal selector
+        <>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-semibold">Select Your Meals</h3>
+            <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-medium">
+              {selectedCount} of {maxMeals} selected
+            </span>
+          </div>
+
+          {isLoading ? (
         <div className="py-8 flex justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
         </div>
