@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { MinusCircle, PlusCircle, Save } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -346,7 +346,7 @@ export default function FixedMealSelector({
   };
   
   // Save the current meal selection
-  const handleSave = () => {
+  const handleSave = async () => {
     const requiredMealCount = parseInt(mealCount.toString());
     if (selectedItems.length !== requiredMealCount) {
       toast({
@@ -369,19 +369,40 @@ export default function FixedMealSelector({
         return;
       }
     }
-    
-    // Group the meals for display
-    const grouped = groupMealsByCount(selectedItems);
-    setSavedItems(grouped);
-    setIsSaved(true);
-    
-    // Update the upcoming meals data
-    queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
-    
-    toast({
-      title: "Selection saved",
-      description: "Your meal selection has been saved.",
-    });
+
+    if (!orderId) {
+      toast({
+        title: "Error",
+        description: "No order ID available for saving.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Call the backend API to mark order as selected
+      await apiRequest('POST', `/api/orders/${orderId}/save-selection`, {});
+      
+      // Group the meals for display
+      const grouped = groupMealsByCount(selectedItems);
+      setSavedItems(grouped);
+      setIsSaved(true);
+      
+      // Update the upcoming meals data
+      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
+      
+      toast({
+        title: "Selection saved",
+        description: "Your meal selection has been saved.",
+      });
+    } catch (error) {
+      console.error('Error saving selection:', error);
+      toast({
+        title: "Error saving selection",
+        description: "There was an error saving your selection. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   // Switch back to edit mode
