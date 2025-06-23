@@ -37,11 +37,12 @@ export default function AccountPageMealSelector({
   const [isSaved, setIsSaved] = useState(false);
   const [localSelectedCount, setLocalSelectedCount] = useState(0);
 
-  // Update local count when items change
+  // Update local count when items change, with bounds checking
   useEffect(() => {
-    const newCount = items.reduce((total, item) => total + 1, 0);
+    const newCount = Math.min(items.reduce((total, item) => total + 1, 0), mealCount);
     setLocalSelectedCount(newCount);
-  }, [items]);
+    console.log('Updated local count:', newCount, 'from items:', items.length);
+  }, [items, mealCount]);
 
   // Check if this order is already saved (has "selected" status)
   const { data: orderData } = useQuery({
@@ -77,7 +78,9 @@ export default function AccountPageMealSelector({
   };
 
   const handleAddMeal = async (meal: Meal) => {
-    if (localSelectedCount >= mealCount) {
+    // Check current count from actual items, not local state
+    const currentItemCount = items.length;
+    if (currentItemCount >= mealCount) {
       toast({
         title: "Maximum meals reached",
         description: `You can only select ${mealCount} meals for this week.`,
@@ -93,9 +96,6 @@ export default function AccountPageMealSelector({
           mealId: meal.id,
           portionSize: "standard"
         });
-        
-        // Update local count immediately for responsive UI
-        setLocalSelectedCount(prev => prev + 1);
       } else {
         // Create new order
         await apiRequest('POST', '/api/orders', {
@@ -118,8 +118,7 @@ export default function AccountPageMealSelector({
         description: `${meal.title} has been added to your selections.`
       });
     } catch (error) {
-      // Revert local count on error
-      setLocalSelectedCount(prev => Math.max(0, prev - 1));
+      console.error('Add meal error:', error);
       toast({
         title: "Error",
         description: "There was an error updating your meal selections. Please try again.",
@@ -129,8 +128,11 @@ export default function AccountPageMealSelector({
   };
 
   const handleRemoveMeal = async (meal: Meal) => {
-    const mealItem = items.find(item => item.mealId === meal.id);
-    if (!mealItem || !orderId) return;
+    // Find the LAST item with this meal ID to remove (most recent)
+    const mealItems = items.filter(item => item.mealId === meal.id);
+    if (mealItems.length === 0 || !orderId) return;
+    
+    const mealItem = mealItems[mealItems.length - 1]; // Get the last one
 
     try {
       await apiRequest('DELETE', `/api/orders/${orderId}/items/${mealItem.id}`);
@@ -147,6 +149,7 @@ export default function AccountPageMealSelector({
         description: `${meal.title} has been removed from your selections.`
       });
     } catch (error) {
+      console.error('Remove meal error:', error);
       // Revert local count on error
       setLocalSelectedCount(prev => prev + 1);
       toast({
