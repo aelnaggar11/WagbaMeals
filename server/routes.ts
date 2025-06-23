@@ -905,28 +905,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Order Routes
-  // Get specific order by ID
-  app.get('/api/orders/:id', authMiddleware, async (req, res) => {
-    try {
-      const orderId = parseInt(req.params.id);
-      const order = await storage.getOrder(orderId);
-      
-      if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
-      }
-      
-      // Check if order belongs to the authenticated user
-      if (order.userId !== req.session.userId) {
-        return res.status(403).json({ message: 'Unauthorized' });
-      }
-      
-      res.json(order);
-    } catch (error) {
-      console.error('Error fetching order:', error);
-      res.status(500).json({ message: 'Server error' });
-    }
-  });
-
   app.get('/api/orders', authMiddleware, async (req, res) => {
     try {
       const orders = await storage.getOrdersByUser(req.session.userId!);
@@ -1704,7 +1682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         total: newSubtotal
       });
 
-      // Don't automatically change status - only when user clicks "Save Selection"
+      // Don't automatically change status - this should only happen when user explicitly saves
 
       res.status(201).json(orderItem);
     } catch (error) {
@@ -1735,7 +1713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Remove the item (we'll need to add this method to storage)
       await storage.removeOrderItem(itemId);
 
-      // Update order totals but don't change status automatically
+      // Update order totals
       const remainingItems = await storage.getOrderItems(orderId);
       const newSubtotal = remainingItems.reduce((sum, item) => sum + item.price, 0);
       const fullPriceTotal = order.mealCount * 249;
@@ -1746,11 +1724,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         discount,
         total: newSubtotal
       });
-
-      // If no meals remain, reset status to not_selected
-      if (remainingItems.length === 0) {
-        await storage.updateOrder(orderId, { status: 'not_selected' });
-      }
 
       res.json({ message: 'Order item removed successfully' });
     } catch (error) {
@@ -1820,31 +1793,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/orders/:orderId/save-selection', authMiddleware, async (req, res) => {
     try {
       const orderId = parseInt(req.params.orderId);
-      console.log(`Save selection request for order ${orderId} by user ${req.session.userId}`);
 
       // Get the order to verify ownership
       const order = await storage.getOrder(orderId);
       if (!order || order.userId !== req.session.userId) {
-        console.log(`Order ${orderId} not found or access denied`);
         return res.status(404).json({ message: 'Order not found' });
       }
 
       // Verify order has meals selected
       const orderItems = await storage.getOrderItems(orderId);
-      console.log(`Order ${orderId} has ${orderItems.length} items, current status: ${order.status}`);
-      
       if (orderItems.length === 0) {
         return res.status(400).json({ message: 'No meals selected to save' });
       }
 
-      // Don't allow saving for skipped orders
-      if (order.status === 'skipped') {
-        return res.status(400).json({ message: 'Cannot save selection for skipped orders' });
+      // Only allow saving if order is in not_selected status
+      if (!order.status || order.status !== 'not_selected') {
+        return res.status(400).json({ message: 'Cannot save selection for this order status' });
       }
 
       // Mark order as selected
       const updatedOrder = await storage.markOrderAsSelected(orderId);
-      console.log(`Order ${orderId} marked as selected successfully`);
 
       res.json({ 
         message: 'Selection saved successfully',

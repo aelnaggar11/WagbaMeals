@@ -14,7 +14,7 @@ import { Order, User, Meal, OrderItem, PortionSize } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatDate, getStatusClass } from "@/lib/utils";
 import { useLocation } from "wouter";
-import AccountPageMealSelector from "@/components/AccountPageMealSelector";
+import FixedMealSelector from "@/pages/FixedMealSelector";
 
 const AccountPage = () => {
   const [location, navigate] = useLocation();
@@ -837,12 +837,13 @@ const AccountPage = () => {
                                 <p className="text-gray-600">Refreshing meal selections...</p>
                               </div>
                             ) : (
-                              <AccountPageMealSelector 
+                              <FixedMealSelector 
                                 key={`${week.weekId}-${week.mealCount}-${week.items?.length || 0}`}
                                 weekId={week.weekId}
                                 orderId={week.orderId}
                                 mealCount={week.mealCount}
                                 items={week.items || []}
+                                defaultPortionSize={week.defaultPortionSize || 'standard'}
                               />
                             )}
                           </div>
