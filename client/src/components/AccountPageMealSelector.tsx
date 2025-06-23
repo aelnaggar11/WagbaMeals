@@ -35,6 +35,13 @@ export default function AccountPageMealSelector({
 }: AccountPageMealSelectorProps) {
   const { toast } = useToast();
   const [isSaved, setIsSaved] = useState(false);
+  const [localSelectedCount, setLocalSelectedCount] = useState(0);
+
+  // Update local count when items change
+  useEffect(() => {
+    const newCount = items.reduce((total, item) => total + 1, 0);
+    setLocalSelectedCount(newCount);
+  }, [items]);
 
   // Check if this order is already saved (has "selected" status)
   const { data: orderData } = useQuery({
@@ -70,10 +77,11 @@ export default function AccountPageMealSelector({
   };
 
   const handleAddMeal = async (meal: Meal) => {
-    if (items.length >= mealCount) {
+    if (localSelectedCount >= mealCount) {
       toast({
         title: "Maximum meals reached",
-        description: `You can only select ${mealCount} meals for this week.`
+        description: `You can only select ${mealCount} meals for this week.`,
+        variant: "destructive"
       });
       return;
     }
@@ -85,6 +93,9 @@ export default function AccountPageMealSelector({
           mealId: meal.id,
           portionSize: "standard"
         });
+        
+        // Update local count immediately for responsive UI
+        setLocalSelectedCount(prev => prev + 1);
       } else {
         // Create new order
         await apiRequest('POST', '/api/orders', {
@@ -107,6 +118,8 @@ export default function AccountPageMealSelector({
         description: `${meal.title} has been added to your selections.`
       });
     } catch (error) {
+      // Revert local count on error
+      setLocalSelectedCount(prev => Math.max(0, prev - 1));
       toast({
         title: "Error",
         description: "There was an error updating your meal selections. Please try again.",
@@ -121,6 +134,9 @@ export default function AccountPageMealSelector({
 
     try {
       await apiRequest('DELETE', `/api/orders/${orderId}/items/${mealItem.id}`);
+      
+      // Update local count immediately for responsive UI
+      setLocalSelectedCount(prev => Math.max(0, prev - 1));
 
       // Force immediate refresh of upcoming meals data
       await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
@@ -131,6 +147,8 @@ export default function AccountPageMealSelector({
         description: `${meal.title} has been removed from your selections.`
       });
     } catch (error) {
+      // Revert local count on error
+      setLocalSelectedCount(prev => prev + 1);
       toast({
         title: "Error",
         description: "There was an error updating your meal selections. Please try again.",
@@ -141,12 +159,19 @@ export default function AccountPageMealSelector({
 
   // Save selection handler
   const handleSaveSelection = async () => {
-    if (!orderId || selectedCount === 0) {
-      console.log(`Save blocked: orderId=${orderId}, selectedCount=${selectedCount}`);
+    if (!orderId) return;
+
+    // Validation: Check if we have the exact number of meals required
+    if (localSelectedCount !== mealCount) {
+      toast({
+        title: "Invalid Selection",
+        description: `Please select exactly ${mealCount} meals. You currently have ${localSelectedCount} selected.`,
+        variant: "destructive",
+      });
       return;
     }
 
-    console.log(`Attempting to save selection for order ${orderId} with ${selectedCount} meals`);
+    console.log(`Attempting to save selection for order ${orderId} with ${localSelectedCount} meals`);
 
     try {
       const response = await apiRequest('POST', `/api/orders/${orderId}/save-selection`);
@@ -155,9 +180,10 @@ export default function AccountPageMealSelector({
       // Update local saved state
       setIsSaved(true);
 
-      // Refresh data
+      // Force refresh all related queries to ensure persistence
       await queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
       await queryClient.invalidateQueries({ queryKey: [`/api/orders/${orderId}`] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       await queryClient.refetchQueries({ queryKey: ['/api/user/upcoming-meals'] });
 
       toast({
@@ -276,22 +302,22 @@ export default function AccountPageMealSelector({
             <h3 className="text-lg font-semibold">Select Your Meals</h3>
             <div className="flex items-center gap-3">
               <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-medium">
-                {selectedCount} of {maxMeals} selected
+                {localSelectedCount} of {mealCount} selected
               </span>
               {orderId && (
                 <Button 
                   onClick={() => {
-                    console.log('Save Selection button clicked!', { orderId, selectedCount, maxMeals });
+                    console.log('Save Selection button clicked!', { orderId, selectedCount: localSelectedCount, maxMeals: mealCount });
                     handleSaveSelection();
                   }}
                   className={`text-white ${
-                    selectedCount === maxMeals 
+                    localSelectedCount === mealCount 
                       ? 'bg-green-600 hover:bg-green-700' 
                       : 'bg-gray-400 cursor-not-allowed'
                   }`}
                   size="sm"
-                  disabled={selectedCount !== maxMeals || !orderId}
-                  title={selectedCount !== maxMeals ? `Need exactly ${maxMeals} meals, have ${selectedCount}` : 'Save your selection'}
+                  disabled={localSelectedCount !== mealCount || !orderId}
+                  title={localSelectedCount !== mealCount ? `Need exactly ${mealCount} meals, have ${localSelectedCount}` : 'Save your selection'}
                 >
                   Save Selection
                 </Button>

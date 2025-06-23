@@ -905,6 +905,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Order Routes
+  // Get specific order by ID
+  app.get('/api/orders/:id', authMiddleware, async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const order = await storage.getOrder(orderId);
+      
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      
+      // Check if order belongs to the authenticated user
+      if (order.userId !== req.session.userId) {
+        return res.status(403).json({ message: 'Unauthorized' });
+      }
+      
+      res.json(order);
+    } catch (error) {
+      console.error('Error fetching order:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   app.get('/api/orders', authMiddleware, async (req, res) => {
     try {
       const orders = await storage.getOrdersByUser(req.session.userId!);
