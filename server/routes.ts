@@ -1679,10 +1679,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateOrder(orderId, {
         subtotal: newSubtotal,
         discount,
-        total: newSubtotal
+        total: newSubtotal,
+        status: 'selected' // Automatically mark as selected when meals are added
       });
-
-      // Don't automatically change status - this should only happen when user explicitly saves
 
       res.status(201).json(orderItem);
     } catch (error) {
@@ -1713,16 +1712,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Remove the item (we'll need to add this method to storage)
       await storage.removeOrderItem(itemId);
 
-      // Update order totals
+      // Update order totals and status
       const remainingItems = await storage.getOrderItems(orderId);
       const newSubtotal = remainingItems.reduce((sum, item) => sum + item.price, 0);
       const fullPriceTotal = order.mealCount * 249;
       const discount = fullPriceTotal - newSubtotal;
+      const newStatus = remainingItems.length > 0 ? 'selected' : 'not_selected';
 
       await storage.updateOrder(orderId, {
         subtotal: newSubtotal,
         discount,
-        total: newSubtotal
+        total: newSubtotal,
+        status: newStatus
       });
 
       res.json({ message: 'Order item removed successfully' });
