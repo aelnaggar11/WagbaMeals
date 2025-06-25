@@ -40,9 +40,11 @@ const AuthPage = () => {
     }
     
     // Check for login tab parameter
-    const loginTab = params.get('tab');
-    if (loginTab === 'login') {
+    const tabParam = params.get('tab');
+    if (tabParam === 'login') {
       setDefaultTab('login');
+    } else if (tabParam === 'register') {
+      setDefaultTab('register');
     }
 
     // Pre-populate email from pre-onboarding modal
@@ -347,7 +349,7 @@ const AuthPage = () => {
       {!skipProgress && <ProgressIndicator steps={steps} currentStep={3} />}
       
       <div className="max-w-md mx-auto">
-        <Tabs defaultValue={defaultTab} className="w-full">
+        <Tabs value={defaultTab} onValueChange={setDefaultTab} className="w-full">
           <TabsList className="grid grid-cols-2 mb-6">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="register">Register</TabsTrigger>
