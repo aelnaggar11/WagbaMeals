@@ -183,6 +183,52 @@ export const insertOrderItemSchema = createInsertSchema(orderItems).pick({
   price: true,
 });
 
+// Neighborhood Model (for service areas)
+export const neighborhoods = pgTable("neighborhoods", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  isServiced: boolean("is_serviced").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertNeighborhoodSchema = createInsertSchema(neighborhoods).pick({
+  name: true,
+  isServiced: true,
+});
+
+// Invitation Code Model (for controlling onboarding capacity)
+export const invitationCodes = pgTable("invitation_codes", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  isActive: boolean("is_active").default(true),
+  maxUses: integer("max_uses"), // null = unlimited
+  currentUses: integer("current_uses").default(0),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertInvitationCodeSchema = createInsertSchema(invitationCodes).pick({
+  code: true,
+  isActive: true,
+  maxUses: true,
+  description: true,
+});
+
+// Waitlist Model (for users who don't qualify initially)
+export const waitlist = pgTable("waitlist", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull(),
+  neighborhood: text("neighborhood").notNull(),
+  rejectionReason: text("rejection_reason"), // "invalid_code" | "area_not_serviced"
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertWaitlistSchema = createInsertSchema(waitlist).pick({
+  email: true,
+  neighborhood: true,
+  rejectionReason: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -212,6 +258,15 @@ export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 
 export type UserWeekStatus = typeof userWeekStatuses.$inferSelect;
 export type InsertUserWeekStatus = z.infer<typeof insertUserWeekStatusSchema>;
+
+export type Neighborhood = typeof neighborhoods.$inferSelect;
+export type InsertNeighborhood = z.infer<typeof insertNeighborhoodSchema>;
+
+export type InvitationCode = typeof invitationCodes.$inferSelect;
+export type InsertInvitationCode = z.infer<typeof insertInvitationCodeSchema>;
+
+export type WaitlistEntry = typeof waitlist.$inferSelect;
+export type InsertWaitlistEntry = z.infer<typeof insertWaitlistSchema>;
 
 export type PortionSize = "standard" | "large" | "mixed";
 

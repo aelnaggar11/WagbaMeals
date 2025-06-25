@@ -1,16 +1,30 @@
-import { Link } from "wouter";
+import { useState } from "react";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import ImperfectCircle from "@/components/ImperfectCircle";
+import PreOnboardingModal from "@/components/PreOnboardingModal";
 import { useQuery } from "@tanstack/react-query";
 import { Week } from "@shared/schema";
 
 const Home = () => {
+  const [, navigate] = useLocation();
+  const [showPreOnboardingModal, setShowPreOnboardingModal] = useState(false);
+  
   // Get current available week for the menu link
   const { data: weeksData } = useQuery<{ weeks: Week[] }>({
     queryKey: ['/api/weeks'],
   });
   
   const currentWeekId = weeksData?.weeks.find(week => week.isSelectable)?.id || "current";
+
+  const handleGetStarted = () => {
+    setShowPreOnboardingModal(true);
+  };
+
+  const handlePreOnboardingSuccess = (email: string) => {
+    // Navigate to meal plans page
+    navigate('/meal-plans');
+  };
 
   return (
     <>
@@ -32,11 +46,13 @@ const Home = () => {
               <p className="text-lg md:text-xl text-gray-600 mb-6">Chef-prepared meals that save you time and keep you healthy. One delivery, one week of delicious food.</p>
               
               <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <Link href="/meal-plans">
-                  <Button size="lg" className="bg-primary hover:bg-primary/90 text-white">
-                    Get Started
-                  </Button>
-                </Link>
+                <Button 
+                  size="lg" 
+                  onClick={handleGetStarted}
+                  className="bg-primary hover:bg-primary/90 text-white"
+                >
+                  Get Started
+                </Button>
                 <Link href="#how-it-works">
                   <Button size="lg" variant="outline" className="border-accent-foreground text-accent-foreground hover:bg-accent-foreground hover:text-white">
                     Learn More

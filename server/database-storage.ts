@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { and, eq, inArray, or } from "drizzle-orm";
 import * as schema from "@shared/schema";
-import { users, admins, meals, weeks, weekMeals, orders, orderItems, userWeekStatuses } from "@shared/schema";
+import { users, admins, meals, weeks, weekMeals, orders, orderItems, userWeekStatuses, neighborhoods, invitationCodes, waitlist } from "@shared/schema";
 import type { 
   User, InsertUser, 
   Admin, InsertAdmin,
@@ -11,6 +11,9 @@ import type {
   Order, InsertOrder, 
   OrderItemFull, InsertOrderItem, 
   UserWeekStatus, InsertUserWeekStatus,
+  Neighborhood, InsertNeighborhood,
+  InvitationCode, InsertInvitationCode,
+  WaitlistEntry, InsertWaitlistEntry,
   IStorage 
 } from "@shared/schema";
 
@@ -613,5 +616,118 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return updatedOrder;
+  }
+
+  // Neighborhood methods
+  async getAllNeighborhoods(): Promise<Neighborhood[]> {
+    return await db.select().from(neighborhoods);
+  }
+
+  async getServicedNeighborhoods(): Promise<Neighborhood[]> {
+    return await db
+      .select()
+      .from(neighborhoods)
+      .where(eq(neighborhoods.isServiced, true));
+  }
+
+  async createNeighborhood(insertNeighborhood: InsertNeighborhood): Promise<Neighborhood> {
+    const [neighborhood] = await db
+      .insert(neighborhoods)
+      .values(insertNeighborhood)
+      .returning();
+    return neighborhood;
+  }
+
+  async updateNeighborhood(id: number, neighborhoodData: Partial<Neighborhood>): Promise<Neighborhood> {
+    const [updatedNeighborhood] = await db
+      .update(neighborhoods)
+      .set(neighborhoodData)
+      .where(eq(neighborhoods.id, id))
+      .returning();
+    return updatedNeighborhood;
+  }
+
+  async deleteNeighborhood(id: number): Promise<void> {
+    await db.delete(neighborhoods).where(eq(neighborhoods.id, id));
+  }
+
+  // Invitation code methods
+  async getAllInvitationCodes(): Promise<InvitationCode[]> {
+    return await db.select().from(invitationCodes);
+  }
+
+  async getActiveInvitationCodes(): Promise<InvitationCode[]> {
+    return await db
+      .select()
+      .from(invitationCodes)
+      .where(eq(invitationCodes.isActive, true));
+  }
+
+  async validateInvitationCode(code: string): Promise<InvitationCode | null> {
+    const [invitationCode] = await db
+      .select()
+      .from(invitationCodes)
+      .where(and(
+        eq(invitationCodes.code, code),
+        eq(invitationCodes.isActive, true)
+      ));
+
+    if (!invitationCode) return null;
+
+    // Check if code has reached max uses
+    if (invitationCode.maxUses !== null && invitationCode.currentUses >= invitationCode.maxUses) {
+      return null;
+    }
+
+    return invitationCode;
+  }
+
+  async createInvitationCode(insertInvitationCode: InsertInvitationCode): Promise<InvitationCode> {
+    const [invitationCode] = await db
+      .insert(invitationCodes)
+      .values(insertInvitationCode)
+      .returning();
+    return invitationCode;
+  }
+
+  async updateInvitationCode(id: number, codeData: Partial<InvitationCode>): Promise<InvitationCode> {
+    const [updatedCode] = await db
+      .update(invitationCodes)
+      .set(codeData)
+      .where(eq(invitationCodes.id, id))
+      .returning();
+    return updatedCode;
+  }
+
+  async deleteInvitationCode(id: number): Promise<void> {
+    await db.delete(invitationCodes).where(eq(invitationCodes.id, id));
+  }
+
+  async incrementCodeUsage(code: string): Promise<InvitationCode> {
+    const [updatedCode] = await db
+      .update(invitationCodes)
+      .set({
+        currentUses: db.select().from(invitationCodes).where(eq(invitationCodes.code, code)).then(r => r[0]?.currentUses || 0) + 1
+      })
+      .where(eq(invitationCodes.code, code))
+      .returning();
+    return updatedCode;
+  }
+
+  // Waitlist methods
+  async getAllWaitlistEntries(): Promise<WaitlistEntry[]> {
+    return await db.select().from(waitlist);
+  }
+
+  async addToWaitlist(insertWaitlistEntry: InsertWaitlistEntry): Promise<WaitlistEntry> {
+    const [waitlistEntry] = await db
+      .insert(waitlist)
+      .values(insertWaitlistEntry)
+      .returning();
+    return waitlistEntry;
+  }
+
+  async removeFromWaitlist(id: number): Promise<void> {
+    await db.delete(waitlist).where(eq(waitlist.id, id));
   }
 }
