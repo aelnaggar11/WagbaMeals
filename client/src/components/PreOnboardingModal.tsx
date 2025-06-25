@@ -40,14 +40,13 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
   // Validation mutation
   const validateMutation = useMutation({
     mutationFn: async (data: { email: string; neighborhood: string; invitationCode: string }) => {
-      const response = await apiRequest('/api/pre-onboarding/validate', {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      console.log('Sending validation request:', data);
+      const response = await apiRequest('POST', '/api/pre-onboarding/validate', data);
+      console.log('Validation response:', response);
       return response as ValidationResponse;
     },
     onSuccess: (data) => {
+      console.log('Success handler called with:', data);
       if (data.success) {
         setStep("success");
         // Store email in sessionStorage for later use
@@ -57,7 +56,8 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
         setRejectionMessage(data.message);
       }
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Validation error:', error);
       toast({
         title: "Error",
         description: "Failed to validate your information. Please try again.",
