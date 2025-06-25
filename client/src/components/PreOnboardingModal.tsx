@@ -57,8 +57,8 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
           handleSuccess();
         }, 2000);
       } else if (data.redirectToLogin) {
-        // Redirect to login page with login tab selected
-        window.location.href = '/auth?tab=login';
+        // Redirect to login page with login tab selected and skip progress
+        window.location.href = '/auth?tab=login&skip_progress=true';
       } else {
         setStep("rejected");
         setRejectionMessage(data.message);
