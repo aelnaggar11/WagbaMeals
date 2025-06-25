@@ -30,7 +30,7 @@ const UsersManagement = () => {
     );
   }
 
-  const formatAddress = (address: User['address']) => {
+  const formatAddress = (address: any) => {
     if (!address) return 'N/A';
     if (typeof address === 'string') return address;
     
@@ -101,7 +101,7 @@ const UsersManagement = () => {
                   </div>
                 </TableCell>
                 <TableCell className="text-sm text-gray-600">
-                  {new Date(user.createdAt).toLocaleDateString()}
+                  {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                 </TableCell>
               </TableRow>
             ))}

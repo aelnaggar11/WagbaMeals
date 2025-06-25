@@ -16,8 +16,6 @@ interface AuthFormData {
   password: string;
   confirmPassword?: string;
   email: string;
-  name?: string;
-  neighborhood?: string;
 }
 
 const AuthPage = () => {
@@ -31,9 +29,7 @@ const AuthPage = () => {
   const [formData, setFormData] = useState<AuthFormData>({
     password: "",
     confirmPassword: "",
-    email: "",
-    name: "",
-    neighborhood: ""
+    email: ""
   });
   
   // Get the return URL from query params and pre-populate email if available
@@ -59,14 +55,12 @@ const AuthPage = () => {
       setIsDirectLoginAccess(true);
     }
 
-    // Pre-populate email and neighborhood from pre-onboarding modal
+    // Pre-populate email from pre-onboarding modal
     const preOnboardingEmail = sessionStorage.getItem('preOnboardingEmail');
-    const preOnboardingNeighborhood = sessionStorage.getItem('preOnboardingNeighborhood');
     if (preOnboardingEmail) {
       setFormData(prev => ({
         ...prev,
-        email: preOnboardingEmail,
-        neighborhood: preOnboardingNeighborhood || ""
+        email: preOnboardingEmail
       }));
       // Clear the stored data after using it
       sessionStorage.removeItem('preOnboardingEmail');
@@ -215,7 +209,7 @@ const AuthPage = () => {
         username: username,
         password: formData.password,
         email: formData.email,
-        name: formData.email.split('@')[0], // Use part of email as name
+        name: formData.email.split('@')[0], // Use part of email as temporary name
         isAdmin: false
       });
       
@@ -454,33 +448,7 @@ const AuthPage = () => {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="register-name">Full Name</Label>
-                  <Input 
-                    id="register-name" 
-                    name="name"
-                    type="text"
-                    value={formData.name || ""}
-                    onChange={handleInputChange}
-                    onKeyPress={(e) => handleKeyPress(e, 'register')}
-                    placeholder="Enter your full name"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="register-neighborhood">Neighborhood</Label>
-                  <Input 
-                    id="register-neighborhood" 
-                    name="neighborhood"
-                    type="text"
-                    value={formData.neighborhood || ""}
-                    onChange={handleInputChange}
-                    onKeyPress={(e) => handleKeyPress(e, 'register')}
-                    placeholder="Your neighborhood"
-                    required
-                    disabled={!!formData.neighborhood} // Disable if pre-populated
-                  />
-                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="register-password">Password</Label>
                   <Input 

@@ -250,13 +250,13 @@ const CheckoutPage = () => {
                   </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="area">Area/District *</Label>
+                  <Label htmlFor="area">Neighborhood *</Label>
                   <Input 
                     id="area" 
                     name="area" 
                     value={address.area} 
                     onChange={handleAddressChange} 
-                    placeholder="Area or district" 
+                    placeholder="Your neighborhood" 
                     required
                   />
                 </div>
