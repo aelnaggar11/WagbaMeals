@@ -1847,13 +1847,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentMethod
       });
 
-      // Update user address if not set
+      // Always update user address and phone from checkout
       const user = await storage.getUser(req.session.userId!);
-      if (user && !user.address) {
+      if (user) {
         await storage.updateUser(req.session.userId!, {
           address: JSON.stringify(address),
           phone: address.phone
         });
+        console.log('Updated user address:', JSON.stringify(address));
       }
 
       res.json(updatedOrder);

@@ -214,6 +214,10 @@ const AccountPage = () => {
         }
       }
       
+      // Get neighborhood from pre-onboarding if address doesn't have it
+      const preOnboardingNeighborhood = sessionStorage.getItem('preOnboardingNeighborhood');
+      const neighborhoodValue = (addressData as any).area || preOnboardingNeighborhood || "";
+      
       setFormData({
         name: profileData.name || "",
         email: profileData.email || "",
@@ -221,7 +225,7 @@ const AccountPage = () => {
         street: (addressData as any).street || "",
         building: (addressData as any).building || "",
         apartment: (addressData as any).apartment || "",
-        area: (addressData as any).area || "",
+        area: neighborhoodValue,
         landmark: (addressData as any).landmark || ""
       });
     }
