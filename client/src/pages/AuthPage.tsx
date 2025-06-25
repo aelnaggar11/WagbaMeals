@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import ProgressIndicator from "@/components/ProgressIndicator";
+import PreOnboardingModal from "@/components/PreOnboardingModal";
 
 interface AuthFormData {
   password: string;
@@ -24,6 +25,8 @@ const AuthPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [returnTo, setReturnTo] = useState<string | null>(null);
   const [defaultTab, setDefaultTab] = useState<string>("register");
+  const [showPreOnboardingModal, setShowPreOnboardingModal] = useState(false);
+  const [isDirectLoginAccess, setIsDirectLoginAccess] = useState(false);
   const [formData, setFormData] = useState<AuthFormData>({
     password: "",
     confirmPassword: "",
@@ -41,10 +44,17 @@ const AuthPage = () => {
     
     // Check for login tab parameter
     const tabParam = params.get('tab');
+    const skipProgress = params.get('skip_progress');
+    
     if (tabParam === 'login') {
       setDefaultTab('login');
     } else if (tabParam === 'register') {
       setDefaultTab('register');
+    }
+    
+    // Check if this is direct login access (skip_progress=true)
+    if (skipProgress === 'true') {
+      setIsDirectLoginAccess(true);
     }
 
     // Pre-populate email from pre-onboarding modal
@@ -326,6 +336,16 @@ const AuthPage = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Handle tab change for direct login access
+  const handleTabChange = (value: string) => {
+    if (isDirectLoginAccess && value === 'register') {
+      // Show pre-onboarding modal instead of allowing direct registration
+      setShowPreOnboardingModal(true);
+      return; // Don't change the tab
+    }
+    setDefaultTab(value);
+  };
   
   // Define the checkout steps
   const steps = [
@@ -349,7 +369,7 @@ const AuthPage = () => {
       {!skipProgress && <ProgressIndicator steps={steps} currentStep={3} />}
       
       <div className="max-w-md mx-auto">
-        <Tabs value={defaultTab} onValueChange={setDefaultTab} className="w-full">
+        <Tabs value={defaultTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid grid-cols-2 mb-6">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="register">Register</TabsTrigger>
@@ -456,6 +476,16 @@ const AuthPage = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* Pre-onboarding Modal */}
+      <PreOnboardingModal
+        isOpen={showPreOnboardingModal}
+        onClose={() => setShowPreOnboardingModal(false)}
+        onSuccess={(email) => {
+          setShowPreOnboardingModal(false);
+          navigate('/meal-plans');
+        }}
+      />
     </div>
   );
 };
