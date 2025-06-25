@@ -88,7 +88,21 @@ function App() {
       location.startsWith('/account') || 
       location.startsWith('/checkout');
     const isAdminRoute = location.startsWith('/admin');
+    const isOnboardingRoute = 
+      location === '/' || 
+      location.startsWith('/meal-plans') || 
+      location.startsWith('/menu/') || 
+      location === '/auth';
       
+    // Redirect authenticated users away from onboarding/landing pages to account
+    if (!userLoading && user && isOnboardingRoute) {
+      const timeoutId = setTimeout(() => {
+        window.location.href = '/account';
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+    
     // Only redirect unauthenticated users from protected routes to auth
     // Don't redirect authenticated users away from auth page - let AuthPage handle it
     if (!userLoading && !user && isUserRoute) {
