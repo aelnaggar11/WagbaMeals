@@ -11,6 +11,7 @@ import MealsManager from "@/components/admin/MealsManager";
 import NeighborhoodsManager from "@/components/admin/NeighborhoodsManager";
 import InvitationCodesManager from "@/components/admin/InvitationCodesManager";
 import WaitlistManager from "@/components/admin/WaitlistManager";
+import UsersManagement from "@/components/admin/UsersManagement";
 
 const Dashboard = () => {
   const [, navigate] = useLocation();
@@ -137,9 +138,24 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="users" className="mt-0">
-            <div className="bg-white rounded-lg border p-6">
-              <h3 className="text-xl font-semibold text-primary mb-4">User Management</h3>
-              <p className="text-gray-600">User management coming soon...</p>
+            <div className="bg-white rounded-lg border">
+              <Tabs defaultValue="user-accounts" className="w-full">
+                <div className="border-b border-gray-200 px-6 py-4">
+                  <h3 className="text-xl font-semibold text-primary mb-4">User Management</h3>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="user-accounts">User Accounts</TabsTrigger>
+                    <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
+                  </TabsList>
+                </div>
+                
+                <TabsContent value="user-accounts" className="p-6 mt-0">
+                  <UsersManagement />
+                </TabsContent>
+                
+                <TabsContent value="waitlist" className="p-6 mt-0">
+                  <WaitlistManager />
+                </TabsContent>
+              </Tabs>
             </div>
           </TabsContent>
 
