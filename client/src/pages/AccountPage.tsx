@@ -196,33 +196,32 @@ const AccountPage = () => {
   // Update form data when profile data is loaded
   useEffect(() => {
     if (profile) {
-      setFormData({
-        name: (profile as any).name || "",
-        email: (profile as any).email || "",
-        phone: (profile as any).phone || "",
-        street: "",
-        building: "",
-        apartment: "",
-        area: "",
-        landmark: ""
-      });
-
-      // Parse address if available
-      if ((profile as any).address) {
+      const profileData = profile as any;
+      
+      // Parse address data if it exists
+      let addressData = {};
+      if (profileData.address) {
         try {
-          const addressObj = JSON.parse((profile as any).address);
-          setFormData(prev => ({
-            ...prev,
-            street: addressObj.street || "",
-            building: addressObj.building || "",
-            apartment: addressObj.apartment || "",
-            area: addressObj.area || "",
-            landmark: addressObj.landmark || ""
-          }));
+          if (typeof profileData.address === 'string') {
+            addressData = JSON.parse(profileData.address);
+          } else {
+            addressData = profileData.address;
+          }
         } catch (e) {
-          // Keep default empty values if address parsing fails
+          console.error('Error parsing address data:', e);
         }
       }
+      
+      setFormData({
+        name: profileData.name || "",
+        email: profileData.email || "",
+        phone: profileData.phone || "",
+        street: (addressData as any).street || "",
+        building: (addressData as any).building || "",
+        apartment: (addressData as any).apartment || "",
+        area: (addressData as any).area || "",
+        landmark: (addressData as any).landmark || ""
+      });
     }
   }, [profile]);
 
