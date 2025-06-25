@@ -1989,6 +1989,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { email, neighborhood, invitationCode } = req.body;
 
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.json({
+          success: false,
+          redirectToLogin: true,
+          message: "An account with this email already exists. Please log in instead."
+        });
+      }
+
       // Validate invitation code
       const validCode = await storage.validateInvitationCode(invitationCode);
       if (!validCode) {
