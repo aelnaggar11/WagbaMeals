@@ -108,14 +108,18 @@ const CheckoutPage = () => {
     console.log('Current address.area:', address.area);
     console.log('Serviced neighborhoods loaded:', servicedNeighborhoods.length);
     
-    if (preOnboardingNeighborhood && servicedNeighborhoods.length > 0 && !address.area) {
-      console.log('Pre-populating neighborhood from modal:', preOnboardingNeighborhood);
-      setAddress(prev => ({
-        ...prev,
-        area: preOnboardingNeighborhood
-      }));
+    if (preOnboardingNeighborhood && servicedNeighborhoods.length > 0) {
+      // Check if the neighborhood from modal is in our serviced list
+      const isValidNeighborhood = servicedNeighborhoods.some(n => n.name === preOnboardingNeighborhood);
+      if (isValidNeighborhood && !address.area) {
+        console.log('Pre-populating neighborhood from modal:', preOnboardingNeighborhood);
+        setAddress(prev => ({
+          ...prev,
+          area: preOnboardingNeighborhood
+        }));
+      }
     }
-  }, [servicedNeighborhoods]);
+  }, [servicedNeighborhoods, address.area]);
   
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

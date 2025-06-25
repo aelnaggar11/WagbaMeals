@@ -58,7 +58,8 @@ const AccountPage = () => {
     building: "",
     apartment: "",
     area: "",
-    landmark: ""
+    landmark: "",
+    deliveryNotes: ""
   });
 
   // ALL QUERIES MUST BE DECLARED BEFORE ANY CONDITIONAL LOGIC
@@ -226,7 +227,8 @@ const AccountPage = () => {
         building: "",
         apartment: "",
         area: neighborhoodValue,
-        landmark: ""
+        landmark: "",
+        deliveryNotes: (addressData as any).deliveryNotes || ""
       };
       
       console.log('Setting form data:', newFormData);
@@ -359,7 +361,8 @@ const AccountPage = () => {
         building: formData.building,
         apartment: formData.apartment,
         area: formData.area,
-        landmark: formData.landmark
+        landmark: formData.landmark,
+        deliveryNotes: formData.deliveryNotes
       });
 
       await apiRequest('PATCH', '/api/user/profile', {
@@ -1011,6 +1014,24 @@ const AccountPage = () => {
                             placeholder="Your neighborhood"
                           />
                         </div>
+                      </div>
+                    </div>
+
+                    {/* Delivery Notes */}
+                    <div className="border-t pt-4 mt-6">
+                      <h3 className="font-semibold text-lg mb-4">Delivery Notes</h3>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="deliveryNotes">Special Instructions (Optional)</Label>
+                        <Textarea
+                          id="deliveryNotes"
+                          name="deliveryNotes"
+                          value={formData.deliveryNotes || ""}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                          placeholder="Any special instructions for delivery"
+                          className="min-h-[100px]"
+                        />
                       </div>
                     </div>
                   </div>
