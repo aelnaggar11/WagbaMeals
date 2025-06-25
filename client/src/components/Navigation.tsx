@@ -7,9 +7,11 @@ import { useQuery } from "@tanstack/react-query";
 import { User, Admin } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import PreOnboardingModal from "@/components/PreOnboardingModal";
 
 const Navigation = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showPreOnboardingModal, setShowPreOnboardingModal] = useState(false);
   const [location, navigate] = useLocation();
   const { toast } = useToast();
   
@@ -144,17 +146,26 @@ const Navigation = () => {
               >
                 Login
               </NavLink>
-              <Link href="/meal-plans">
-                <Button variant="default" className="bg-primary hover:bg-primary/90 text-white">
-                  Get Started
-                </Button>
-              </Link>
+              <Button 
+                variant="default" 
+                className="bg-primary hover:bg-primary/90 text-white"
+                onClick={() => setShowPreOnboardingModal(true)}
+              >
+                Get Started
+              </Button>
             </>
           )}
         </div>
       </div>
       
-      
+      {/* Pre-onboarding Modal */}
+      <PreOnboardingModal
+        isOpen={showPreOnboardingModal}
+        onClose={() => setShowPreOnboardingModal(false)}
+        onSuccess={(email) => {
+          navigate('/meal-plans');
+        }}
+      />
     </header>
   );
 };
