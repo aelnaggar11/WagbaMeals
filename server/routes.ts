@@ -2155,6 +2155,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin endpoint to view waitlist entries
+  app.get('/api/admin/waitlist', adminMiddleware, async (req, res) => {
+    try {
+      const waitlistEntries = await storage.getAllWaitlistEntries();
+      res.json({ waitlistEntries });
+    } catch (error) {
+      console.error('Error fetching waitlist entries:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   app.get('/api/admin/waitlist', adminMiddleware, async (req, res) => {
     try {
       const waitlistEntries = await storage.getAllWaitlistEntries();

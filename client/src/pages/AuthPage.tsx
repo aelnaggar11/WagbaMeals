@@ -17,6 +17,7 @@ interface AuthFormData {
   confirmPassword?: string;
   email: string;
   name?: string;
+  neighborhood?: string;
 }
 
 const AuthPage = () => {
@@ -31,7 +32,8 @@ const AuthPage = () => {
     password: "",
     confirmPassword: "",
     email: "",
-    name: ""
+    name: "",
+    neighborhood: ""
   });
   
   // Get the return URL from query params and pre-populate email if available
@@ -450,6 +452,33 @@ const AuthPage = () => {
                     onKeyPress={(e) => handleKeyPress(e, 'register')}
                     placeholder="Enter your email address"
                     required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-name">Full Name</Label>
+                  <Input 
+                    id="register-name" 
+                    name="name"
+                    type="text"
+                    value={formData.name || ""}
+                    onChange={handleInputChange}
+                    onKeyPress={(e) => handleKeyPress(e, 'register')}
+                    placeholder="Enter your full name"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-neighborhood">Neighborhood</Label>
+                  <Input 
+                    id="register-neighborhood" 
+                    name="neighborhood"
+                    type="text"
+                    value={formData.neighborhood || ""}
+                    onChange={handleInputChange}
+                    onKeyPress={(e) => handleKeyPress(e, 'register')}
+                    placeholder="Your neighborhood"
+                    required
+                    disabled={!!formData.neighborhood} // Disable if pre-populated
                   />
                 </div>
                 <div className="space-y-2">
