@@ -1,4 +1,4 @@
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import Home from "@/pages/Home";
@@ -17,18 +17,7 @@ import { User, Admin } from "@shared/schema";
 import { Loader2 } from "lucide-react";
 
 function App() {
-  // Get current location for protected route handling
-  const [location, setLocation] = useState(window.location.pathname);
-  
-  // Listen for location changes
-  useEffect(() => {
-    const handleRouteChange = () => {
-      setLocation(window.location.pathname);
-    };
-    
-    window.addEventListener('popstate', handleRouteChange);
-    return () => window.removeEventListener('popstate', handleRouteChange);
-  }, []);
+  const [location, navigate] = useLocation();
   
   // User authentication query with proper 401 handling
   const { data: user, isLoading: userLoading } = useQuery<User | null>({
@@ -91,24 +80,19 @@ function App() {
     const isOnboardingRoute = 
       location === '/' || 
       location.startsWith('/meal-plans') || 
-      location.startsWith('/menu/') || 
-      location === '/auth';
+      location.startsWith('/menu/');
       
     // Redirect authenticated users away from onboarding/landing pages to account
     if (!userLoading && user && isOnboardingRoute) {
-      const timeoutId = setTimeout(() => {
-        window.location.href = '/account';
-      }, 100);
-      
-      return () => clearTimeout(timeoutId);
+      navigate('/account');
+      return;
     }
     
     // Only redirect unauthenticated users from protected routes to auth
-    // Don't redirect authenticated users away from auth page - let AuthPage handle it
     if (!userLoading && !user && isUserRoute) {
       const timeoutId = setTimeout(() => {
         window.location.href = '/auth?returnTo=' + encodeURIComponent(location);
-      }, 500); // Small delay to allow auth state to stabilize
+      }, 500);
       
       return () => clearTimeout(timeoutId);
     }
@@ -117,7 +101,7 @@ function App() {
     if (!adminLoading && !admin && isAdminRoute && location !== '/admin/login') {
       window.location.href = '/admin/login';
     }
-  }, [user, admin, userLoading, adminLoading, location]);
+  }, [user, admin, userLoading, adminLoading, location, navigate]);
   
   // Show loading spinner for protected routes
   if ((userLoading && (location.startsWith('/account') || location.startsWith('/checkout'))) ||
