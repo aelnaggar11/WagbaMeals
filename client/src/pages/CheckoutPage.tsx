@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
@@ -44,6 +45,13 @@ const CheckoutPage = () => {
   }>({
     queryKey: ['/api/user/profile'],
   });
+
+  // Fetch neighborhoods for dropdown
+  const { data: neighborhoodsData } = useQuery<{ neighborhoods: Array<{ id: number; name: string; serviced: boolean }> }>({
+    queryKey: ['/api/neighborhoods'],
+  });
+
+  const servicedNeighborhoods = neighborhoodsData?.neighborhoods.filter(n => n.serviced) || [];
   
   // Form state for delivery address
   const [address, setAddress] = useState({
@@ -91,13 +99,31 @@ const CheckoutPage = () => {
         phone: userProfile.phone
       });
     }
-  });
+  }, [userProfile]);
+
+  // Pre-populate neighborhood from pre-onboarding modal
+  useEffect(() => {
+    const preOnboardingNeighborhood = sessionStorage.getItem('preOnboardingNeighborhood');
+    if (preOnboardingNeighborhood && !address.area) {
+      setAddress(prev => ({
+        ...prev,
+        area: preOnboardingNeighborhood
+      }));
+    }
+  }, [servicedNeighborhoods]);
   
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setAddress({
       ...address,
       [name]: value
+    });
+  };
+
+  const handleNeighborhoodChange = (value: string) => {
+    setAddress({
+      ...address,
+      area: value
     });
   };
   
@@ -251,14 +277,18 @@ const CheckoutPage = () => {
                 
                 <div className="space-y-2">
                   <Label htmlFor="area">Neighborhood *</Label>
-                  <Input 
-                    id="area" 
-                    name="area" 
-                    value={address.area} 
-                    onChange={handleAddressChange} 
-                    placeholder="Your neighborhood" 
-                    required
-                  />
+                  <Select value={address.area} onValueChange={handleNeighborhoodChange} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your neighborhood" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {servicedNeighborhoods.map((neighborhood) => (
+                        <SelectItem key={neighborhood.id} value={neighborhood.name}>
+                          {neighborhood.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

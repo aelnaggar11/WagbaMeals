@@ -197,6 +197,7 @@ const AccountPage = () => {
   useEffect(() => {
     if (profile) {
       const profileData = profile as any;
+      console.log('Profile data received:', profileData);
       
       // Parse address data if it exists
       let addressData = {};
@@ -204,6 +205,7 @@ const AccountPage = () => {
         try {
           if (typeof profileData.address === 'string') {
             addressData = JSON.parse(profileData.address);
+            console.log('Parsed address data:', addressData);
           } else {
             addressData = profileData.address;
           }
