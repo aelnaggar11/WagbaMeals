@@ -53,9 +53,9 @@ const CheckoutPage = () => {
 
   const servicedNeighborhoods = neighborhoodsData?.neighborhoods.filter(n => n.isServiced) || [];
   
-  // Initialize address state with neighborhood from sessionStorage
+  // Initialize address state with neighborhood from localStorage (persistent across navigation)
   const [address, setAddress] = useState(() => {
-    const storedNeighborhood = sessionStorage.getItem('preOnboardingNeighborhood');
+    const storedNeighborhood = localStorage.getItem('preOnboardingNeighborhood') || sessionStorage.getItem('preOnboardingNeighborhood');
     console.log('CheckoutPage initializing with stored neighborhood:', storedNeighborhood);
     return {
       name: "",
@@ -70,11 +70,11 @@ const CheckoutPage = () => {
   
   // Check and set neighborhood on component mount
   useEffect(() => {
-    const storedNeighborhood = sessionStorage.getItem('preOnboardingNeighborhood');
+    const storedNeighborhood = localStorage.getItem('preOnboardingNeighborhood') || sessionStorage.getItem('preOnboardingNeighborhood');
     console.log('=== CHECKOUT PAGE MOUNT DEBUG ===');
-    console.log('Stored neighborhood on mount:', storedNeighborhood);
+    console.log('Stored neighborhood (localStorage):', localStorage.getItem('preOnboardingNeighborhood'));
+    console.log('Stored neighborhood (sessionStorage):', sessionStorage.getItem('preOnboardingNeighborhood'));
     console.log('Current address.area:', address.area);
-    console.log('All sessionStorage keys:', Object.keys(sessionStorage));
     
     // Force set the neighborhood if we have it stored but address.area is empty
     if (storedNeighborhood && !address.area) {
@@ -122,36 +122,17 @@ const CheckoutPage = () => {
 
   // Pre-populate neighborhood from pre-onboarding modal
   useEffect(() => {
-    const preOnboardingNeighborhood = sessionStorage.getItem('preOnboardingNeighborhood');
-    console.log('=== NEIGHBORHOOD PRE-POPULATION DEBUG ===');
-    console.log('Stored neighborhood:', preOnboardingNeighborhood);
-    console.log('Current address.area:', address.area);
-    console.log('Serviced neighborhoods loaded:', servicedNeighborhoods.length);
-    console.log('Serviced neighborhoods:', servicedNeighborhoods.map(n => n.name));
+    const preOnboardingNeighborhood = localStorage.getItem('preOnboardingNeighborhood') || sessionStorage.getItem('preOnboardingNeighborhood');
     
     if (preOnboardingNeighborhood && servicedNeighborhoods.length > 0 && !address.area) {
       // Check if the neighborhood from modal is in our serviced list
       const matchingNeighborhood = servicedNeighborhoods.find(n => n.name === preOnboardingNeighborhood);
-      console.log('Matching neighborhood found:', matchingNeighborhood);
       
       if (matchingNeighborhood) {
-        console.log('✅ Pre-populating neighborhood:', preOnboardingNeighborhood);
-        setAddress(prev => {
-          const newAddress = { ...prev, area: preOnboardingNeighborhood };
-          console.log('New address state:', newAddress);
-          return newAddress;
-        });
-      } else {
-        console.log('❌ Neighborhood not in serviced list');
+        console.log('✅ Pre-populating neighborhood from localStorage:', preOnboardingNeighborhood);
+        setAddress(prev => ({ ...prev, area: preOnboardingNeighborhood }));
       }
-    } else {
-      console.log('❌ Conditions not met:', {
-        hasStoredNeighborhood: !!preOnboardingNeighborhood,
-        hasServicedNeighborhoods: servicedNeighborhoods.length > 0,
-        addressAreaEmpty: !address.area
-      });
     }
-    console.log('=== END DEBUG ===');
   }, [servicedNeighborhoods]);
   
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {

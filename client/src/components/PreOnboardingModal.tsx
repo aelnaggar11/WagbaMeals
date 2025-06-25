@@ -53,19 +53,21 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
       
       if (data.success) {
         setStep("success");
-        // Store email and neighborhood in sessionStorage for later use
+        // Store email and neighborhood in localStorage for persistence across navigation
+        localStorage.setItem('preOnboardingEmail', email);
+        localStorage.setItem('preOnboardingNeighborhood', neighborhood);
         sessionStorage.setItem('preOnboardingEmail', email);
         sessionStorage.setItem('preOnboardingNeighborhood', neighborhood);
         
         // Verify storage immediately
-        const storedNeighborhood = sessionStorage.getItem('preOnboardingNeighborhood');
-        console.log('Verified stored neighborhood:', storedNeighborhood);
+        const storedNeighborhood = localStorage.getItem('preOnboardingNeighborhood');
+        console.log('Verified stored neighborhood in localStorage:', storedNeighborhood);
         
         // Auto-redirect after 2 seconds, but preserve sessionStorage
         setTimeout(() => {
           // Double-check storage before redirect
-          const finalCheck = sessionStorage.getItem('preOnboardingNeighborhood');
-          console.log('Final storage check before redirect:', finalCheck);
+          const finalCheck = localStorage.getItem('preOnboardingNeighborhood');
+          console.log('Final storage check before redirect (localStorage):', finalCheck);
           handleSuccess();
         }, 2000);
       } else if (data.redirectToLogin) {
