@@ -104,22 +104,36 @@ const CheckoutPage = () => {
   // Pre-populate neighborhood from pre-onboarding modal
   useEffect(() => {
     const preOnboardingNeighborhood = sessionStorage.getItem('preOnboardingNeighborhood');
-    console.log('Checking for pre-onboarding neighborhood:', preOnboardingNeighborhood);
+    console.log('=== NEIGHBORHOOD PRE-POPULATION DEBUG ===');
+    console.log('Stored neighborhood:', preOnboardingNeighborhood);
     console.log('Current address.area:', address.area);
     console.log('Serviced neighborhoods loaded:', servicedNeighborhoods.length);
+    console.log('Serviced neighborhoods:', servicedNeighborhoods.map(n => n.name));
     
-    if (preOnboardingNeighborhood && servicedNeighborhoods.length > 0) {
+    if (preOnboardingNeighborhood && servicedNeighborhoods.length > 0 && !address.area) {
       // Check if the neighborhood from modal is in our serviced list
-      const isValidNeighborhood = servicedNeighborhoods.some(n => n.name === preOnboardingNeighborhood);
-      if (isValidNeighborhood && !address.area) {
-        console.log('Pre-populating neighborhood from modal:', preOnboardingNeighborhood);
-        setAddress(prev => ({
-          ...prev,
-          area: preOnboardingNeighborhood
-        }));
+      const matchingNeighborhood = servicedNeighborhoods.find(n => n.name === preOnboardingNeighborhood);
+      console.log('Matching neighborhood found:', matchingNeighborhood);
+      
+      if (matchingNeighborhood) {
+        console.log('✅ Pre-populating neighborhood:', preOnboardingNeighborhood);
+        setAddress(prev => {
+          const newAddress = { ...prev, area: preOnboardingNeighborhood };
+          console.log('New address state:', newAddress);
+          return newAddress;
+        });
+      } else {
+        console.log('❌ Neighborhood not in serviced list');
       }
+    } else {
+      console.log('❌ Conditions not met:', {
+        hasStoredNeighborhood: !!preOnboardingNeighborhood,
+        hasServicedNeighborhoods: servicedNeighborhoods.length > 0,
+        addressAreaEmpty: !address.area
+      });
     }
-  }, [servicedNeighborhoods, address.area]);
+    console.log('=== END DEBUG ===');
+  }, [servicedNeighborhoods]);
   
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
