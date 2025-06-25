@@ -223,10 +223,10 @@ const AccountPage = () => {
         email: profileData.email || "",
         phone: profileData.phone || "",
         street: (addressData as any).street || "",
-        building: (addressData as any).building || "",
-        apartment: (addressData as any).apartment || "",
+        building: "",
+        apartment: "",
         area: neighborhoodValue,
-        landmark: (addressData as any).landmark || ""
+        landmark: ""
       };
       
       console.log('Setting form data:', newFormData);
@@ -1000,31 +1000,6 @@ const AccountPage = () => {
                           />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="building">Building</Label>
-                            <Input
-                              id="building"
-                              name="building"
-                              value={formData.building}
-                              onChange={handleInputChange}
-                              disabled={!isEditing}
-                              placeholder="Building number/name"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="apartment">Apartment/Unit</Label>
-                            <Input
-                              id="apartment"
-                              name="apartment"
-                              value={formData.apartment}
-                              onChange={handleInputChange}
-                              disabled={!isEditing}
-                              placeholder="Apt/Unit number"
-                            />
-                          </div>
-                        </div>
-
                         <div className="space-y-2">
                           <Label htmlFor="area">Neighborhood</Label>
                           <Input
@@ -1034,18 +1009,6 @@ const AccountPage = () => {
                             onChange={handleInputChange}
                             disabled={!isEditing}
                             placeholder="Your neighborhood"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="landmark">Landmark (Optional)</Label>
-                          <Input
-                            id="landmark"
-                            name="landmark"
-                            value={formData.landmark}
-                            onChange={handleInputChange}
-                            disabled={!isEditing}
-                            placeholder="Nearby landmark for easier delivery"
                           />
                         </div>
                       </div>

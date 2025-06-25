@@ -104,14 +104,18 @@ const CheckoutPage = () => {
   // Pre-populate neighborhood from pre-onboarding modal
   useEffect(() => {
     const preOnboardingNeighborhood = sessionStorage.getItem('preOnboardingNeighborhood');
-    if (preOnboardingNeighborhood && !address.area && servicedNeighborhoods.length > 0) {
+    console.log('Checking for pre-onboarding neighborhood:', preOnboardingNeighborhood);
+    console.log('Current address.area:', address.area);
+    console.log('Serviced neighborhoods loaded:', servicedNeighborhoods.length);
+    
+    if (preOnboardingNeighborhood && servicedNeighborhoods.length > 0 && !address.area) {
       console.log('Pre-populating neighborhood from modal:', preOnboardingNeighborhood);
       setAddress(prev => ({
         ...prev,
         area: preOnboardingNeighborhood
       }));
     }
-  }, [servicedNeighborhoods, address.area]);
+  }, [servicedNeighborhoods]);
   
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
