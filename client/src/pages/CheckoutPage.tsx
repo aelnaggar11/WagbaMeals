@@ -53,17 +53,36 @@ const CheckoutPage = () => {
 
   const servicedNeighborhoods = neighborhoodsData?.neighborhoods.filter(n => n.isServiced) || [];
   
-  // Form state for delivery address
-  const [address, setAddress] = useState({
-    name: "",
-    street: "",
-    apartment: "",
-    building: "",
-    area: "",
-    landmark: "",
-    phone: ""
+  // Initialize address state with neighborhood from sessionStorage
+  const [address, setAddress] = useState(() => {
+    const storedNeighborhood = sessionStorage.getItem('preOnboardingNeighborhood');
+    console.log('CheckoutPage initializing with stored neighborhood:', storedNeighborhood);
+    return {
+      name: "",
+      street: "",
+      apartment: "",
+      building: "",
+      area: storedNeighborhood || "",
+      landmark: "",
+      phone: ""
+    };
   });
   
+  // Check and set neighborhood on component mount
+  useEffect(() => {
+    const storedNeighborhood = sessionStorage.getItem('preOnboardingNeighborhood');
+    console.log('=== CHECKOUT PAGE MOUNT DEBUG ===');
+    console.log('Stored neighborhood on mount:', storedNeighborhood);
+    console.log('Current address.area:', address.area);
+    console.log('All sessionStorage keys:', Object.keys(sessionStorage));
+    
+    // Force set the neighborhood if we have it stored but address.area is empty
+    if (storedNeighborhood && !address.area) {
+      console.log('Force setting neighborhood from storage:', storedNeighborhood);
+      setAddress(prev => ({ ...prev, area: storedNeighborhood }));
+    }
+  }, []);
+
   // Enhanced auto-retry with authentication state monitoring
   useEffect(() => {
     if (error && !pendingOrder && !isLoading) {
