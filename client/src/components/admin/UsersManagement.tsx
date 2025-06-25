@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { User } from "@shared/schema";
 import { Users, Mail, Phone, MapPin } from "lucide-react";
 
@@ -30,6 +30,20 @@ const UsersManagement = () => {
     );
   }
 
+  const formatAddress = (address: User['address']) => {
+    if (!address) return 'N/A';
+    if (typeof address === 'string') return address;
+    
+    const parts = [
+      address.street,
+      address.building,
+      address.apartment && `Apt ${address.apartment}`,
+      address.area
+    ].filter(Boolean);
+    
+    return parts.join(', ');
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -39,60 +53,60 @@ const UsersManagement = () => {
         </div>
       </div>
 
-      <div className="grid gap-4">
-        {users.map((user) => (
-          <Card key={user.id} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">{user.name}</CardTitle>
-                <Badge variant="outline" className="text-xs">
-                  ID: {user.id}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center space-x-2">
-                  <Mail className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-700">{user.email}</span>
-                </div>
-                {user.phone && (
+      <div className="border rounded-md">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ID</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Username</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>Address</TableHead>
+              <TableHead>Joined</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {users.map((user) => (
+              <TableRow key={user.id}>
+                <TableCell>
+                  <Badge variant="outline" className="text-xs">
+                    {user.id}
+                  </Badge>
+                </TableCell>
+                <TableCell className="font-medium">{user.name}</TableCell>
+                <TableCell>
                   <div className="flex items-center space-x-2">
-                    <Phone className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-700">{user.phone}</span>
+                    <Mail className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">{user.email}</span>
                   </div>
-                )}
-              </div>
-              
-              {user.address && (
-                <div className="flex items-start space-x-2">
-                  <MapPin className="h-4 w-4 text-gray-500 mt-0.5" />
-                  <div className="text-sm text-gray-700">
-                    {typeof user.address === 'string' ? (
-                      <span>{user.address}</span>
-                    ) : (
-                      <div className="space-y-1">
-                        <div>{user.address.street}, {user.address.building}</div>
-                        {user.address.apartment && <div>Apt: {user.address.apartment}</div>}
-                        <div>{user.address.area}</div>
-                        {user.address.landmark && <div>Near: {user.address.landmark}</div>}
-                      </div>
-                    )}
+                </TableCell>
+                <TableCell className="text-sm text-gray-600">{user.username}</TableCell>
+                <TableCell>
+                  {user.phone ? (
+                    <div className="flex items-center space-x-2">
+                      <Phone className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm">{user.phone}</span>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-400">N/A</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-start space-x-2 max-w-xs">
+                    <MapPin className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm text-gray-600 truncate" title={formatAddress(user.address)}>
+                      {formatAddress(user.address)}
+                    </span>
                   </div>
-                </div>
-              )}
-              
-              <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                <span className="text-xs text-gray-500">
-                  Username: {user.username}
-                </span>
-                <span className="text-xs text-gray-500">
-                  Joined: {new Date(user.createdAt).toLocaleDateString()}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                </TableCell>
+                <TableCell className="text-sm text-gray-600">
+                  {new Date(user.createdAt).toLocaleDateString()}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
