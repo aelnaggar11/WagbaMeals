@@ -218,7 +218,7 @@ const AccountPage = () => {
       const preOnboardingNeighborhood = sessionStorage.getItem('preOnboardingNeighborhood');
       const neighborhoodValue = (addressData as any).area || preOnboardingNeighborhood || "";
       
-      setFormData({
+      const newFormData = {
         name: profileData.name || "",
         email: profileData.email || "",
         phone: profileData.phone || "",
@@ -227,9 +227,17 @@ const AccountPage = () => {
         apartment: (addressData as any).apartment || "",
         area: neighborhoodValue,
         landmark: (addressData as any).landmark || ""
-      });
+      };
+      
+      console.log('Setting form data:', newFormData);
+      setFormData(newFormData);
     }
   }, [profile]);
+
+  // Debug logging to track form data state
+  useEffect(() => {
+    console.log('Current form data state:', formData);
+  }, [formData]);
 
   // NOW SAFE TO HAVE CONDITIONAL RETURNS AFTER ALL HOOKS ARE DECLARED
   if (isUserLoading) {
