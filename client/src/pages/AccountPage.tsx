@@ -974,59 +974,68 @@ const AccountPage = () => {
                     {/* Address Fields */}
                     <div className="border-t pt-4 mt-6">
                       <h3 className="font-semibold text-lg mb-4">Delivery Address</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      
+                      <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label htmlFor="street">Street</Label>
+                          <Label htmlFor="street">Street Address</Label>
                           <Input
                             id="street"
                             name="street"
                             value={formData.street}
                             onChange={handleInputChange}
                             disabled={!isEditing}
+                            placeholder="Street name and number"
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="building">Building</Label>
-                          <Input
-                            id="building"
-                            name="building"
-                            value={formData.building}
-                            onChange={handleInputChange}
-                            disabled={!isEditing}
-                          />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="building">Building</Label>
+                            <Input
+                              id="building"
+                              name="building"
+                              value={formData.building}
+                              onChange={handleInputChange}
+                              disabled={!isEditing}
+                              placeholder="Building number/name"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="apartment">Apartment/Unit</Label>
+                            <Input
+                              id="apartment"
+                              name="apartment"
+                              value={formData.apartment}
+                              onChange={handleInputChange}
+                              disabled={!isEditing}
+                              placeholder="Apt/Unit number"
+                            />
+                          </div>
                         </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+
                         <div className="space-y-2">
-                          <Label htmlFor="apartment">Apartment/Unit</Label>
-                          <Input
-                            id="apartment"
-                            name="apartment"
-                            value={formData.apartment}
-                            onChange={handleInputChange}
-                            disabled={!isEditing}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="area">Area/District</Label>
+                          <Label htmlFor="area">Neighborhood</Label>
                           <Input
                             id="area"
                             name="area"
                             value={formData.area}
                             onChange={handleInputChange}
                             disabled={!isEditing}
+                            placeholder="Your neighborhood"
                           />
                         </div>
-                      </div>
-                      <div className="space-y-2 mt-4">
-                        <Label htmlFor="landmark">Landmark (Optional)</Label>
-                        <Input
-                          id="landmark"
-                          name="landmark"
-                          value={formData.landmark}
-                          onChange={handleInputChange}
-                          disabled={!isEditing}
-                        />
+
+                        <div className="space-y-2">
+                          <Label htmlFor="landmark">Landmark (Optional)</Label>
+                          <Input
+                            id="landmark"
+                            name="landmark"
+                            value={formData.landmark}
+                            onChange={handleInputChange}
+                            disabled={!isEditing}
+                            placeholder="Nearby landmark for easier delivery"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>

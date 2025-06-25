@@ -47,11 +47,11 @@ const CheckoutPage = () => {
   });
 
   // Fetch neighborhoods for dropdown
-  const { data: neighborhoodsData } = useQuery<{ neighborhoods: Array<{ id: number; name: string; serviced: boolean }> }>({
+  const { data: neighborhoodsData } = useQuery<{ neighborhoods: Array<{ id: number; name: string; isServiced: boolean }> }>({
     queryKey: ['/api/neighborhoods'],
   });
 
-  const servicedNeighborhoods = neighborhoodsData?.neighborhoods.filter(n => n.serviced) || [];
+  const servicedNeighborhoods = neighborhoodsData?.neighborhoods.filter(n => n.isServiced) || [];
   
   // Form state for delivery address
   const [address, setAddress] = useState({
