@@ -28,11 +28,12 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
   const [invitationCode, setInvitationCode] = useState("");
   const [step, setStep] = useState<"form" | "success" | "rejected">("form");
   const [rejectionMessage, setRejectionMessage] = useState("");
+  const [neighborhoodError, setNeighborhoodError] = useState("");
   const { toast } = useToast();
 
-  // Fetch serviced neighborhoods
+  // Fetch all neighborhoods (not just serviced ones)
   const { data: neighborhoodsData } = useQuery<{ neighborhoods: Neighborhood[] }>({
-    queryKey: ['/api/neighborhoods/serviced'],
+    queryKey: ['/api/neighborhoods'],
     enabled: isOpen,
   });
 
@@ -77,13 +78,23 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Clear previous errors
+    setNeighborhoodError("");
+    
     if (!email || !neighborhood || !invitationCode) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all fields.",
+        description: "Please fill in all fields to continue.",
         variant: "destructive",
       });
       return;
+    }
+
+    // Check if selected neighborhood is serviced
+    const selectedNeighborhood = neighborhoods.find(n => n.name === neighborhood);
+    if (selectedNeighborhood && !selectedNeighborhood.isServiced) {
+      setNeighborhoodError(`Sorry, we don't currently deliver to ${neighborhood}. We've added you to our waitlist and will notify you when we expand service to your area.`);
+      // Still proceed with validation to add to waitlist
     }
 
     validateMutation.mutate({ email, neighborhood, invitationCode });
@@ -106,6 +117,7 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
       setInvitationCode("");
       setStep("form");
       setRejectionMessage("");
+      setNeighborhoodError("");
     }
   }, [isOpen]);
 
@@ -148,6 +160,11 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
                   ))}
                 </SelectContent>
               </Select>
+              {neighborhoodError && (
+                <p className="text-sm text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
+                  {neighborhoodError}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
