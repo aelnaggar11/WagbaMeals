@@ -1974,5 +1974,182 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize HTTP server
   const httpServer = createServer(app);
 
+  // Pre-onboarding filtration routes
+  app.get('/api/neighborhoods/serviced', async (req, res) => {
+    try {
+      const neighborhoods = await storage.getServicedNeighborhoods();
+      res.json({ neighborhoods });
+    } catch (error) {
+      console.error('Error fetching serviced neighborhoods:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.post('/api/pre-onboarding/validate', async (req, res) => {
+    try {
+      const { email, neighborhood, invitationCode } = req.body;
+
+      // Validate invitation code
+      const validCode = await storage.validateInvitationCode(invitationCode);
+      if (!validCode) {
+        // Add to waitlist with rejection reason
+        await storage.addToWaitlist({
+          email,
+          neighborhood,
+          rejectionReason: 'invalid_code'
+        });
+        
+        return res.json({
+          success: false,
+          message: "Sorry, the invitation code you entered is not valid or has reached its usage limit. We've added you to our waitlist and will contact you when we have more capacity."
+        });
+      }
+
+      // Check if neighborhood is serviced
+      const servicedNeighborhoods = await storage.getServicedNeighborhoods();
+      const isServicedArea = servicedNeighborhoods.some(n => n.name === neighborhood);
+      
+      if (!isServicedArea) {
+        // Add to waitlist with rejection reason
+        await storage.addToWaitlist({
+          email,
+          neighborhood,
+          rejectionReason: 'area_not_serviced'
+        });
+        
+        return res.json({
+          success: false,
+          message: "We're not currently serving your neighborhood. We've added you to our waitlist and will reach out as soon as we expand to your area."
+        });
+      }
+
+      // Both validations passed - increment code usage
+      await storage.incrementCodeUsage(invitationCode);
+
+      res.json({
+        success: true,
+        message: "Welcome! You're eligible for Wagba."
+      });
+    } catch (error) {
+      console.error('Error validating pre-onboarding:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Admin routes for managing neighborhoods and invitation codes
+  app.get('/api/admin/neighborhoods', adminMiddleware, async (req, res) => {
+    try {
+      const neighborhoods = await storage.getAllNeighborhoods();
+      res.json({ neighborhoods });
+    } catch (error) {
+      console.error('Error fetching neighborhoods:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.post('/api/admin/neighborhoods', adminMiddleware, async (req, res) => {
+    try {
+      const { name, isServiced } = req.body;
+      const neighborhood = await storage.createNeighborhood({ name, isServiced });
+      res.status(201).json(neighborhood);
+    } catch (error) {
+      console.error('Error creating neighborhood:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.patch('/api/admin/neighborhoods/:id', adminMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const neighborhoodData = req.body;
+      const neighborhood = await storage.updateNeighborhood(id, neighborhoodData);
+      res.json(neighborhood);
+    } catch (error) {
+      console.error('Error updating neighborhood:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.delete('/api/admin/neighborhoods/:id', adminMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteNeighborhood(id);
+      res.json({ message: 'Neighborhood deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting neighborhood:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.get('/api/admin/invitation-codes', adminMiddleware, async (req, res) => {
+    try {
+      const codes = await storage.getAllInvitationCodes();
+      res.json({ codes });
+    } catch (error) {
+      console.error('Error fetching invitation codes:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.post('/api/admin/invitation-codes', adminMiddleware, async (req, res) => {
+    try {
+      const { code, isActive, maxUses, description } = req.body;
+      const invitationCode = await storage.createInvitationCode({
+        code: code.toUpperCase(),
+        isActive,
+        maxUses,
+        description
+      });
+      res.status(201).json(invitationCode);
+    } catch (error) {
+      console.error('Error creating invitation code:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.patch('/api/admin/invitation-codes/:id', adminMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const codeData = req.body;
+      const invitationCode = await storage.updateInvitationCode(id, codeData);
+      res.json(invitationCode);
+    } catch (error) {
+      console.error('Error updating invitation code:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.delete('/api/admin/invitation-codes/:id', adminMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteInvitationCode(id);
+      res.json({ message: 'Invitation code deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting invitation code:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.get('/api/admin/waitlist', adminMiddleware, async (req, res) => {
+    try {
+      const waitlistEntries = await storage.getAllWaitlistEntries();
+      res.json({ waitlistEntries });
+    } catch (error) {
+      console.error('Error fetching waitlist:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.delete('/api/admin/waitlist/:id', adminMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.removeFromWaitlist(id);
+      res.json({ message: 'Waitlist entry removed successfully' });
+    } catch (error) {
+      console.error('Error removing waitlist entry:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   return httpServer;
 }

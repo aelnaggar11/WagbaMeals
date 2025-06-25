@@ -704,10 +704,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async incrementCodeUsage(code: string): Promise<InvitationCode> {
+    // First get the current code
+    const [currentCode] = await db
+      .select()
+      .from(invitationCodes)
+      .where(eq(invitationCodes.code, code));
+    
+    if (!currentCode) {
+      throw new Error("Invitation code not found");
+    }
+
+    // Increment the usage count
     const [updatedCode] = await db
       .update(invitationCodes)
       .set({
-        currentUses: db.select().from(invitationCodes).where(eq(invitationCodes.code, code)).then(r => r[0]?.currentUses || 0) + 1
+        currentUses: currentCode.currentUses + 1
       })
       .where(eq(invitationCodes.code, code))
       .returning();

@@ -278,6 +278,13 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* Pre-onboarding Modal */}
+      <PreOnboardingModal
+        isOpen={showPreOnboardingModal}
+        onClose={() => setShowPreOnboardingModal(false)}
+        onSuccess={handlePreOnboardingSuccess}
+      />
     </>
   );
 };

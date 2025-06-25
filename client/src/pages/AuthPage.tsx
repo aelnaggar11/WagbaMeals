@@ -30,12 +30,23 @@ const AuthPage = () => {
     name: ""
   });
   
-  // Get the return URL from query params if available
+  // Get the return URL from query params and pre-populate email if available
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const returnToPath = params.get('returnTo');
     if (returnToPath) {
       setReturnTo(returnToPath);
+    }
+
+    // Pre-populate email from pre-onboarding modal
+    const preOnboardingEmail = sessionStorage.getItem('preOnboardingEmail');
+    if (preOnboardingEmail) {
+      setFormData(prev => ({
+        ...prev,
+        email: preOnboardingEmail
+      }));
+      // Clear the stored email after using it
+      sessionStorage.removeItem('preOnboardingEmail');
     }
   }, []);
   
