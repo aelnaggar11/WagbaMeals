@@ -57,7 +57,7 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
           handleSuccess();
         }, 2000);
       } else if (data.redirectToLogin) {
-        // Redirect to login page
+        // Redirect to login page with login tab selected
         window.location.href = '/auth';
       } else {
         setStep("rejected");

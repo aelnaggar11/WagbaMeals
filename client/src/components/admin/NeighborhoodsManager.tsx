@@ -27,11 +27,7 @@ const NeighborhoodsManager = () => {
   // Create neighborhood mutation
   const createMutation = useMutation({
     mutationFn: async (data: { name: string; isServiced: boolean }) => {
-      return await apiRequest('/api/admin/neighborhoods', {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return await apiRequest('POST', '/api/admin/neighborhoods', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/neighborhoods'] });
@@ -53,11 +49,7 @@ const NeighborhoodsManager = () => {
   // Update neighborhood mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: { name: string; isServiced: boolean } }) => {
-      return await apiRequest(`/api/admin/neighborhoods/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return await apiRequest('PATCH', `/api/admin/neighborhoods/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/neighborhoods'] });
@@ -79,9 +71,7 @@ const NeighborhoodsManager = () => {
   // Delete neighborhood mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/admin/neighborhoods/${id}`, {
-        method: 'DELETE',
-      });
+      return await apiRequest('DELETE', `/api/admin/neighborhoods/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/neighborhoods'] });

@@ -123,9 +123,16 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="pricing" className="mt-0">
-            <div className="bg-white rounded-lg border p-6">
-              <h3 className="text-xl font-semibold text-primary mb-4">Pricing Management</h3>
-              <p className="text-gray-600">Pricing management coming soon...</p>
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg border p-6">
+                <h3 className="text-xl font-semibold text-primary mb-4">Pricing Management</h3>
+                <p className="text-gray-600">Pricing management coming soon...</p>
+              </div>
+              
+              <div className="bg-white rounded-lg border p-6">
+                <h3 className="text-xl font-semibold text-primary mb-4">Invitation Codes</h3>
+                <InvitationCodesManager />
+              </div>
             </div>
           </TabsContent>
 
