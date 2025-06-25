@@ -61,8 +61,11 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
         const storedNeighborhood = sessionStorage.getItem('preOnboardingNeighborhood');
         console.log('Verified stored neighborhood:', storedNeighborhood);
         
-        // Auto-redirect after 2 seconds
+        // Auto-redirect after 2 seconds, but preserve sessionStorage
         setTimeout(() => {
+          // Double-check storage before redirect
+          const finalCheck = sessionStorage.getItem('preOnboardingNeighborhood');
+          console.log('Final storage check before redirect:', finalCheck);
           handleSuccess();
         }, 2000);
       } else if (data.redirectToLogin) {
