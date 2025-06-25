@@ -23,6 +23,7 @@ const AuthPage = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [returnTo, setReturnTo] = useState<string | null>(null);
+  const [defaultTab, setDefaultTab] = useState<string>("register");
   const [formData, setFormData] = useState<AuthFormData>({
     password: "",
     confirmPassword: "",
@@ -36,6 +37,12 @@ const AuthPage = () => {
     const returnToPath = params.get('returnTo');
     if (returnToPath) {
       setReturnTo(returnToPath);
+    }
+    
+    // Check for login tab parameter
+    const loginTab = params.get('tab');
+    if (loginTab === 'login') {
+      setDefaultTab('login');
     }
 
     // Pre-populate email from pre-onboarding modal
@@ -340,7 +347,7 @@ const AuthPage = () => {
       {!skipProgress && <ProgressIndicator steps={steps} currentStep={3} />}
       
       <div className="max-w-md mx-auto">
-        <Tabs defaultValue="register" className="w-full">
+        <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className="grid grid-cols-2 mb-6">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="register">Register</TabsTrigger>
