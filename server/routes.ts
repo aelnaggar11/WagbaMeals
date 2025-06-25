@@ -1999,42 +1999,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      let shouldAddToWaitlist = false;
+      let rejectionMessage = "";
+
       // Validate invitation code
       const validCode = await storage.validateInvitationCode(invitationCode);
       if (!validCode) {
-        // Add to waitlist with rejection reason
-        await storage.addToWaitlist({
-          email,
-          neighborhood,
-          rejectionReason: 'invalid_code'
-        });
-        
-        return res.json({
-          success: false,
-          message: "Sorry, the invitation code you entered is not valid or has reached its usage limit. We've added you to our waitlist and will contact you when we have more capacity."
-        });
+        shouldAddToWaitlist = true;
+        rejectionMessage = "Sorry, the invitation code you entered is not valid or has reached its usage limit. We've added you to our waitlist and will contact you when we have more capacity.";
       }
 
       // Check if neighborhood is serviced
-      const servicedNeighborhoods = await storage.getServicedNeighborhoods();
-      const isServicedArea = servicedNeighborhoods.some(n => n.name === neighborhood);
+      const allNeighborhoods = await storage.getAllNeighborhoods();
+      const selectedNeighborhood = allNeighborhoods.find(n => n.name === neighborhood);
       
-      if (!isServicedArea) {
-        // Add to waitlist with rejection reason
+      if (!selectedNeighborhood?.isServiced) {
+        shouldAddToWaitlist = true;
+        rejectionMessage = `Sorry, we don't currently deliver to ${neighborhood}. We've added you to our waitlist and will notify you when we expand service to your area.`;
+      }
+
+      // Add to waitlist if needed
+      if (shouldAddToWaitlist) {
         await storage.addToWaitlist({
           email,
           neighborhood,
-          rejectionReason: 'area_not_serviced'
+          rejectionReason: !validCode ? 'invalid_code' : 'unserviced_area'
         });
-        
+
         return res.json({
           success: false,
-          message: "We're not currently serving your neighborhood. We've added you to our waitlist and will reach out as soon as we expand to your area."
+          message: rejectionMessage
         });
       }
 
-      // Both validations passed - increment code usage
-      await storage.incrementCodeUsage(invitationCode);
+      // Increment code usage for valid submissions
+      if (validCode) {
+        await storage.incrementCodeUsage(invitationCode);
+      }
+
+      // Store neighborhood data for pre-population in registration
+      // This will be retrieved later via sessionStorage in the frontend
 
       res.json({
         success: true,
@@ -2042,6 +2046,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Error validating pre-onboarding:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Public endpoint to get all neighborhoods (for pre-onboarding modal)
+  app.get('/api/neighborhoods', async (req, res) => {
+    try {
+      const neighborhoods = await storage.getAllNeighborhoods();
+      res.json({ neighborhoods });
+    } catch (error) {
+      console.error('Error fetching neighborhoods:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });

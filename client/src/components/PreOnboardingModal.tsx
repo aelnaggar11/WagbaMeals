@@ -51,8 +51,9 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
       console.log('Success handler called with:', data);
       if (data.success) {
         setStep("success");
-        // Store email in sessionStorage for later use
+        // Store email and neighborhood in sessionStorage for later use
         sessionStorage.setItem('preOnboardingEmail', email);
+        sessionStorage.setItem('preOnboardingNeighborhood', neighborhood);
         // Auto-redirect after 2 seconds
         setTimeout(() => {
           handleSuccess();

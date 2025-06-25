@@ -57,15 +57,18 @@ const AuthPage = () => {
       setIsDirectLoginAccess(true);
     }
 
-    // Pre-populate email from pre-onboarding modal
+    // Pre-populate email and neighborhood from pre-onboarding modal
     const preOnboardingEmail = sessionStorage.getItem('preOnboardingEmail');
+    const preOnboardingNeighborhood = sessionStorage.getItem('preOnboardingNeighborhood');
     if (preOnboardingEmail) {
       setFormData(prev => ({
         ...prev,
-        email: preOnboardingEmail
+        email: preOnboardingEmail,
+        neighborhood: preOnboardingNeighborhood || ""
       }));
-      // Clear the stored email after using it
+      // Clear the stored data after using it
       sessionStorage.removeItem('preOnboardingEmail');
+      sessionStorage.removeItem('preOnboardingNeighborhood');
     }
   }, []);
   
