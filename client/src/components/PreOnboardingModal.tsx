@@ -178,27 +178,28 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
 
         {step === "success" && (
           <div className="text-center space-y-4">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+              <Check className="w-8 h-8 text-green-600" />
+            </div>
             <p className="text-gray-600">
-              Great! You're eligible for Wagba. Let's get you set up with your weekly meal delivery.
+              Great! You're eligible for Wagba. Let's get you set up with an account.
             </p>
             <Button onClick={handleSuccess} className="w-full">
-              Continue to Meal Plans
+              Continue to Sign Up
             </Button>
           </div>
         )}
 
         {step === "rejected" && (
           <div className="text-center space-y-4">
-            <XCircle className="h-16 w-16 text-red-500 mx-auto" />
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+              <X className="w-8 h-8 text-red-600" />
+            </div>
             <p className="text-gray-600">
               {rejectionMessage}
             </p>
-            <p className="text-sm text-gray-500">
-              We've saved your information and will contact you as soon as we expand to your area or have more availability.
-            </p>
             <Button onClick={handleRejectionClose} variant="outline" className="w-full">
-              Got it
+              Close
             </Button>
           </div>
         )}
