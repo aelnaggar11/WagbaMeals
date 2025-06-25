@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import MenuManagement from "./MenuManagement";
 import OrdersManagement from "./OrdersManagement";
 import MealsManager from "@/components/admin/MealsManager";
+import NeighborhoodsManager from "@/components/admin/NeighborhoodsManager";
+import InvitationCodesManager from "@/components/admin/InvitationCodesManager";
+import WaitlistManager from "@/components/admin/WaitlistManager";
 
 const Dashboard = () => {
   const [, navigate] = useLocation();
@@ -138,9 +141,21 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="neighborhoods" className="mt-0">
+            <NeighborhoodsManager />
+          </TabsContent>
+
+          <TabsContent value="invitation-codes" className="mt-0">
+            <InvitationCodesManager />
+          </TabsContent>
+
+          <TabsContent value="waitlist" className="mt-0">
+            <WaitlistManager />
+          </TabsContent>
+
+          <TabsContent value="analytics" className="mt-0">
             <div className="bg-white rounded-lg border p-6">
-              <h3 className="text-xl font-semibold text-primary mb-4">Neighborhood Management</h3>
-              <p className="text-gray-600">Neighborhood management coming soon...</p>
+              <h3 className="text-xl font-semibold text-primary mb-4">Analytics</h3>
+              <p className="text-gray-600">Analytics dashboard coming soon...</p>
             </div>
           </TabsContent>
         </Tabs>

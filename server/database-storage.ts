@@ -741,4 +741,50 @@ export class DatabaseStorage implements IStorage {
   async removeFromWaitlist(id: number): Promise<void> {
     await db.delete(waitlist).where(eq(waitlist.id, id));
   }
+
+  // Seed initial data for pre-onboarding system
+  async seedPreOnboardingData(): Promise<void> {
+    try {
+      // Check if we already have neighborhoods
+      const existingNeighborhoods = await this.getAllNeighborhoods();
+      if (existingNeighborhoods.length === 0) {
+        // Add Cairo neighborhoods - some serviced, some not
+        const cairoNeighborhoods = [
+          { name: "Zamalek", isServiced: true },
+          { name: "Maadi", isServiced: true }, 
+          { name: "New Cairo", isServiced: true },
+          { name: "Heliopolis", isServiced: false },
+          { name: "Mohandessin", isServiced: false },
+          { name: "Downtown", isServiced: false },
+          { name: "Dokki", isServiced: false },
+          { name: "Giza", isServiced: false },
+          { name: "Nasr City", isServiced: false },
+          { name: "Rehab", isServiced: false }
+        ];
+
+        for (const neighborhood of cairoNeighborhoods) {
+          await this.createNeighborhood(neighborhood);
+        }
+        console.log('Seeded neighborhoods');
+      }
+
+      // Check if we already have invitation codes
+      const existingCodes = await this.getAllInvitationCodes();
+      if (existingCodes.length === 0) {
+        // Add initial invitation codes
+        const initialCodes = [
+          { code: "WAGBA2025", isActive: true, maxUses: 100, description: "Launch week - General access" },
+          { code: "EARLY50", isActive: true, maxUses: 50, description: "Early adopters batch" },
+          { code: "VIP25", isActive: true, maxUses: 25, description: "VIP launch access" }
+        ];
+
+        for (const code of initialCodes) {
+          await this.createInvitationCode(code);
+        }
+        console.log('Seeded invitation codes');
+      }
+    } catch (error) {
+      console.error('Error seeding pre-onboarding data:', error);
+    }
+  }
 }
