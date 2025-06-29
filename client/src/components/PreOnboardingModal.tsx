@@ -29,6 +29,7 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
   const [step, setStep] = useState<"form" | "success" | "rejected">("form");
   const [rejectionMessage, setRejectionMessage] = useState("");
   const [neighborhoodError, setNeighborhoodError] = useState("");
+  const [emailError, setEmailError] = useState("");
   const { toast } = useToast();
 
   // Fetch all neighborhoods (not just serviced ones)
@@ -53,6 +54,9 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
       
       if (data.success) {
         setStep("success");
+        // Clear any previous errors
+        setEmailError("");
+        
         // Store email and neighborhood in localStorage for persistence across navigation
         localStorage.setItem('preOnboardingEmail', email);
         localStorage.setItem('preOnboardingNeighborhood', neighborhood);
@@ -71,8 +75,8 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
           handleSuccess();
         }, 2000);
       } else if (data.redirectToLogin) {
-        // Redirect to login page with login tab selected and skip progress
-        window.location.href = '/auth?tab=login&skip_progress=true';
+        // Show inline error instead of redirecting
+        setEmailError("This email is already registered. Please use a different email or login with your existing account.");
       } else {
         setStep("rejected");
         setRejectionMessage(data.message);
@@ -131,6 +135,7 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
       setStep("form");
       setRejectionMessage("");
       setNeighborhoodError("");
+      setEmailError("");
     }
   }, [isOpen]);
 
@@ -153,10 +158,18 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  // Clear email error when user starts typing
+                  if (emailError) setEmailError("");
+                }}
                 placeholder="your@email.com"
                 required
+                className={emailError ? "border-red-500" : ""}
               />
+              {emailError && (
+                <p className="text-sm text-red-600 mt-1">{emailError}</p>
+              )}
             </div>
 
             <div className="space-y-2">
