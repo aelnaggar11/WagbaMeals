@@ -88,10 +88,10 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
-      refetchOnWindowFocus: true, // Always refetch on window focus
-      refetchOnMount: true, // Always refetch when component mounts
+      refetchOnWindowFocus: true,
+      refetchOnMount: true,
       staleTime: 0, // Consider all data stale immediately
-      gcTime: 0, // Remove from cache immediately when no longer in use
+      gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
       retry: false,
     },
     mutations: {
@@ -107,4 +107,15 @@ export const resetAuthCache = () => {
   // Force immediate refetch of all auth queries
   queryClient.refetchQueries({ queryKey: ['/api/auth/me'] });
   queryClient.refetchQueries({ queryKey: ['/api/admin/auth/me'] });
+};
+
+// Aggressive cache invalidation utility for immediate UI updates
+export const forceRefreshQuery = (queryKey: any[]) => {
+  queryClient.invalidateQueries({ queryKey });
+  queryClient.refetchQueries({ queryKey });
+  queryClient.removeQueries({ queryKey });
+  // Add a small delay to ensure the refresh happens
+  setTimeout(() => {
+    queryClient.refetchQueries({ queryKey });
+  }, 100);
 };

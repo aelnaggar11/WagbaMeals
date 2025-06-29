@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, forceRefreshQuery } from "@/lib/queryClient";
 import { InvitationCode } from "@shared/schema";
 import { Plus, Trash2, Edit, Save, X, Copy, Check } from "lucide-react";
 
@@ -41,7 +41,7 @@ const InvitationCodesManager = () => {
       return await apiRequest('POST', '/api/admin/invitation-codes', data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/invitation-codes'] });
+      forceRefreshQuery(['/api/admin/invitation-codes']);
       setNewCode({ code: "", isActive: true, maxUses: null, description: "" });
       toast({
         title: "Success",
@@ -66,7 +66,7 @@ const InvitationCodesManager = () => {
       return await apiRequest('PATCH', `/api/admin/invitation-codes/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/invitation-codes'] });
+      forceRefreshQuery(['/api/admin/invitation-codes']);
       setEditingId(null);
       toast({
         title: "Success",
@@ -88,7 +88,7 @@ const InvitationCodesManager = () => {
       return await apiRequest('DELETE', `/api/admin/invitation-codes/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/invitation-codes'] });
+      forceRefreshQuery(['/api/admin/invitation-codes']);
       toast({
         title: "Success",
         description: "Invitation code deleted successfully.",
