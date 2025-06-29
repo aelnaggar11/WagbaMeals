@@ -2125,29 +2125,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/admin/invitation-codes', adminMiddleware, async (req, res) => {
     try {
+      console.log('Creating invitation code with data:', req.body);
       const { code, isActive, maxUses, description } = req.body;
+      
+      if (!code || code.trim() === '') {
+        return res.status(400).json({ message: 'Code is required' });
+      }
+      
       const invitationCode = await storage.createInvitationCode({
         code: code.toUpperCase(),
-        isActive,
-        maxUses,
-        description
+        isActive: isActive !== undefined ? isActive : true,
+        maxUses: maxUses || null,
+        description: description || ""
       });
+      
+      console.log('Successfully created invitation code:', invitationCode);
       res.status(201).json(invitationCode);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating invitation code:', error);
-      res.status(500).json({ message: 'Server error' });
+      console.error('Error details:', error?.message);
+      console.error('Error stack:', error?.stack);
+      res.status(500).json({ message: `Server error: ${error?.message || 'Unknown error'}` });
     }
   });
 
   app.patch('/api/admin/invitation-codes/:id', adminMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      console.log('Updating invitation code with ID:', id, 'Data:', req.body);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid ID' });
+      }
+      
       const codeData = req.body;
       const invitationCode = await storage.updateInvitationCode(id, codeData);
+      
+      console.log('Successfully updated invitation code:', invitationCode);
       res.json(invitationCode);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating invitation code:', error);
-      res.status(500).json({ message: 'Server error' });
+      console.error('Error details:', error?.message);
+      console.error('Error stack:', error?.stack);
+      res.status(500).json({ message: `Server error: ${error?.message || 'Unknown error'}` });
     }
   });
 
