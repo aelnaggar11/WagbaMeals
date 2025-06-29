@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { and, eq, inArray, or } from "drizzle-orm";
 import * as schema from "@shared/schema";
-import { users, admins, meals, weeks, weekMeals, orders, orderItems, userWeekStatuses, neighborhoods, invitationCodes, waitlist } from "@shared/schema";
+import { users, admins, meals, weeks, weekMeals, orders, orderItems, userWeekStatuses, neighborhoods, invitationCodes, waitlist, pricingConfigs } from "@shared/schema";
 import type { 
   User, InsertUser, 
   Admin, InsertAdmin,
@@ -14,6 +14,7 @@ import type {
   Neighborhood, InsertNeighborhood,
   InvitationCode, InsertInvitationCode,
   WaitlistEntry, InsertWaitlistEntry,
+  PricingConfig, InsertPricingConfig,
   IStorage 
 } from "@shared/schema";
 
@@ -786,5 +787,54 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error seeding pre-onboarding data:', error);
     }
+  }
+
+  // Pricing Configuration methods
+  async getAllPricingConfigs(): Promise<PricingConfig[]> {
+    return await db.select().from(pricingConfigs);
+  }
+
+  async getPricingConfigsByType(configType: string): Promise<PricingConfig[]> {
+    return await db
+      .select()
+      .from(pricingConfigs)
+      .where(eq(pricingConfigs.configType, configType));
+  }
+
+  async getPricingConfig(configType: string, configKey: string): Promise<PricingConfig | undefined> {
+    const [config] = await db
+      .select()
+      .from(pricingConfigs)
+      .where(and(
+        eq(pricingConfigs.configType, configType),
+        eq(pricingConfigs.configKey, configKey)
+      ));
+    return config;
+  }
+
+  async createPricingConfig(config: InsertPricingConfig): Promise<PricingConfig> {
+    const [newConfig] = await db
+      .insert(pricingConfigs)
+      .values(config)
+      .returning();
+    return newConfig;
+  }
+
+  async updatePricingConfig(id: number, configData: Partial<PricingConfig>): Promise<PricingConfig> {
+    const now = new Date();
+    const [updatedConfig] = await db
+      .update(pricingConfigs)
+      .set({ ...configData, updatedAt: now })
+      .where(eq(pricingConfigs.id, id))
+      .returning();
+    
+    if (!updatedConfig) {
+      throw new Error(`Pricing config not found: ${id}`);
+    }
+    return updatedConfig;
+  }
+
+  async deletePricingConfig(id: number): Promise<void> {
+    await db.delete(pricingConfigs).where(eq(pricingConfigs.id, id));
   }
 }

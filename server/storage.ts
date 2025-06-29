@@ -6,7 +6,8 @@ import {
   WeekMeal, InsertWeekMeal,
   Order, InsertOrder,
   OrderItemFull, InsertOrderItem,
-  UserWeekStatus, InsertUserWeekStatus
+  UserWeekStatus, InsertUserWeekStatus,
+  PricingConfig, InsertPricingConfig
 } from "@shared/schema";
 
 export interface IStorage {
@@ -53,6 +54,14 @@ export interface IStorage {
   addOrderItem(orderItem: InsertOrderItem): Promise<OrderItemFull>;
   updateOrderItem(itemId: number, updates: Partial<OrderItemFull>): Promise<OrderItemFull>;
   removeOrderItem(itemId: number): Promise<void>;
+
+  // Pricing Configuration methods
+  getAllPricingConfigs(): Promise<PricingConfig[]>;
+  getPricingConfigsByType(configType: string): Promise<PricingConfig[]>;
+  getPricingConfig(configType: string, configKey: string): Promise<PricingConfig | undefined>;
+  createPricingConfig(config: InsertPricingConfig): Promise<PricingConfig>;
+  updatePricingConfig(id: number, configData: Partial<PricingConfig>): Promise<PricingConfig>;
+  deletePricingConfig(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
