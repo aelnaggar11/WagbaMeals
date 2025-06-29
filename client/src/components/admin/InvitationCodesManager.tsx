@@ -44,17 +44,17 @@ const InvitationCodesManager = () => {
       console.log('=== CREATE SUCCESS ===');
       console.log('New code response:', newCode);
       
+      // Get current data from the component state as fallback
+      const currentCodes = codes || [];
+      
       // Immediately update the cache with optimistic data
       queryClient.setQueryData(['/api/admin/invitation-codes'], (old: any) => {
         console.log('Current cache data:', old);
-        if (!old) return { codes: [newCode] };
-        const updated = { codes: [...old.codes, newCode] };
+        const existingCodes = old?.codes || currentCodes;
+        const updated = { codes: [...existingCodes, newCode] };
         console.log('Updated cache data:', updated);
         return updated;
       });
-      
-      // Then invalidate to get fresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/invitation-codes'] });
       
       setNewCode({ code: "", isActive: true, maxUses: null, description: "" });
       toast({
@@ -117,19 +117,19 @@ const InvitationCodesManager = () => {
       console.log('=== DELETE SUCCESS ===');
       console.log('Deleted ID:', deletedId);
       
+      // Get current data from the component state as fallback
+      const currentCodes = codes || [];
+      
       // Immediately update the cache by removing the deleted item
       queryClient.setQueryData(['/api/admin/invitation-codes'], (old: any) => {
         console.log('Current cache data:', old);
-        if (!old) return { codes: [] };
+        const existingCodes = old?.codes || currentCodes;
         const updated = {
-          codes: old.codes.filter((code: any) => code.id !== deletedId)
+          codes: existingCodes.filter((code: any) => code.id !== deletedId)
         };
         console.log('Updated cache data:', updated);
         return updated;
       });
-      
-      // Then invalidate to get fresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/invitation-codes'] });
       
       toast({
         title: "Success",
