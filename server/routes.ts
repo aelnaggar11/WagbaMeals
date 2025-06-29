@@ -148,10 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Enhanced admin middleware with token fallback
   const adminMiddleware = async (req: Request, res: Response, next: Function) => {
-    console.log('=== ADMIN MIDDLEWARE DEBUG ===');
-    console.log('Session adminId:', req.session.adminId);
-    console.log('Cookie token:', req.cookies.wagba_admin_token);
-    console.log('Authorization header:', req.headers.authorization);
+
     
     // Check session first
     let adminId = req.session.adminId;
@@ -162,12 +159,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const headerToken = req.headers.authorization?.replace('Bearer ', '');
       const token = headerToken || cookieToken;
       
-      console.log('Using token for auth:', token);
-      
       if (token) {
         try {
           const decoded = Buffer.from(token, 'base64').toString();
-          console.log('Decoded token:', decoded);
           const [type, tokenAdminId, timestamp, email] = decoded.split(':');
           
           if (type === 'admin' && tokenAdminId && email) {
@@ -176,7 +170,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               adminId = parseInt(tokenAdminId);
               // Set session for future requests
               req.session.adminId = adminId;
-              console.log('Token auth successful for admin:', adminId);
             }
           }
         } catch (error) {
@@ -2134,7 +2127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/admin/invitation-codes', adminMiddleware, async (req, res) => {
     try {
-      console.log('Creating invitation code with data:', req.body);
+
       const { code, isActive, maxUses, description } = req.body;
       
       if (!code || code.trim() === '') {
@@ -2148,7 +2141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: description || ""
       });
       
-      console.log('Successfully created invitation code:', invitationCode);
+
       res.status(201).json(invitationCode);
     } catch (error: any) {
       console.error('Error creating invitation code:', error);
@@ -2161,7 +2154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/admin/invitation-codes/:id', adminMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      console.log('Updating invitation code with ID:', id, 'Data:', req.body);
+
       
       if (isNaN(id)) {
         return res.status(400).json({ message: 'Invalid ID' });
@@ -2170,7 +2163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const codeData = req.body;
       const invitationCode = await storage.updateInvitationCode(id, codeData);
       
-      console.log('Successfully updated invitation code:', invitationCode);
+
       res.json(invitationCode);
     } catch (error: any) {
       console.error('Error updating invitation code:', error);

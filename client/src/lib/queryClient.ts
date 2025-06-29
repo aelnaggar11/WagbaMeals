@@ -20,20 +20,9 @@ export async function apiRequest(
     ? localStorage.getItem('wagba_admin_token')
     : localStorage.getItem('wagba_auth_token');
     
-  console.log('=== API REQUEST DEBUG ===');
-  console.log('URL:', url);
-  console.log('Method:', method);
-  console.log('Is admin request:', isAdminRequest);
-  console.log('Token from localStorage:', token);
-  console.log('Headers before request:', headers);
-    
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-    console.log('Added Authorization header:', headers['Authorization']);
   }
-
-  console.log('Final headers:', headers);
-  console.log('Request body:', data);
 
   const res = await fetch(url, {
     method,
@@ -42,13 +31,8 @@ export async function apiRequest(
     credentials: "include",
   });
 
-  console.log('Response status:', res.status);
-  console.log('Response headers:', Object.fromEntries(res.headers.entries()));
-
   await throwIfResNotOk(res);
-  const result = await res.json();
-  console.log('Response data:', result);
-  return result;
+  return await res.json();
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
