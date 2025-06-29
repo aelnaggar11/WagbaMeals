@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { PricingService } from "./pricingService";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -10,29 +11,14 @@ export function formatCurrency(amount: number): string {
 }
 
 export function calculateDiscount(mealCount: number, basePrice: number): number {
-  // Apply quantity-based discounts
-  const pricePerMeal = getPriceForMealCount(mealCount);
+  // Apply quantity-based discounts using dynamic pricing
+  const pricePerMeal = PricingService.getPriceForMealCountSync(mealCount);
   return (basePrice - pricePerMeal) * mealCount;
 }
 
 export function getPriceForMealCount(mealCount: number): number {
-  // Pricing tiers based on meal count - matches onboarding system
-  const pricing: { [key: number]: number } = {
-    4: 249,
-    5: 239,
-    6: 239,
-    7: 219,
-    8: 219,
-    9: 219,
-    10: 199,
-    11: 199,
-    12: 199,
-    13: 199,
-    14: 199,
-    15: 199
-  };
-  
-  return pricing[mealCount] || 249; // fallback to base price
+  // Use dynamic pricing service with fallback
+  return PricingService.getPriceForMealCountSync(mealCount);
 }
 
 export function formatDate(date: Date | string): string {

@@ -12,6 +12,7 @@ import NeighborhoodsManager from "@/components/admin/NeighborhoodsManager";
 import InvitationCodesManager from "@/components/admin/InvitationCodesManager";
 import WaitlistManager from "@/components/admin/WaitlistManager";
 import UsersManagement from "@/components/admin/UsersManagement";
+import PricingManager from "@/components/admin/PricingManager";
 
 const Dashboard = () => {
   const [, navigate] = useLocation();
@@ -126,8 +127,7 @@ const Dashboard = () => {
           <TabsContent value="pricing" className="mt-0">
             <div className="space-y-6">
               <div className="bg-white rounded-lg border p-6">
-                <h3 className="text-xl font-semibold text-primary mb-4">Pricing Management</h3>
-                <p className="text-gray-600">Pricing management coming soon...</p>
+                <PricingManager />
               </div>
               
               <div className="bg-white rounded-lg border p-6">

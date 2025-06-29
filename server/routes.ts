@@ -2216,5 +2216,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin pricing configuration routes
+  app.get('/api/admin/pricing', adminMiddleware, async (req, res) => {
+    try {
+      const pricingConfigs = await storage.getAllPricingConfigs();
+      res.json({ pricingConfigs });
+    } catch (error) {
+      console.error('Error fetching pricing configs:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.get('/api/admin/pricing/:type', adminMiddleware, async (req, res) => {
+    try {
+      const configType = req.params.type;
+      const pricingConfigs = await storage.getPricingConfigsByType(configType);
+      res.json({ pricingConfigs });
+    } catch (error) {
+      console.error('Error fetching pricing configs by type:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.post('/api/admin/pricing', adminMiddleware, async (req, res) => {
+    try {
+      const { configType, configKey, price, description, isActive } = req.body;
+      const newConfig = await storage.createPricingConfig({
+        configType,
+        configKey,
+        price,
+        description,
+        isActive
+      });
+      res.status(201).json(newConfig);
+    } catch (error) {
+      console.error('Error creating pricing config:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.patch('/api/admin/pricing/:id', adminMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const configData = req.body;
+      const updatedConfig = await storage.updatePricingConfig(id, configData);
+      res.json(updatedConfig);
+    } catch (error) {
+      console.error('Error updating pricing config:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.delete('/api/admin/pricing/:id', adminMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deletePricingConfig(id);
+      res.json({ message: 'Pricing config deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting pricing config:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Public endpoint to get current pricing configurations
+  app.get('/api/pricing', async (req, res) => {
+    try {
+      const pricingConfigs = await storage.getAllPricingConfigs();
+      const activePricing = pricingConfigs.filter(config => config.isActive);
+      res.json({ pricingConfigs: activePricing });
+    } catch (error) {
+      console.error('Error fetching pricing:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.get('/api/pricing/:type', async (req, res) => {
+    try {
+      const configType = req.params.type;
+      const pricingConfigs = await storage.getPricingConfigsByType(configType);
+      const activePricing = pricingConfigs.filter(config => config.isActive);
+      res.json({ pricingConfigs: activePricing });
+    } catch (error) {
+      console.error('Error fetching pricing by type:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   return httpServer;
 }
