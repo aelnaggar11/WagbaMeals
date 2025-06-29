@@ -1850,11 +1850,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Always update user address and phone from checkout
       const user = await storage.getUser(req.session.userId!);
       if (user) {
+        // Include delivery notes in the address object for user profile
+        const addressWithNotes = {
+          ...address,
+          deliveryNotes: deliveryNotes || ""
+        };
+        
         await storage.updateUser(req.session.userId!, {
-          address: JSON.stringify(address),
+          address: JSON.stringify(addressWithNotes),
           phone: address.phone
         });
-        console.log('Updated user address:', JSON.stringify(address));
+        console.log('Updated user address with delivery notes:', JSON.stringify(addressWithNotes));
       }
 
       res.json(updatedOrder);
