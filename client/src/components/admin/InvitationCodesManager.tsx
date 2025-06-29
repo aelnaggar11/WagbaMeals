@@ -40,8 +40,8 @@ const InvitationCodesManager = () => {
     mutationFn: async (data: { code: string; isActive: boolean; maxUses: number | null; description: string }) => {
       return await apiRequest('POST', '/api/admin/invitation-codes', data);
     },
-    onSuccess: () => {
-      forceRefreshQuery(['/api/admin/invitation-codes']);
+    onSuccess: async () => {
+      await forceRefreshQuery(['/api/admin/invitation-codes']);
       setNewCode({ code: "", isActive: true, maxUses: null, description: "" });
       toast({
         title: "Success",
@@ -65,8 +65,8 @@ const InvitationCodesManager = () => {
     }) => {
       return await apiRequest('PATCH', `/api/admin/invitation-codes/${id}`, data);
     },
-    onSuccess: () => {
-      forceRefreshQuery(['/api/admin/invitation-codes']);
+    onSuccess: async () => {
+      await forceRefreshQuery(['/api/admin/invitation-codes']);
       setEditingId(null);
       toast({
         title: "Success",
@@ -87,8 +87,8 @@ const InvitationCodesManager = () => {
     mutationFn: async (id: number) => {
       return await apiRequest('DELETE', `/api/admin/invitation-codes/${id}`);
     },
-    onSuccess: () => {
-      forceRefreshQuery(['/api/admin/invitation-codes']);
+    onSuccess: async () => {
+      await forceRefreshQuery(['/api/admin/invitation-codes']);
       toast({
         title: "Success",
         description: "Invitation code deleted successfully.",

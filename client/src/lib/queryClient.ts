@@ -94,12 +94,27 @@ export const resetAuthCache = () => {
 };
 
 // Aggressive cache invalidation utility for immediate UI updates
-export const forceRefreshQuery = (queryKey: any[]) => {
-  queryClient.invalidateQueries({ queryKey });
-  queryClient.refetchQueries({ queryKey });
+export const forceRefreshQuery = async (queryKey: any[]) => {
+  console.log('=== FORCE REFRESH DEBUG ===');
+  console.log('Query key:', queryKey);
+  
+  // Step 1: Remove existing data from cache
   queryClient.removeQueries({ queryKey });
-  // Add a small delay to ensure the refresh happens
-  setTimeout(() => {
-    queryClient.refetchQueries({ queryKey });
-  }, 100);
+  console.log('Removed cached data');
+  
+  // Step 2: Invalidate queries to mark them as stale
+  await queryClient.invalidateQueries({ queryKey });
+  console.log('Invalidated queries');
+  
+  // Step 3: Force immediate refetch
+  const result = await queryClient.refetchQueries({ queryKey });
+  console.log('Refetch result:', result);
+  
+  // Step 4: Additional refetch with delay to ensure it works
+  setTimeout(async () => {
+    console.log('Delayed refetch triggered');
+    await queryClient.refetchQueries({ queryKey });
+  }, 50);
+  
+  return result;
 };
