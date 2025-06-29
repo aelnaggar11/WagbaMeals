@@ -40,7 +40,7 @@ const MealsManager = () => {
   });
 
   // Fetch all meals
-  const { data: mealsData, isLoading } = useQuery<{ meals: Meal[] }>({
+  const { data: mealsData, isLoading, refetch } = useQuery<{ meals: Meal[] }>({
     queryKey: ['/api/meals'],
     queryFn: async () => {
       const response = await fetch('/api/meals');
@@ -61,8 +61,7 @@ const MealsManager = () => {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/meals'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/meals'] });
+      refetch();
       setIsDialogOpen(false);
       resetForm();
       toast({
@@ -91,8 +90,7 @@ const MealsManager = () => {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/meals'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/meals'] });
+      refetch();
       setIsDialogOpen(false);
       setEditingMeal(null);
       resetForm();
@@ -120,8 +118,7 @@ const MealsManager = () => {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/meals'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/meals'] });
+      refetch();
       toast({
         title: "Success",
         description: "Meal deleted successfully!"

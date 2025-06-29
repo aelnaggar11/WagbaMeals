@@ -18,7 +18,7 @@ const NeighborhoodsManager = () => {
   const { toast } = useToast();
 
   // Fetch neighborhoods
-  const { data: neighborhoodsData, isLoading } = useQuery<{ neighborhoods: Neighborhood[] }>({
+  const { data: neighborhoodsData, isLoading, refetch } = useQuery<{ neighborhoods: Neighborhood[] }>({
     queryKey: ['/api/admin/neighborhoods'],
   });
 
@@ -30,7 +30,7 @@ const NeighborhoodsManager = () => {
       return await apiRequest('POST', '/api/admin/neighborhoods', data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/neighborhoods'] });
+      refetch();
       setNewNeighborhood({ name: "", isServiced: false });
       toast({
         title: "Success",
@@ -52,7 +52,7 @@ const NeighborhoodsManager = () => {
       return await apiRequest('PATCH', `/api/admin/neighborhoods/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/neighborhoods'] });
+      refetch();
       setEditingId(null);
       toast({
         title: "Success",
@@ -74,7 +74,7 @@ const NeighborhoodsManager = () => {
       return await apiRequest('DELETE', `/api/admin/neighborhoods/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/neighborhoods'] });
+      refetch();
       toast({
         title: "Success",
         description: "Neighborhood deleted successfully.",
