@@ -216,8 +216,8 @@ const AccountPage = () => {
         }
       }
       
-      // Get neighborhood from pre-onboarding if address doesn't have it
-      const preOnboardingNeighborhood = sessionStorage.getItem('preOnboardingNeighborhood');
+      // Get neighborhood from localStorage (not sessionStorage) for consistency
+      const preOnboardingNeighborhood = localStorage.getItem('preOnboardingNeighborhood');
       const neighborhoodValue = (addressData as any).area || preOnboardingNeighborhood || "";
       
       const newFormData = {
@@ -225,15 +225,22 @@ const AccountPage = () => {
         email: profileData.email || "",
         phone: profileData.phone || "",
         street: (addressData as any).street || "",
-        building: "",
-        apartment: "",
+        building: (addressData as any).building || "",
+        apartment: (addressData as any).apartment || "",
         area: neighborhoodValue,
-        landmark: "",
+        landmark: (addressData as any).landmark || "",
         deliveryNotes: (addressData as any).deliveryNotes || ""
       };
       
       console.log('Setting form data:', newFormData);
+      
+      // Force update by setting form data directly without checking previous state
       setFormData(newFormData);
+      
+      // Force a re-render by triggering state change
+      setTimeout(() => {
+        setFormData(prev => ({ ...prev, ...newFormData }));
+      }, 0);
     }
   }, [profile]);
 
@@ -344,7 +351,7 @@ const AccountPage = () => {
   // Use local state if available, otherwise fall back to server data
   const displayUpcomingMeals = localUpcomingMeals || upcomingMealsData;
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,

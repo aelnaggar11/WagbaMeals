@@ -44,7 +44,8 @@ export const getQueryFn: <T>(options: {
     const headers: Record<string, string> = {};
     
     // Add token header as backup authentication
-    const isAdminRequest = queryKey[0].toString().includes('/admin/');
+    const queryKeyStr = queryKey[0] as string;
+    const isAdminRequest = queryKeyStr.includes('/admin/');
     const token = isAdminRequest 
       ? localStorage.getItem('wagba_admin_token')
       : localStorage.getItem('wagba_auth_token');
@@ -71,16 +72,10 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
-      refetchOnWindowFocus: (query) => {
-        // Always refetch auth queries on window focus
-        const isAuthQuery = query.queryKey[0]?.toString().includes('/auth/');
-        return isAuthQuery ? true : false;
-      },
-      staleTime: (query) => {
-        // Auth queries should always be fresh
-        const isAuthQuery = query.queryKey[0]?.toString().includes('/auth/');
-        return isAuthQuery ? 0 : Infinity;
-      },
+      refetchOnWindowFocus: true, // Always refetch on window focus
+      refetchOnMount: true, // Always refetch when component mounts
+      staleTime: 0, // Consider all data stale immediately
+      gcTime: 0, // Remove from cache immediately when no longer in use
       retry: false,
     },
     mutations: {
