@@ -40,8 +40,16 @@ const InvitationCodesManager = () => {
     mutationFn: async (data: { code: string; isActive: boolean; maxUses: number | null; description: string }) => {
       return await apiRequest('POST', '/api/admin/invitation-codes', data);
     },
-    onSuccess: async () => {
-      await forceRefreshQuery(['/api/admin/invitation-codes']);
+    onSuccess: (newCode) => {
+      // Immediately update the cache with optimistic data
+      queryClient.setQueryData(['/api/admin/invitation-codes'], (old: any) => {
+        if (!old) return { codes: [newCode] };
+        return { codes: [...old.codes, newCode] };
+      });
+      
+      // Then invalidate to get fresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/invitation-codes'] });
+      
       setNewCode({ code: "", isActive: true, maxUses: null, description: "" });
       toast({
         title: "Success",
@@ -65,8 +73,20 @@ const InvitationCodesManager = () => {
     }) => {
       return await apiRequest('PATCH', `/api/admin/invitation-codes/${id}`, data);
     },
-    onSuccess: async () => {
-      await forceRefreshQuery(['/api/admin/invitation-codes']);
+    onSuccess: (updatedCode) => {
+      // Immediately update the cache with optimistic data
+      queryClient.setQueryData(['/api/admin/invitation-codes'], (old: any) => {
+        if (!old) return { codes: [updatedCode] };
+        return {
+          codes: old.codes.map((code: any) => 
+            code.id === updatedCode.id ? updatedCode : code
+          )
+        };
+      });
+      
+      // Then invalidate to get fresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/invitation-codes'] });
+      
       setEditingId(null);
       toast({
         title: "Success",
@@ -87,8 +107,18 @@ const InvitationCodesManager = () => {
     mutationFn: async (id: number) => {
       return await apiRequest('DELETE', `/api/admin/invitation-codes/${id}`);
     },
-    onSuccess: async () => {
-      await forceRefreshQuery(['/api/admin/invitation-codes']);
+    onSuccess: (_, deletedId) => {
+      // Immediately update the cache by removing the deleted item
+      queryClient.setQueryData(['/api/admin/invitation-codes'], (old: any) => {
+        if (!old) return { codes: [] };
+        return {
+          codes: old.codes.filter((code: any) => code.id !== deletedId)
+        };
+      });
+      
+      // Then invalidate to get fresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/invitation-codes'] });
+      
       toast({
         title: "Success",
         description: "Invitation code deleted successfully.",

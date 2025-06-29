@@ -98,23 +98,41 @@ export const forceRefreshQuery = async (queryKey: any[]) => {
   console.log('=== FORCE REFRESH DEBUG ===');
   console.log('Query key:', queryKey);
   
-  // Step 1: Remove existing data from cache
+  // Step 1: Set new data to force immediate update
+  queryClient.setQueryData(queryKey, null);
+  console.log('Set query data to null');
+  
+  // Step 2: Remove existing data from cache completely
   queryClient.removeQueries({ queryKey });
   console.log('Removed cached data');
   
-  // Step 2: Invalidate queries to mark them as stale
+  // Step 3: Invalidate to mark as stale
   await queryClient.invalidateQueries({ queryKey });
   console.log('Invalidated queries');
   
-  // Step 3: Force immediate refetch
-  const result = await queryClient.refetchQueries({ queryKey });
-  console.log('Refetch result:', result);
-  
-  // Step 4: Additional refetch with delay to ensure it works
-  setTimeout(async () => {
-    console.log('Delayed refetch triggered');
-    await queryClient.refetchQueries({ queryKey });
-  }, 50);
-  
-  return result;
+  // Step 4: Force immediate refetch with fetchActiveQueries for mounted components
+  try {
+    const result = await queryClient.refetchQueries({ 
+      queryKey,
+      type: 'active' // Only refetch active/mounted queries
+    });
+    console.log('Active refetch result:', result);
+    
+    // Step 5: Fallback - try fetching the data directly
+    const fallbackResult = await queryClient.fetchQuery({
+      queryKey,
+      staleTime: 0
+    });
+    console.log('Fallback fetch result:', fallbackResult);
+    
+    return fallbackResult;
+  } catch (error) {
+    console.error('Refetch error:', error);
+    
+    // Final fallback - manual data fetch
+    setTimeout(async () => {
+      console.log('Final fallback refetch triggered');
+      await queryClient.invalidateQueries({ queryKey });
+    }, 100);
+  }
 };
