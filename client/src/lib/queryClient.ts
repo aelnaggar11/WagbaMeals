@@ -93,46 +93,9 @@ export const resetAuthCache = () => {
   queryClient.refetchQueries({ queryKey: ['/api/admin/auth/me'] });
 };
 
-// Aggressive cache invalidation utility for immediate UI updates
+// Simple cache refresh utility - deprecated in favor of direct refetch() calls
+// Use refetch() directly from useQuery hooks instead of this function
 export const forceRefreshQuery = async (queryKey: any[]) => {
-  console.log('=== FORCE REFRESH DEBUG ===');
-  console.log('Query key:', queryKey);
-  
-  // Step 1: Set new data to force immediate update
-  queryClient.setQueryData(queryKey, null);
-  console.log('Set query data to null');
-  
-  // Step 2: Remove existing data from cache completely
-  queryClient.removeQueries({ queryKey });
-  console.log('Removed cached data');
-  
-  // Step 3: Invalidate to mark as stale
+  console.warn('forceRefreshQuery is deprecated. Use refetch() from useQuery hook instead.');
   await queryClient.invalidateQueries({ queryKey });
-  console.log('Invalidated queries');
-  
-  // Step 4: Force immediate refetch with fetchActiveQueries for mounted components
-  try {
-    const result = await queryClient.refetchQueries({ 
-      queryKey,
-      type: 'active' // Only refetch active/mounted queries
-    });
-    console.log('Active refetch result:', result);
-    
-    // Step 5: Fallback - try fetching the data directly
-    const fallbackResult = await queryClient.fetchQuery({
-      queryKey,
-      staleTime: 0
-    });
-    console.log('Fallback fetch result:', fallbackResult);
-    
-    return fallbackResult;
-  } catch (error) {
-    console.error('Refetch error:', error);
-    
-    // Final fallback - manual data fetch
-    setTimeout(async () => {
-      console.log('Final fallback refetch triggered');
-      await queryClient.invalidateQueries({ queryKey });
-    }, 100);
-  }
 };

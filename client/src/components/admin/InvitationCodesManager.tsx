@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient, forceRefreshQuery } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { InvitationCode } from "@shared/schema";
 import { Plus, Trash2, Edit, Save, X, Copy, Check } from "lucide-react";
 

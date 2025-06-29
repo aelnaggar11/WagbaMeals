@@ -229,6 +229,26 @@ export const insertWaitlistSchema = createInsertSchema(waitlist).pick({
   rejectionReason: true,
 });
 
+// Pricing Configuration Model (for dynamic meal bundle and delivery pricing)
+export const pricingConfigs = pgTable("pricing_configs", {
+  id: serial("id").primaryKey(),
+  configType: text("config_type").notNull(), // "meal_bundle" | "delivery"
+  configKey: text("config_key").notNull(), // "4_meals", "5_meals", etc. or "base_delivery"
+  price: real("price").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertPricingConfigSchema = createInsertSchema(pricingConfigs).pick({
+  configType: true,
+  configKey: true,
+  price: true,
+  description: true,
+  isActive: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -267,6 +287,9 @@ export type InsertInvitationCode = z.infer<typeof insertInvitationCodeSchema>;
 
 export type WaitlistEntry = typeof waitlist.$inferSelect;
 export type InsertWaitlistEntry = z.infer<typeof insertWaitlistSchema>;
+
+export type PricingConfig = typeof pricingConfigs.$inferSelect;
+export type InsertPricingConfig = z.infer<typeof insertPricingConfigSchema>;
 
 export type PortionSize = "standard" | "large" | "mixed";
 

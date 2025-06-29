@@ -11,7 +11,7 @@ const WaitlistManager = () => {
   const { toast } = useToast();
 
   // Fetch waitlist entries
-  const { data: waitlistData, isLoading } = useQuery<{ waitlistEntries: WaitlistEntry[] }>({
+  const { data: waitlistData, isLoading, refetch } = useQuery<{ waitlistEntries: WaitlistEntry[] }>({
     queryKey: ['/api/admin/waitlist'],
   });
 
@@ -25,7 +25,7 @@ const WaitlistManager = () => {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/waitlist'] });
+      refetch();
       toast({
         title: "Success",
         description: "Waitlist entry removed successfully.",
