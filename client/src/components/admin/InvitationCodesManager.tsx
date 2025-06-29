@@ -41,10 +41,16 @@ const InvitationCodesManager = () => {
       return await apiRequest('POST', '/api/admin/invitation-codes', data);
     },
     onSuccess: (newCode) => {
+      console.log('=== CREATE SUCCESS ===');
+      console.log('New code response:', newCode);
+      
       // Immediately update the cache with optimistic data
       queryClient.setQueryData(['/api/admin/invitation-codes'], (old: any) => {
+        console.log('Current cache data:', old);
         if (!old) return { codes: [newCode] };
-        return { codes: [...old.codes, newCode] };
+        const updated = { codes: [...old.codes, newCode] };
+        console.log('Updated cache data:', updated);
+        return updated;
       });
       
       // Then invalidate to get fresh data
@@ -108,12 +114,18 @@ const InvitationCodesManager = () => {
       return await apiRequest('DELETE', `/api/admin/invitation-codes/${id}`);
     },
     onSuccess: (_, deletedId) => {
+      console.log('=== DELETE SUCCESS ===');
+      console.log('Deleted ID:', deletedId);
+      
       // Immediately update the cache by removing the deleted item
       queryClient.setQueryData(['/api/admin/invitation-codes'], (old: any) => {
+        console.log('Current cache data:', old);
         if (!old) return { codes: [] };
-        return {
+        const updated = {
           codes: old.codes.filter((code: any) => code.id !== deletedId)
         };
+        console.log('Updated cache data:', updated);
+        return updated;
       });
       
       // Then invalidate to get fresh data
