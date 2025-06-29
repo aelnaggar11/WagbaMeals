@@ -38,11 +38,7 @@ const InvitationCodesManager = () => {
   // Create code mutation
   const createMutation = useMutation({
     mutationFn: async (data: { code: string; isActive: boolean; maxUses: number | null; description: string }) => {
-      return await apiRequest('/api/admin/invitation-codes', {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return await apiRequest('POST', '/api/admin/invitation-codes', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/invitation-codes'] });
@@ -67,11 +63,7 @@ const InvitationCodesManager = () => {
       id: number; 
       data: { code: string; isActive: boolean; maxUses: number | null; description: string } 
     }) => {
-      return await apiRequest(`/api/admin/invitation-codes/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return await apiRequest('PATCH', `/api/admin/invitation-codes/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/invitation-codes'] });
@@ -93,9 +85,7 @@ const InvitationCodesManager = () => {
   // Delete code mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/admin/invitation-codes/${id}`, {
-        method: 'DELETE',
-      });
+      return await apiRequest('DELETE', `/api/admin/invitation-codes/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/invitation-codes'] });
