@@ -31,7 +31,7 @@ export const admins = pgTable("admins", {
   password: text("password").notNull(),
   name: text("name"),
   email: text("email").notNull().unique(),
-  role: text("role").default("admin"), // admin, super_admin, etc.
+  role: text("role").default("admin"), // "admin" or "super_admin"
   permissions: text("permissions").array().default(["orders", "meals", "users", "weeks"]),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -43,7 +43,17 @@ export const insertAdminSchema = createInsertSchema(admins).pick({
   email: true,
   role: true,
   permissions: true,
+}).extend({
+  role: z.enum(["admin", "super_admin"]).default("admin"),
 });
+
+// Admin role type for better type checking
+export const AdminRole = {
+  ADMIN: "admin" as const,
+  SUPER_ADMIN: "super_admin" as const,
+} as const;
+
+export type AdminRoleType = typeof AdminRole[keyof typeof AdminRole];
 
 // Meal Model
 export const meals = pgTable("meals", {

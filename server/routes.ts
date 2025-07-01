@@ -8,7 +8,7 @@ import session from "express-session";
 import MemoryStore from 'memorystore';
 import ConnectPgSimple from 'connect-pg-simple';
 import { pool } from "./db";
-import { getPriceForMealCount } from "@shared/schema";
+import { getPriceForMealCount, Admin } from "@shared/schema";
 
 declare module 'express-session' {
   interface SessionData {
@@ -20,6 +20,13 @@ declare module 'express-session' {
       portionSize: string;
       selectedMeals: any[];
     };
+  }
+}
+
+// Extend Request interface to include admin
+declare module 'express-serve-static-core' {
+  interface Request {
+    admin?: Admin;
   }
 }
 
@@ -185,6 +192,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const admin = await storage.getAdmin(adminId);
     if (!admin) {
       return res.status(403).json({ message: 'Forbidden - Invalid admin session' });
+    }
+
+    // Add admin to request for role checking
+    req.admin = admin;
+    next();
+  };
+
+  // Super admin middleware - requires super_admin role
+  const superAdminMiddleware = async (req: Request, res: Response, next: Function) => {
+    // First run admin middleware to authenticate
+    await new Promise<void>((resolve, reject) => {
+      adminMiddleware(req, res, (err?: any) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    }).catch(() => {
+      return res.status(401).json({ message: 'Unauthorized - Admin access required' });
+    });
+
+    // Check if admin has super_admin role
+    const admin = req.admin;
+    if (!admin || admin.role !== 'super_admin') {
+      return res.status(403).json({ message: 'Forbidden - Super admin access required' });
     }
 
     next();
