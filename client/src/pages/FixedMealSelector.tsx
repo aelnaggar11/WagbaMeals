@@ -7,6 +7,7 @@ import { MinusCircle, PlusCircle, Save } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { PricingService } from "@/lib/pricingService";
 
 interface Meal {
   id: number;
@@ -43,8 +44,21 @@ export default function FixedMealSelector({
   const [savedItems, setSavedItems] = useState<any[]>([]);
   const [isSaved, setIsSaved] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [largeMealAddOn, setLargeMealAddOn] = useState(99);
   
-
+  // Load dynamic pricing
+  useEffect(() => {
+    const loadPricing = async () => {
+      try {
+        const largeMealPrice = await PricingService.getLargeMealAddonPrice();
+        setLargeMealAddOn(largeMealPrice);
+      } catch (error) {
+        console.error('Failed to load large meal pricing:', error);
+      }
+    };
+    
+    loadPricing();
+  }, []);
 
   // Fetch meals for this week
   const { data, isLoading } = useQuery({
@@ -491,7 +505,7 @@ export default function FixedMealSelector({
                                   {idx > 0 && ', '}
                                   {count}x {size.charAt(0).toUpperCase() + size.slice(1)}
                                   {size === 'large' && (
-                                    <span className="text-green-600 font-medium"> (+99 EGP each)</span>
+                                    <span className="text-green-600 font-medium"> (+{largeMealAddOn} EGP each)</span>
                                   )}
                                 </span>
                               ))}
@@ -504,7 +518,7 @@ export default function FixedMealSelector({
                           <div className="mt-2 text-sm text-gray-600">
                             All meals: {defaultPortionSize === 'large' ? 'Large' : 'Standard'} portion
                             {defaultPortionSize === 'large' && (
-                              <span className="ml-2 text-green-600 font-medium">+99 EGP each</span>
+                              <span className="ml-2 text-green-600 font-medium">+{largeMealAddOn} EGP each</span>
                             )}
                           </div>
                         )}
@@ -638,7 +652,7 @@ export default function FixedMealSelector({
                           <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
                             <div>
                               <div className="font-medium text-sm">Large</div>
-                              <div className="text-xs text-gray-500">+99 EGP each</div>
+                              <div className="text-xs text-gray-500">+{largeMealAddOn} EGP each</div>
                             </div>
                             <div className="flex items-center gap-2">
                               <Button
@@ -674,7 +688,7 @@ export default function FixedMealSelector({
                         <div className="text-sm text-gray-600">
                           All meals: {defaultPortionSize === 'large' ? 'Large' : 'Standard'} portion
                           {defaultPortionSize === 'large' && (
-                            <span className="ml-2 text-green-600 font-medium">+99 EGP each</span>
+                            <span className="ml-2 text-green-600 font-medium">+{largeMealAddOn} EGP each</span>
                           )}
                         </div>
                       </div>
