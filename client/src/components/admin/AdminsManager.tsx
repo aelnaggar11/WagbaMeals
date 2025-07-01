@@ -67,6 +67,20 @@ const AdminsManager = () => {
   // Fetch admins
   const { data: adminsData, isLoading, refetch } = useQuery<{ admins: Admin[] }>({
     queryKey: ['/api/admin/admins'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/admins', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch admins: ${response.status}`);
+      }
+      
+      return response.json();
+    },
     enabled: isSuperAdmin, // Only fetch if user is super admin
   });
 
