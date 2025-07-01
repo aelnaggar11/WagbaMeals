@@ -88,7 +88,23 @@ const AdminsManager = () => {
 
   // Create admin mutation
   const createAdminMutation = useMutation({
-    mutationFn: (data: typeof formData) => apiRequest('/api/admin/admins', 'POST', data),
+    mutationFn: async (data: typeof formData) => {
+      const response = await fetch('/api/admin/admins', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to create admin: ${response.status}`);
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       toast({ title: "Admin created successfully" });
       setIsCreateDialogOpen(false);
@@ -106,8 +122,23 @@ const AdminsManager = () => {
 
   // Update admin mutation
   const updateAdminMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<typeof formData> }) => 
-      apiRequest(`/api/admin/admins/${id}`, 'PUT', data),
+    mutationFn: async ({ id, data }: { id: number; data: Partial<typeof formData> }) => {
+      const response = await fetch(`/api/admin/admins/${id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to update admin: ${response.status}`);
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       toast({ title: "Admin updated successfully" });
       setIsEditDialogOpen(false);
@@ -125,7 +156,22 @@ const AdminsManager = () => {
 
   // Delete admin mutation
   const deleteAdminMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/admin/admins/${id}`, 'DELETE'),
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/admin/admins/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to delete admin: ${response.status}`);
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       toast({ title: "Admin deleted successfully" });
       setIsDeleteDialogOpen(false);
