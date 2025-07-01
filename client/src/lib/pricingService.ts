@@ -136,6 +136,29 @@ export class PricingService {
   }
 }
 
+// Cache management utility
+export class PricingCache {
+  static clear(): void {
+    // Force cache refresh by setting cache to null and expiring timestamp
+    pricingCache = null;
+    // Access the module-level variable directly
+    const now = Date.now();
+    // Reset to force cache reload
+    pricingCache = null;
+  }
+
+  static async refresh(): Promise<void> {
+    this.clear();
+    // Force cache refresh by re-initializing the pricing cache
+    try {
+      await PricingService.getAllMealPricing();
+      await PricingService.getLargeMealAddonPrice();
+    } catch (error) {
+      console.error('Failed to refresh pricing cache:', error);
+    }
+  }
+}
+
 // Initialize cache on module load for better UX
 PricingService.getAllMealPricing().catch(() => {
   // Silently handle initialization errors

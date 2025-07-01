@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { PricingConfig } from "@shared/schema";
-import { PricingService } from "@/lib/pricingService";
+import { PricingService, PricingCache } from "@/lib/pricingService";
 import { Plus, Edit, Save, X, DollarSign } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
