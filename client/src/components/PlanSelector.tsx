@@ -13,6 +13,13 @@ const PlanSelector = ({ selectedMealCount, onMealCountChange, pricing, selectedP
   
   const getPrice = (count: number) => {
     // Always show standard price in the buttons
+    if (!pricing || !pricing[count]) {
+      // Fallback pricing if data is not loaded yet
+      const fallbackPricing: Record<number, number> = {
+        4: 599, 6: 749, 8: 899, 10: 1049, 12: 1199, 14: 1349
+      };
+      return fallbackPricing[count] || 0;
+    }
     return pricing[count].standard;
   };
   

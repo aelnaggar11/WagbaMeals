@@ -13,6 +13,7 @@ const MealPlans = () => {
   const [selectedPortionSize, setSelectedPortionSize] = useState("standard");
   const [pricing, setPricing] = useState<Record<number, { standard: number; large: number }>>({});
   const [largeMealAddOn, setLargeMealAddOn] = useState(99);
+  const [pricingLoaded, setPricingLoaded] = useState(false);
 
   // Get current week for menu redirect
   const { data: weeksData } = useQuery<{ weeks: Week[] }>({
@@ -42,20 +43,19 @@ const MealPlans = () => {
         
         setPricing(dynamicPricing);
         setLargeMealAddOn(largeMealPrice);
+        setPricingLoaded(true);
       } catch (error) {
         console.error('Failed to load dynamic pricing:', error);
         // Fallback to default pricing
         setPricing({
-          4: { standard: 249, large: 348 },
-          5: { standard: 239, large: 338 },
-          6: { standard: 239, large: 338 },
-          7: { standard: 219, large: 318 },
-          8: { standard: 219, large: 318 },
-          9: { standard: 219, large: 318 },
-          10: { standard: 199, large: 298 },
-          12: { standard: 199, large: 298 },
-          14: { standard: 199, large: 298 }
+          4: { standard: 599, large: 698 },
+          6: { standard: 749, large: 848 },
+          8: { standard: 899, large: 998 },
+          10: { standard: 1049, large: 1148 },
+          12: { standard: 1199, large: 1298 },
+          14: { standard: 1349, large: 1448 }
         });
+        setPricingLoaded(true);
       }
     };
     
@@ -87,12 +87,18 @@ const MealPlans = () => {
         <div className="text-center mb-12 mt-6"></div>
 
         {/* Meal Count Selection */}
-        <PlanSelector
-          selectedMealCount={selectedMealCount}
-          onMealCountChange={setSelectedMealCount}
-          pricing={pricing}
-          selectedPortionSize={selectedPortionSize}
-        />
+        {pricingLoaded ? (
+          <PlanSelector
+            selectedMealCount={selectedMealCount}
+            onMealCountChange={setSelectedMealCount}
+            pricing={pricing}
+            selectedPortionSize={selectedPortionSize}
+          />
+        ) : (
+          <div className="max-w-4xl mx-auto mb-8 text-center py-8">
+            <div className="text-gray-500">Loading meal plans...</div>
+          </div>
+        )}
 
         {/* Portion Size Selection */}
         <PortionSelector
