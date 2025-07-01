@@ -20,7 +20,8 @@ const defaultPricing: Map<string, number> = new Map([
   ['meal_bundle_14_meals', 199],
   ['meal_bundle_15_meals', 199],
   ['delivery_base_delivery', 0],
-  ['delivery_express_delivery', 30]
+  ['delivery_express_delivery', 30],
+  ['meal_addon_large_meal_addon', 50]
 ]);
 
 export class PricingService {
@@ -82,6 +83,13 @@ export class PricingService {
     return pricing.get(key) || defaultPricing.get(key) || 0;
   }
 
+  // Get large meal add-on cost
+  static async getLargeMealAddonPrice(): Promise<number> {
+    const pricing = await this.ensurePricingCache();
+    const key = 'meal_addon_large_meal_addon';
+    return pricing.get(key) || defaultPricing.get(key) || 50;
+  }
+
   // Get all meal bundle pricing (for UI display)
   static async getAllMealPricing(): Promise<Map<number, number>> {
     const pricing = await this.ensurePricingCache();
@@ -117,6 +125,14 @@ export class PricingService {
     }
     const key = `delivery_${deliveryType}`;
     return pricingCache.get(key) || defaultPricing.get(key) || 0;
+  }
+
+  static getLargeMealAddonPriceSync(): number {
+    if (!pricingCache) {
+      return defaultPricing.get('meal_addon_large_meal_addon') || 50;
+    }
+    const key = 'meal_addon_large_meal_addon';
+    return pricingCache.get(key) || defaultPricing.get(key) || 50;
   }
 }
 

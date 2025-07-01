@@ -27,6 +27,7 @@ const PricingManager = () => {
   // Group pricing by type for better organization
   const mealBundlePricing = pricingConfigs.filter(config => config.configType === 'meal_bundle');
   const deliveryPricing = pricingConfigs.filter(config => config.configType === 'delivery');
+  const mealAddonPricing = pricingConfigs.filter(config => config.configType === 'meal_addon');
 
   // Update pricing mutation
   const updateMutation = useMutation({
@@ -101,7 +102,7 @@ const PricingManager = () => {
         <h3 className="text-lg font-medium">Pricing Management</h3>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-3">
         {/* Meal Bundle Pricing */}
         <Card>
           <CardHeader>
@@ -200,6 +201,91 @@ const PricingManager = () => {
               <p className="text-gray-500 text-sm">No delivery pricing configured</p>
             ) : (
               deliveryPricing.map((config) => (
+                <div key={config.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-medium">{formatConfigKey(config.configKey)}</span>
+                      <Badge variant={config.isActive ? "default" : "secondary"}>
+                        {config.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                    </div>
+                    {config.description && (
+                      <p className="text-sm text-gray-600 mt-1">{config.description}</p>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    {editingId === config.id ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="space-y-1">
+                          <Label htmlFor={`price-${config.id}`} className="text-xs">Price (EGP)</Label>
+                          <Input
+                            id={`price-${config.id}`}
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={editingData.price}
+                            onChange={(e) => setEditingData(prev => ({ 
+                              ...prev, 
+                              price: parseFloat(e.target.value) || 0 
+                            }))}
+                            className="w-20 h-8 text-sm"
+                          />
+                        </div>
+                        <div className="flex space-x-1">
+                          <Button
+                            size="sm"
+                            onClick={() => handleSave(config.id)}
+                            disabled={updateMutation.isPending}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Save className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleCancel}
+                            className="h-8 w-8 p-0"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <span className="font-semibold text-primary">
+                          {formatCurrency(config.price)}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(config)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Meal Add-on Pricing */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center space-x-2">
+              <DollarSign className="h-4 w-4" />
+              <span>Meal Add-ons</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {mealAddonPricing.length === 0 ? (
+              <p className="text-gray-500 text-sm">No meal add-on pricing configured</p>
+            ) : (
+              mealAddonPricing.map((config) => (
                 <div key={config.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
