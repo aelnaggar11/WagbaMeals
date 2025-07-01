@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import ProgressIndicator from "@/components/ProgressIndicator";
 import { Button } from "@/components/ui/button";
@@ -6,10 +6,13 @@ import PlanSelector from "@/components/PlanSelector";
 import PortionSelector from "@/components/PortionSelector";
 import { useQuery } from "@tanstack/react-query";
 import { Week } from "@shared/schema";
+import { PricingService } from "@/lib/pricingService";
 
 const MealPlans = () => {
   const [selectedMealCount, setSelectedMealCount] = useState(6);
   const [selectedPortionSize, setSelectedPortionSize] = useState("standard");
+  const [pricing, setPricing] = useState<Record<number, { standard: number; large: number }>>({});
+  const [largeMealAddOn, setLargeMealAddOn] = useState(99);
 
   // Get current week for menu redirect
   const { data: weeksData } = useQuery<{ weeks: Week[] }>({
@@ -18,27 +21,57 @@ const MealPlans = () => {
 
   const currentWeekId = weeksData?.weeks.find(week => week.isSelectable)?.id || "current";
 
-  // Pricing data based on meal counts
-  const pricing = {
-    4: { standard: 249, large: 348 },
-    5: { standard: 239, large: 338 },
-    6: { standard: 239, large: 338 },
-    7: { standard: 219, large: 318 },
-    8: { standard: 219, large: 318 },
-    9: { standard: 219, large: 318 },
-    10: { standard: 199, large: 298 },
-    12: { standard: 199, large: 298 },
-    14: { standard: 199, large: 298 }
-  };
+  // Load dynamic pricing
+  useEffect(() => {
+    const loadPricing = async () => {
+      try {
+        const [mealPricing, largeMealPrice] = await Promise.all([
+          PricingService.getAllMealPricing(),
+          PricingService.getLargeMealAddonPrice()
+        ]);
+        
+        const dynamicPricing: Record<number, { standard: number; large: number }> = {};
+        
+        // Convert Map to object
+        mealPricing.forEach((standardPrice, count) => {
+          dynamicPricing[count] = {
+            standard: standardPrice,
+            large: standardPrice + largeMealPrice
+          };
+        });
+        
+        setPricing(dynamicPricing);
+        setLargeMealAddOn(largeMealPrice);
+      } catch (error) {
+        console.error('Failed to load dynamic pricing:', error);
+        // Fallback to default pricing
+        setPricing({
+          4: { standard: 249, large: 348 },
+          5: { standard: 239, large: 338 },
+          6: { standard: 239, large: 338 },
+          7: { standard: 219, large: 318 },
+          8: { standard: 219, large: 318 },
+          9: { standard: 219, large: 318 },
+          10: { standard: 199, large: 298 },
+          12: { standard: 199, large: 298 },
+          14: { standard: 199, large: 298 }
+        });
+      }
+    };
+    
+    loadPricing();
+  }, []);
 
   // Calculate total based on selection
   const calculateTotal = () => {
+    if (!pricing[selectedMealCount]) return 0;
+    
     if (selectedPortionSize === "mixed") {
       // For mixed, show the base standard price range
-      return pricing[selectedMealCount as keyof typeof pricing].standard * selectedMealCount;
+      return pricing[selectedMealCount].standard * selectedMealCount;
     }
 
-    return pricing[selectedMealCount as keyof typeof pricing][selectedPortionSize as keyof typeof pricing[4]] * selectedMealCount;
+    return pricing[selectedMealCount][selectedPortionSize as keyof typeof pricing[4]] * selectedMealCount;
   };
 
   return (
@@ -75,7 +108,11 @@ const MealPlans = () => {
             <div className="flex justify-between items-center pb-2 border-b border-gray-100">
               <span className="text-gray-600">{selectedMealCount} meals per week</span>
               <span className="font-medium">
-                EGP {pricing[selectedMealCount as keyof typeof pricing][selectedPortionSize === "mixed" ? "standard" : selectedPortionSize as keyof typeof pricing[4]]} per meal
+                {pricing[selectedMealCount] ? (
+                  `EGP ${pricing[selectedMealCount][selectedPortionSize === "mixed" ? "standard" : selectedPortionSize as keyof typeof pricing[4]]} per meal`
+                ) : (
+                  "Loading..."
+                )}
               </span>
             </div>
 
@@ -87,7 +124,7 @@ const MealPlans = () => {
             {selectedPortionSize === "large" && (
               <div className="flex justify-between items-center pb-2 border-b border-gray-100">
                 <span className="text-gray-600">Large Portion Premium</span>
-                <span className="font-medium">+EGP 99 per meal</span>
+                <span className="font-medium">+EGP {largeMealAddOn} per meal</span>
               </div>
             )}
 
