@@ -13,6 +13,7 @@ import InvitationCodesManager from "@/components/admin/InvitationCodesManager";
 import WaitlistManager from "@/components/admin/WaitlistManager";
 import UsersManagement from "@/components/admin/UsersManagement";
 import PricingManager from "@/components/admin/PricingManager";
+import AdminsManager from "@/components/admin/AdminsManager";
 
 const Dashboard = () => {
   const [, navigate] = useLocation();
@@ -77,7 +78,7 @@ const Dashboard = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-8 bg-gray-200 rounded-lg p-1">
+          <TabsList className="grid w-full grid-cols-7 mb-8 bg-gray-200 rounded-lg p-1">
             <TabsTrigger 
               value="weekly-menus" 
               className="data-[state=active]:bg-white data-[state=active]:text-primary text-gray-600"
@@ -101,6 +102,12 @@ const Dashboard = () => {
               className="data-[state=active]:bg-white data-[state=active]:text-primary text-gray-600"
             >
               Users
+            </TabsTrigger>
+            <TabsTrigger 
+              value="admins" 
+              className="data-[state=active]:bg-white data-[state=active]:text-primary text-gray-600"
+            >
+              Admins
             </TabsTrigger>
             <TabsTrigger 
               value="orders" 

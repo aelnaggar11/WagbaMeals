@@ -570,56 +570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/auth/me', async (req, res) => {
-    try {
-      // Check session first
-      let adminId = req.session.adminId;
-      
-      // If no session, try token authentication
-      if (!adminId) {
-        const cookieToken = req.cookies.wagba_admin_token;
-        const headerToken = req.headers.authorization?.replace('Bearer ', '');
-        const token = headerToken || cookieToken;
-        
-        if (token) {
-          try {
-            const decoded = Buffer.from(token, 'base64').toString();
-            const [type, tokenAdminId, timestamp, email] = decoded.split(':');
-            
-            if (type === 'admin' && tokenAdminId && email) {
-              const admin = await storage.getAdmin(parseInt(tokenAdminId));
-              if (admin && admin.email === email) {
-                adminId = parseInt(tokenAdminId);
-                // Set session for future requests
-                req.session.adminId = adminId;
-              }
-            }
-          } catch (error) {
-            console.log('Admin token decode error in /api/admin/auth/me:', String(error));
-          }
-        }
-      }
 
-      if (!adminId) {
-        return res.status(401).json(null);
-      }
-
-      const admin = await storage.getAdmin(adminId);
-      if (!admin) {
-        return res.status(401).json(null);
-      }
-
-      res.json({
-        id: admin.id,
-        username: admin.username,
-        email: admin.email,
-        name: admin.name,
-        role: admin.role
-      });
-    } catch (error) {
-      res.status(500).json({ message: 'Server error' });
-    }
-  });
 
   app.post('/api/admin/auth/logout', (req, res) => {
     req.session.destroy((err) => {
@@ -2328,6 +2279,166 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ pricingConfigs: activePricing });
     } catch (error) {
       console.error('Error fetching pricing by type:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Super Admin Routes - Admin Management
+  // Get all admins (super admin only)
+  app.get('/api/admin/admins', superAdminMiddleware, async (req, res) => {
+    try {
+      const admins = await storage.getAllAdmins();
+      // Don't return passwords
+      const safeAdmins = admins.map(admin => ({
+        ...admin,
+        password: undefined
+      }));
+      res.json({ admins: safeAdmins });
+    } catch (error) {
+      console.error('Error fetching admins:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Create new admin (super admin only)
+  app.post('/api/admin/admins', superAdminMiddleware, async (req, res) => {
+    try {
+      const { username, password, name, email, role } = req.body;
+      
+      // Validate required fields
+      if (!username || !password || !email) {
+        return res.status(400).json({ message: 'Username, password, and email are required' });
+      }
+
+      // Validate role
+      if (role && !['admin', 'super_admin'].includes(role)) {
+        return res.status(400).json({ message: 'Invalid role. Must be admin or super_admin' });
+      }
+
+      // Check if username or email already exists
+      const existingByUsername = await storage.getAdminByUsername(username);
+      const existingByEmail = await storage.getAdminByEmail(email);
+      
+      if (existingByUsername) {
+        return res.status(400).json({ message: 'Username already exists' });
+      }
+      
+      if (existingByEmail) {
+        return res.status(400).json({ message: 'Email already exists' });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const newAdmin = await storage.createAdmin({
+        username,
+        password: hashedPassword,
+        name: name || username,
+        email,
+        role: role || 'admin',
+        permissions: ['orders', 'meals', 'users', 'weeks']
+      });
+
+      // Don't return password
+      const safeAdmin = { ...newAdmin, password: undefined };
+      res.status(201).json({ admin: safeAdmin });
+    } catch (error) {
+      console.error('Error creating admin:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Update admin (super admin only)
+  app.put('/api/admin/admins/:id', superAdminMiddleware, async (req, res) => {
+    try {
+      const adminId = parseInt(req.params.id);
+      const { username, password, name, email, role } = req.body;
+      
+      const existingAdmin = await storage.getAdmin(adminId);
+      if (!existingAdmin) {
+        return res.status(404).json({ message: 'Admin not found' });
+      }
+
+      // Validate role if provided
+      if (role && !['admin', 'super_admin'].includes(role)) {
+        return res.status(400).json({ message: 'Invalid role. Must be admin or super_admin' });
+      }
+
+      // Check if username or email conflicts with other admins
+      if (username && username !== existingAdmin.username) {
+        const existingByUsername = await storage.getAdminByUsername(username);
+        if (existingByUsername && existingByUsername.id !== adminId) {
+          return res.status(400).json({ message: 'Username already exists' });
+        }
+      }
+      
+      if (email && email !== existingAdmin.email) {
+        const existingByEmail = await storage.getAdminByEmail(email);
+        if (existingByEmail && existingByEmail.id !== adminId) {
+          return res.status(400).json({ message: 'Email already exists' });
+        }
+      }
+
+      const updateData: any = {};
+      if (username) updateData.username = username;
+      if (name) updateData.name = name;
+      if (email) updateData.email = email;
+      if (role) updateData.role = role;
+      if (password) updateData.password = await bcrypt.hash(password, 10);
+
+      const updatedAdmin = await storage.updateAdmin(adminId, updateData);
+      
+      // Don't return password
+      const safeAdmin = { ...updatedAdmin, password: undefined };
+      res.json({ admin: safeAdmin });
+    } catch (error) {
+      console.error('Error updating admin:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Delete admin (super admin only)
+  app.delete('/api/admin/admins/:id', superAdminMiddleware, async (req, res) => {
+    try {
+      const adminId = parseInt(req.params.id);
+      const currentAdmin = req.admin;
+      
+      // Prevent self-deletion
+      if (currentAdmin && currentAdmin.id === adminId) {
+        return res.status(400).json({ message: 'Cannot delete your own account' });
+      }
+
+      const existingAdmin = await storage.getAdmin(adminId);
+      if (!existingAdmin) {
+        return res.status(404).json({ message: 'Admin not found' });
+      }
+
+      // For now, we'll implement a soft delete by updating the admin to mark as inactive
+      // In a real system, you might want to keep admin records for audit purposes
+      await storage.updateAdmin(adminId, { 
+        username: `deleted_${existingAdmin.username}_${Date.now()}`,
+        email: `deleted_${existingAdmin.email}_${Date.now()}`,
+        role: 'deleted' as any // This will need to be handled in the database
+      });
+      
+      res.json({ message: 'Admin deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting admin:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Get current admin profile (includes role info)
+  app.get('/api/admin/auth/me', adminMiddleware, async (req, res) => {
+    try {
+      const admin = req.admin;
+      if (!admin) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+      
+      // Don't return password
+      const safeAdmin = { ...admin, password: undefined };
+      res.json(safeAdmin);
+    } catch (error) {
+      console.error('Error fetching admin profile:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });
