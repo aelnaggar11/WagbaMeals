@@ -166,6 +166,10 @@ const Dashboard = () => {
             </div>
           </TabsContent>
 
+          <TabsContent value="admins" className="mt-0">
+            <AdminsManager />
+          </TabsContent>
+
           <TabsContent value="orders" className="mt-0">
             <OrdersManagement />
           </TabsContent>
