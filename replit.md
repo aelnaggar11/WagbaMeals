@@ -127,6 +127,11 @@ Wagba is a full-stack meal delivery application focused on weekly meal plans. Th
 - Session persistence across application restarts
 
 ## Changelog
+- July 1, 2025: DYNAMIC PRICING SYSTEM - Implemented comprehensive pricing management for admins with immediate application-wide updates
+- July 1, 2025: Added large meal add-on pricing configuration (50 EGP) for portion size upgrades
+- July 1, 2025: Created dynamic pricing service to replace all hardcoded meal bundle and delivery pricing
+- July 1, 2025: Built admin pricing management interface with meal bundles, delivery, and meal add-ons sections
+- July 1, 2025: Database-backed pricing configurations with 5-minute cache for optimal performance
 - June 29, 2025: CRITICAL FIX - Resolved systemic cache invalidation issues across entire application using direct refetch() approach
 - June 29, 2025: Applied consistent cache refresh pattern to all admin components (InvitationCodesManager, MealsManager, NeighborhoodsManager, WaitlistManager)
 - June 29, 2025: Replaced complex forceRefreshQuery utility with simple refetch() calls for immediate UI updates
