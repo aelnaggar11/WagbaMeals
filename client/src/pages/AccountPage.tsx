@@ -16,6 +16,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatDate, getStatusClass } from "@/lib/utils";
 import { useLocation } from "wouter";
 import FixedMealSelector from "@/pages/FixedMealSelector";
+import { PricingService } from "@/lib/pricingService";
 
 const AccountPage = () => {
   const [location, navigate] = useLocation();
@@ -62,6 +63,7 @@ const AccountPage = () => {
     landmark: "",
     deliveryNotes: ""
   });
+  const [largeMealAddOn, setLargeMealAddOn] = useState(99);
 
   // ALL QUERIES MUST BE DECLARED BEFORE ANY CONDITIONAL LOGIC
   const { data: currentUser, isLoading: isUserLoading } = useQuery<User | null>({
@@ -243,6 +245,20 @@ const AccountPage = () => {
       }, 0);
     }
   }, [profile]);
+
+  // Load dynamic pricing
+  useEffect(() => {
+    const loadPricing = async () => {
+      try {
+        const largeMealPrice = await PricingService.getLargeMealAddonPrice();
+        setLargeMealAddOn(largeMealPrice);
+      } catch (error) {
+        console.error('Failed to load large meal pricing:', error);
+      }
+    };
+    
+    loadPricing();
+  }, []);
 
   // Debug logging to track form data state
   useEffect(() => {
@@ -1107,7 +1123,7 @@ const AccountPage = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="standard">Standard</SelectItem>
-                    <SelectItem value="large">Large (+99 EGP per meal)</SelectItem>
+                    <SelectItem value="large">Large (+{largeMealAddOn} EGP per meal)</SelectItem>
                     <SelectItem value="mixed">Mix & Match</SelectItem>
                   </SelectContent>
                 </Select>

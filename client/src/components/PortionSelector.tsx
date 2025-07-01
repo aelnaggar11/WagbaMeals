@@ -1,5 +1,7 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { PricingService } from "@/lib/pricingService";
 
 interface PortionSelectorProps {
   selectedPortionSize: string;
@@ -7,6 +9,22 @@ interface PortionSelectorProps {
 }
 
 const PortionSelector = ({ selectedPortionSize, onPortionSizeChange }: PortionSelectorProps) => {
+  const [largeMealAddOn, setLargeMealAddOn] = useState(99);
+
+  // Load dynamic pricing
+  useEffect(() => {
+    const loadPricing = async () => {
+      try {
+        const largeMealPrice = await PricingService.getLargeMealAddonPrice();
+        setLargeMealAddOn(largeMealPrice);
+      } catch (error) {
+        console.error('Failed to load large meal pricing:', error);
+      }
+    };
+    
+    loadPricing();
+  }, []);
+
   return (
     <div className="max-w-4xl mx-auto mb-8">
       <Card className="rounded-xl shadow-md">
@@ -36,7 +54,7 @@ const PortionSelector = ({ selectedPortionSize, onPortionSizeChange }: PortionSe
               onClick={() => onPortionSizeChange("large")}
             >
               <h4 className="font-bold mb-2">Large</h4>
-              <p className="text-sm text-primary font-medium mb-1">+EGP 99 per meal</p>
+              <p className="text-sm text-primary font-medium mb-1">+EGP {largeMealAddOn} per meal</p>
               <p className="text-sm text-gray-600">750-850 Calories</p>
               <p className="text-sm text-gray-600">45-60g Protein</p>
             </button>
