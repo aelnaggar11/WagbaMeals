@@ -263,6 +263,20 @@ const CheckoutPage = () => {
     <div className="container mx-auto px-4 py-8">
       <ProgressIndicator steps={steps} currentStep={4} />
       
+      {/* Back Button */}
+      <div className="flex justify-start mb-4 mt-6">
+        <Button 
+          variant="ghost" 
+          className="flex items-center text-gray-600"
+          onClick={() => window.history.back()}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Account
+        </Button>
+      </div>
+      
       <div className="max-w-4xl mx-auto mt-8">
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

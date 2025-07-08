@@ -127,6 +127,10 @@ Wagba is a full-stack meal delivery application focused on weekly meal plans. Th
 - Session persistence across application restarts
 
 ## Changelog
+- July 8, 2025: ONBOARDING UX IMPROVEMENTS - Added back buttons to all onboarding steps for better navigation flow
+- July 8, 2025: Disabled meal selection dropdowns for non-Mix & Match subscriptions to prevent user confusion
+- July 8, 2025: Removed individual meal pricing display from meal cards as all meals of same type have same price
+- July 8, 2025: Enhanced meal selection UI with proper subscription type awareness and disabled states
 - July 1, 2025: ADMIN HIERARCHY SYSTEM - Implemented super admin and regular admin roles with comprehensive admin account management
 - July 1, 2025: Added AdminsManager component with role-based access control for creating, editing, and deleting admin accounts
 - July 1, 2025: Enhanced admin authentication middleware with super admin role verification and security features

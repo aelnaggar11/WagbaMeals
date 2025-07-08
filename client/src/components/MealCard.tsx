@@ -10,6 +10,7 @@ interface MealCardProps {
   onSelect: (mealId: number, portionSize: PortionSize) => void;
   onRemove: (mealId: number) => void;
   disabled?: boolean;
+  subscriptionType?: string; // Add subscription type to control UI
 }
 
 const MealCard = ({
@@ -19,6 +20,7 @@ const MealCard = ({
   onSelect,
   onRemove,
   disabled = false,
+  subscriptionType = "standard"
 }: MealCardProps) => {
   const [portionSize, setPortionSize] = useState<PortionSize>("standard");
   
@@ -100,7 +102,7 @@ const MealCard = ({
         <div className="mt-2 pt-4 border-t border-gray-100 flex justify-between items-center">
           <div>
             <span className="text-sm font-bold text-gray-700">{portionSize === "standard" ? "Standard" : "Large"}</span>
-            <span className="block text-primary font-bold">EGP {getPrice()}</span>
+            {/* Remove individual meal pricing per user request */}
           </div>
           <div className="flex items-center">
             <button className="bg-secondary hover:bg-gray-200 text-gray-700 w-8 h-8 rounded-full flex items-center justify-center">
@@ -108,9 +110,12 @@ const MealCard = ({
             </button>
             <div className="w-px h-4 bg-gray-200 mx-2"></div>
             <select 
-              className="bg-white border border-gray-200 rounded-lg text-sm py-1 pl-2 pr-6"
+              className={`bg-white border border-gray-200 rounded-lg text-sm py-1 pl-2 pr-6 ${
+                subscriptionType !== 'mixed' && subscriptionType !== 'mix' ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
               value={portionSize}
               onChange={handlePortionChange}
+              disabled={subscriptionType !== 'mixed' && subscriptionType !== 'mix'}
             >
               <option value="standard">Standard</option>
               <option value="large">Large (+EGP 99)</option>

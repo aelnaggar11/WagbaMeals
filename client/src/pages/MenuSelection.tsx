@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import WeekSelector from "@/components/WeekSelector";
 import MealCard from "@/components/MealCard";
 import OrderSummary from "@/components/OrderSummary";
@@ -165,6 +165,20 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
         {!params.get("fromAccount") && <ProgressIndicator steps={steps} currentStep={2} />}
         
         <div className="mb-8 mt-6">
+          {/* Back Button for onboarding flow */}
+          {!params.get("fromAccount") && (
+            <div className="flex justify-start mb-4">
+              <Link href="/meal-plans">
+                <Button variant="ghost" className="flex items-center text-gray-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Back to Plans
+                </Button>
+              </Link>
+            </div>
+          )}
+          
           {/* Title and navigation when coming from account page */}
           {params.get("fromAccount") && (
             <div className="flex flex-col mb-4">
@@ -225,6 +239,7 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
                 onSelect={handleSelectMeal}
                 onRemove={handleRemoveMeal}
                 disabled={isSelectionComplete && !isMealSelected(meal.id)}
+                subscriptionType={portionSize}
               />
             ))}
           </div>

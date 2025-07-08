@@ -367,6 +367,30 @@ const AuthPage = () => {
       </div>
       {!skipProgress && <ProgressIndicator steps={steps} currentStep={3} />}
       
+      {/* Back Button for onboarding flow */}
+      {!skipProgress && (
+        <div className="flex justify-start mb-4">
+          <Button 
+            variant="ghost" 
+            className="flex items-center text-gray-600"
+            onClick={() => {
+              const params = new URLSearchParams(window.location.search);
+              const returnTo = params.get('returnTo');
+              if (returnTo) {
+                window.location.href = returnTo;
+              } else {
+                window.location.href = '/menu/current';
+              }
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Menu
+          </Button>
+        </div>
+      )}
+      
       <div className="max-w-md mx-auto">
         <Tabs value={defaultTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid grid-cols-2 mb-6">
