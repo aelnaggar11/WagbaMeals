@@ -41,6 +41,22 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
     queryKey: [`/api/orders/${weekId}`],
   });
 
+  // Handle browser back button properly
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      // Check if we're in onboarding flow
+      if (params.get("fromPlan") && params.get("mealCount")) {
+        // Navigate back to meal plans page
+        setLocation("/meal-plans");
+        return;
+      }
+      // For other cases, let default behavior handle it
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [setLocation, params]);
+
   // Update selections if existing order is found or if there are stored selections in session
   useEffect(() => {
     // First check for stored selections from previous session (after login redirect)

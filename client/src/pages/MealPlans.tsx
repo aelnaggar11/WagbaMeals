@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import ProgressIndicator from "@/components/ProgressIndicator";
 import { Button } from "@/components/ui/button";
 import PlanSelector from "@/components/PlanSelector";
@@ -9,11 +9,23 @@ import { Week } from "@shared/schema";
 import { PricingService } from "@/lib/pricingService";
 
 const MealPlans = () => {
+  const [, navigate] = useLocation();
   const [selectedMealCount, setSelectedMealCount] = useState(6);
   const [selectedPortionSize, setSelectedPortionSize] = useState("standard");
   const [pricing, setPricing] = useState<Record<number, { standard: number; large: number }>>({});
   const [largeMealAddOn, setLargeMealAddOn] = useState(99);
   const [pricingLoaded, setPricingLoaded] = useState(false);
+
+  // Handle browser back button properly
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      // Navigate back to home page
+      navigate('/');
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [navigate]);
 
   // Get current week for menu redirect
   const { data: weeksData } = useQuery<{ weeks: Week[] }>({

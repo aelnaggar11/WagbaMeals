@@ -32,6 +32,26 @@ const AuthPage = () => {
     email: ""
   });
   
+  // Handle browser back button properly
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const params = new URLSearchParams(window.location.search);
+      // Check if we're in onboarding flow
+      if (params.get("fromSelection") && params.get("mealCount")) {
+        // Navigate back to menu selection
+        const weekId = params.get("weekId") || "current";
+        const mealCount = params.get("mealCount");
+        const portionSize = params.get("portionSize");
+        navigate(`/menu/${weekId}?fromPlan=true&mealCount=${mealCount}&portionSize=${portionSize}`);
+        return;
+      }
+      // For other cases, let default behavior handle it
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [navigate]);
+
   // Get the return URL from query params and pre-populate email if available
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

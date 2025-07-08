@@ -68,6 +68,17 @@ const CheckoutPage = () => {
     };
   });
   
+  // Handle browser back button properly
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      // Always navigate back to account page for checkout
+      navigate('/account');
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [navigate]);
+
   // Check and set neighborhood on component mount
   useEffect(() => {
     const storedNeighborhood = localStorage.getItem('preOnboardingNeighborhood') || sessionStorage.getItem('preOnboardingNeighborhood');
