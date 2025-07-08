@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { PricingConfig } from "@shared/schema";
 import { PricingService, PricingCache } from "@/lib/pricingService";
 import { Plus, Edit, Save, X, DollarSign } from "lucide-react";
@@ -37,6 +37,11 @@ const PricingManager = () => {
     onSuccess: () => {
       // Clear pricing cache to force refresh
       PricingService.clearCache();
+      
+      // Invalidate all relevant React Query caches
+      queryClient.invalidateQueries({ queryKey: ['/api/pricing'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/pricing'] });
+      
       refetch();
       setEditingId(null);
       toast({

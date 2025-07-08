@@ -13,6 +13,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { Order } from "@shared/schema";
 import ProgressIndicator from "@/components/ProgressIndicator";
+import { PricingService } from "@/lib/pricingService";
 
 const CheckoutPage = () => {
   const [, navigate] = useLocation();
@@ -20,6 +21,7 @@ const CheckoutPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [deliveryNotes, setDeliveryNotes] = useState("");
+  const [deliveryFee, setDeliveryFee] = useState(0);
   
   // Fetch current order with enhanced retry and error handling for onboarding
   const { data: pendingOrder, isLoading, error, refetch } = useQuery<Order>({
@@ -34,6 +36,12 @@ const CheckoutPage = () => {
     retryDelay: attemptIndex => Math.min(500 * 2 ** attemptIndex, 5000),
     refetchOnWindowFocus: true,
     staleTime: 0, // Always fetch fresh data for pending orders
+  });
+
+  // Fetch delivery fee using React Query for better caching and updates
+  const { data: deliveryFeeData } = useQuery<{ pricingConfigs: any[] }>({
+    queryKey: ['/api/pricing'],
+    staleTime: 0, // Always fetch fresh pricing data
   });
   
   // Fetch user profile for delivery address
@@ -78,6 +86,16 @@ const CheckoutPage = () => {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, [navigate]);
+
+  // Update delivery fee when pricing data changes
+  useEffect(() => {
+    if (deliveryFeeData?.pricingConfigs) {
+      const baseDeliveryConfig = deliveryFeeData.pricingConfigs.find(
+        config => config.configType === 'delivery' && config.configKey === 'base_delivery'
+      );
+      setDeliveryFee(baseDeliveryConfig?.price || 0);
+    }
+  }, [deliveryFeeData]);
 
   // Check and set neighborhood on component mount
   useEffect(() => {
@@ -429,7 +447,7 @@ const CheckoutPage = () => {
                   </div>
                   <div className="flex justify-between">
                     <span>Delivery Fee</span>
-                    <span>EGP 0.00</span>
+                    <span>EGP {deliveryFee.toFixed(2)}</span>
                   </div>
                   {pendingOrder.discount > 0 && (
                     <div className="flex justify-between text-accent">
@@ -439,7 +457,7 @@ const CheckoutPage = () => {
                   )}
                   <div className="flex justify-between font-bold text-lg pt-4 border-t">
                     <span>Total</span>
-                    <span className="text-primary">EGP {pendingOrder.total.toFixed(0)}</span>
+                    <span className="text-primary">EGP {(pendingOrder.total + deliveryFee).toFixed(0)}</span>
                 </div>
               </CardContent>
               <CardFooter>
