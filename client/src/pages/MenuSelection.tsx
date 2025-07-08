@@ -261,7 +261,11 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
                     />
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg">{meal.title}</h3>
-                      <p className="text-gray-600 text-sm line-clamp-2">{meal.description}</p>
+                      <div className="flex items-center mt-1 text-sm text-gray-600">
+                        <span>{meal.calories || 0} cal</span>
+                        <span className="mx-2">•</span>
+                        <span>{meal.protein || 0}g protein</span>
+                      </div>
                     </div>
                   </div>
 
