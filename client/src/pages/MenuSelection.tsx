@@ -70,7 +70,7 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
           setSelectedMeals(storedSelections.selectedMeals);
           // Clear the stored selections to avoid reusing them unintentionally
           sessionStorage.removeItem('mealSelections');
-          
+
           toast({
             title: "Selections Restored",
             description: "Your meal selections have been restored.",
@@ -144,7 +144,7 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
           <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto"></div>
           <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
           <div className="h-12 bg-gray-200 rounded w-2/3 mx-auto mt-8"></div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="bg-white rounded-xl overflow-hidden shadow">
@@ -173,13 +173,13 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
     { id: 3, label: "Create Account" },
     { id: 4, label: "Complete Checkout" }
   ];
-  
+
   return (
     <div className="bg-white py-8">
       <div className="container mx-auto px-4">
         {/* Only show Progress Indicator during onboarding, not when coming from account page */}
         {!params.get("fromAccount") && <ProgressIndicator steps={steps} currentStep={2} />}
-        
+
         <div className="mb-8 mt-6">
           {/* Back Button for onboarding flow */}
           {!params.get("fromAccount") && (
@@ -194,7 +194,7 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
               </Link>
             </div>
           )}
-          
+
           {/* Title and navigation when coming from account page */}
           {params.get("fromAccount") && (
             <div className="flex flex-col mb-4">
@@ -224,10 +224,10 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
             </div>
           )}
         </div>
-        
+
         {/* Week Selection - Hidden during Get Started flow or when coming from account page */}
         {!params.get("fromPlan") && !params.get("fromAccount") && <WeekSelector currentWeekId={weekId} />}
-        
+
         {/* Meal Selection Count */}
         <div className="max-w-6xl mx-auto mb-6 flex items-center justify-between px-4">
           <h3 className="text-lg font-medium">
@@ -242,25 +242,60 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
             </button>
           </div>
         </div>
-        
+
         {/* All Meals */}
         <div className="max-w-6xl mx-auto mb-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {menuData?.meals.map((meal) => (
-              <MealCard 
-                key={meal.id}
-                meal={meal}
-                isSelected={isMealSelected(meal.id)}
-                selectedCount={getMealCount(meal.id)}
-                onSelect={handleSelectMeal}
-                onRemove={handleRemoveMeal}
-                disabled={isSelectionComplete && !isMealSelected(meal.id)}
-                subscriptionType={portionSize}
-              />
-            ))}
+          <div className="space-y-4">
+            {(menuData as any)?.meals?.map((meal: Meal) => {
+              const count = getMealCount(meal.id);
+              const isSelected = count > 0;
+              const isMaxReached = selectedMeals.length >= mealCount;
+
+              return (
+                <div key={meal.id} className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+                  <div className="flex items-center space-x-4">
+                    <img 
+                      src={meal.imageUrl} 
+                      alt={meal.title} 
+                      className="w-16 h-16 object-cover rounded-md"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg">{meal.title}</h3>
+                      <p className="text-gray-600 text-sm line-clamp-2">{meal.description}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => handleRemoveMeal(meal.id)}
+                      className={`p-2 rounded-full ${isSelected ? 'text-red-500 hover:bg-red-50' : 'text-gray-300 cursor-not-allowed'}`}
+                      disabled={!isSelected}
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </button>
+
+                    <span className="w-8 text-center font-medium">
+                      {count}
+                    </span>
+
+                    <button
+                      onClick={() => handleSelectMeal(meal.id, portionSize === 'mixed' ? 'standard' : portionSize as PortionSize)}
+                      className={`p-2 rounded-full ${(!isMaxReached || isSelected) ? 'text-green-500 hover:bg-green-50' : 'text-gray-300 cursor-not-allowed'}`}
+                      disabled={isMaxReached && !isSelected}
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
-        
+
         {/* Order Summary */}
         <div className="mt-10">
           <OrderSummary
