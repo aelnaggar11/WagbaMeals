@@ -252,48 +252,115 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
               const isMaxReached = selectedMeals.length >= mealCount;
 
               return (
-                <div key={meal.id} className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
-                  <div className="flex items-center space-x-4">
-                    <img 
-                      src={meal.imageUrl} 
-                      alt={meal.title} 
-                      className="w-16 h-16 object-cover rounded-md"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg">{meal.title}</h3>
-                      <div className="flex items-center mt-1 text-sm text-gray-600">
-                        <span>{meal.calories || 0} cal</span>
-                        <span className="mx-2">•</span>
-                        <span>{meal.protein || 0}g protein</span>
+                <div key={meal.id} className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+                  <div className="flex items-center justify-between p-4">
+                    <div className="flex items-center space-x-4">
+                      <img 
+                        src={meal.imageUrl} 
+                        alt={meal.title} 
+                        className="w-16 h-16 object-cover rounded-md"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg">{meal.title}</h3>
+                        <div className="flex items-center mt-1 text-sm text-gray-600">
+                          <span>{meal.calories || 0} cal</span>
+                          <span className="mx-2">•</span>
+                          <span>{meal.protein || 0}g protein</span>
+                        </div>
                       </div>
                     </div>
+
+                    {/* Standard controls for non-mixed portion sizes */}
+                    {portionSize !== 'mixed' && (
+                      <div className="flex items-center space-x-3">
+                        <button
+                          onClick={() => handleRemoveMeal(meal.id)}
+                          className={`p-2 rounded-full ${isSelected ? 'text-red-500 hover:bg-red-50' : 'text-gray-300 cursor-not-allowed'}`}
+                          disabled={!isSelected}
+                        >
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </button>
+
+                        <span className="w-8 text-center font-medium">
+                          {count}
+                        </span>
+
+                        <button
+                          onClick={() => handleSelectMeal(meal.id, portionSize as PortionSize)}
+                          className={`p-2 rounded-full ${(!isMaxReached || isSelected) ? 'text-green-500 hover:bg-green-50' : 'text-gray-300 cursor-not-allowed'}`}
+                          disabled={isMaxReached && !isSelected}
+                        >
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Mix & Match controls */}
+                    {portionSize === 'mixed' && (
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleRemoveMeal(meal.id)}
+                          className={`p-2 rounded-full ${isSelected ? 'text-red-500 hover:bg-red-50' : 'text-gray-300 cursor-not-allowed'}`}
+                          disabled={!isSelected}
+                        >
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </button>
+
+                        <span className="w-8 text-center font-medium">
+                          {count}
+                        </span>
+
+                        <div className="flex space-x-1">
+                          <button
+                            onClick={() => handleSelectMeal(meal.id, 'standard')}
+                            className={`px-3 py-1 text-xs rounded ${(!isMaxReached || isSelected) ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                            disabled={isMaxReached && !isSelected}
+                          >
+                            Std
+                          </button>
+                          <button
+                            onClick={() => handleSelectMeal(meal.id, 'large')}
+                            className={`px-3 py-1 text-xs rounded ${(!isMaxReached || isSelected) ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                            disabled={isMaxReached && !isSelected}
+                          >
+                            Large
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => handleRemoveMeal(meal.id)}
-                      className={`p-2 rounded-full ${isSelected ? 'text-red-500 hover:bg-red-50' : 'text-gray-300 cursor-not-allowed'}`}
-                      disabled={!isSelected}
-                    >
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </button>
-
-                    <span className="w-8 text-center font-medium">
-                      {count}
-                    </span>
-
-                    <button
-                      onClick={() => handleSelectMeal(meal.id, portionSize === 'mixed' ? 'standard' : portionSize as PortionSize)}
-                      className={`p-2 rounded-full ${(!isMaxReached || isSelected) ? 'text-green-500 hover:bg-green-50' : 'text-gray-300 cursor-not-allowed'}`}
-                      disabled={isMaxReached && !isSelected}
-                    >
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </button>
-                  </div>
+                  {/* Show portion breakdown for Mix & Match */}
+                  {portionSize === 'mixed' && isSelected && (
+                    <div className="border-t bg-gray-50 px-4 py-3">
+                      <div className="text-sm text-gray-600">
+                        <span className="font-medium">Selected portions: </span>
+                        {(() => {
+                          const mealPortions = selectedMeals.filter(item => item.mealId === meal.id);
+                          const portionCounts = mealPortions.reduce((acc, item) => {
+                            acc[item.portionSize] = (acc[item.portionSize] || 0) + 1;
+                            return acc;
+                          }, {} as Record<string, number>);
+                          
+                          return Object.entries(portionCounts).map(([size, count], idx) => (
+                            <span key={size}>
+                              {idx > 0 && ', '}
+                              {count}x {size.charAt(0).toUpperCase() + size.slice(1)}
+                              {size === 'large' && (
+                                <span className="text-green-600 font-medium"> (+EGP 99 each)</span>
+                              )}
+                            </span>
+                          ));
+                        })()}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
