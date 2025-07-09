@@ -342,13 +342,18 @@ const OrdersManagement = () => {
       queryFn: async () => {
         if (!selectedWeekId) return [];
         const allItems: any[] = [];
-        for (const order of weekOrders) {
+        
+        // Only fetch items for orders that have selected meals
+        const selectedOrders = weekOrders.filter(order => order.status === 'selected');
+        
+        for (const order of selectedOrders) {
           try {
-            const response = await apiRequest('GET', `/api/orders/${order.id}/items`);
-            const items = await response.json();
-            allItems.push(...items);
+            const items = await apiRequest('GET', `/api/orders/${order.id}/items`);
+            if (items && Array.isArray(items)) {
+              allItems.push(...items);
+            }
           } catch (error) {
-            console.error(`Failed to fetch items for order ${order.id}`);
+            console.error(`Failed to fetch items for order ${order.id}:`, error);
           }
         }
         return allItems;
@@ -360,8 +365,16 @@ const OrdersManagement = () => {
     const mealCounts: { [key: number]: { standard: number; large: number; meal?: Meal } } = {};
     let randomMealsNeeded = { standard: 0, large: 0 };
     
+    // Debug logging
+    console.log('=== MEAL PREP DEBUG ===');
+    console.log('Selected Week ID:', selectedWeekId);
+    console.log('Week Orders:', weekOrders.length);
+    console.log('Orders with selected status:', weekOrders.filter(order => order.status === 'selected').length);
+    console.log('All Order Items:', allOrderItems?.length || 0);
+    
     // Count selected meals
     allOrderItems?.forEach((item: any) => {
+      console.log('Processing item:', item);
       if (!mealCounts[item.mealId]) {
         mealCounts[item.mealId] = { standard: 0, large: 0, meal: getMealById(item.mealId) };
       }
@@ -371,19 +384,17 @@ const OrdersManagement = () => {
         mealCounts[item.mealId].large++;
       }
     });
+    
+    console.log('Final meal counts:', mealCounts);
 
     // Calculate random meals needed for "not_selected" orders
     weekOrders.forEach(order => {
       if (order.status === 'not_selected') {
-        const orderItemCount = allOrderItems?.filter((item: any) => item.orderId === order.id).length || 0;
-        const missingMeals = order.mealCount - orderItemCount;
-        
-        if (missingMeals > 0) {
-          if (order.defaultPortionSize === 'standard') {
-            randomMealsNeeded.standard += missingMeals;
-          } else {
-            randomMealsNeeded.large += missingMeals;
-          }
+        // For not_selected orders, we need the full meal count as random meals
+        if (order.defaultPortionSize === 'standard') {
+          randomMealsNeeded.standard += order.mealCount;
+        } else {
+          randomMealsNeeded.large += order.mealCount;
         }
       }
     });
