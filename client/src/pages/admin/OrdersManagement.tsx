@@ -15,6 +15,58 @@ import { formatCurrency } from "@/lib/utils";
 import { Package, Clock, MapPin, CreditCard, Users } from "lucide-react";
 import OrderList from "@/components/admin/OrderList";
 
+// Helper function to format delivery address from JSON string
+const formatDeliveryAddress = (addressString: string | null) => {
+  if (!addressString) return null;
+  
+  try {
+    const address = JSON.parse(addressString);
+    const parts = [];
+    
+    // Add name if available
+    if (address.name) {
+      parts.push(address.name);
+    }
+    
+    // Add street address
+    if (address.street) {
+      parts.push(address.street);
+    }
+    
+    // Add apartment/building info
+    const apartmentInfo = [];
+    if (address.apartment) {
+      apartmentInfo.push(`Apt ${address.apartment}`);
+    }
+    if (address.building) {
+      apartmentInfo.push(`Building ${address.building}`);
+    }
+    if (apartmentInfo.length > 0) {
+      parts.push(apartmentInfo.join(', '));
+    }
+    
+    // Add area/neighborhood
+    if (address.area) {
+      parts.push(address.area);
+    }
+    
+    // Add landmark if available
+    if (address.landmark) {
+      parts.push(`Near ${address.landmark}`);
+    }
+    
+    // Add phone if available
+    if (address.phone) {
+      parts.push(`📞 ${address.phone}`);
+    }
+    
+    return parts.join(', ');
+  } catch (error) {
+    // If it's not valid JSON, return the original string
+    return addressString;
+  }
+};
+
 const OrdersManagement = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -278,7 +330,7 @@ const OrdersManagement = () => {
                         <div className="flex items-start">
                           <MapPin size={14} className="mr-2 text-gray-500 mt-0.5" />
                           <div>
-                            <div>{order.deliveryAddress || "No address provided"}</div>
+                            <div>{formatDeliveryAddress(order.deliveryAddress) || "No address provided"}</div>
                             {order.deliveryNotes && (
                               <div className="text-gray-600 mt-1">Note: {order.deliveryNotes}</div>
                             )}
