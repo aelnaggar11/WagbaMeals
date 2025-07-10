@@ -432,25 +432,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/auth/logout', (req, res) => {
+    // Clear user ID from session but keep admin ID if present
+    if (req.session) {
+      delete req.session.userId;
+      
+      // If there's no admin ID either, destroy the entire session
+      if (!req.session.adminId) {
+        req.session.destroy((err) => {
+          if (err) {
+            console.error('Session destroy error:', err);
+          }
+        });
+      }
+    }
+    
     // Clear all authentication cookies immediately with all variations
     res.clearCookie('wagba_auth_token', { path: '/' });
     res.clearCookie('connect.sid', { path: '/' });
     res.clearCookie('connect.sid.sig', { path: '/' });
     res.clearCookie('wagba_session', { path: '/' });
     
-    // Force session destruction
-    if (req.session) {
-      req.session.destroy((err) => {
-        if (err) {
-          console.error('Session destroy error:', err);
-        }
-      });
-    }
-    
-    // Clear session data manually as well
-    req.session = null;
-    
-    res.json({ message: 'Logged out successfully' });
+    res.json({ message: 'User logged out successfully' });
   });
 
   app.post('/api/auth/forgot-password', async (req, res) => {
@@ -584,25 +586,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   app.post('/api/admin/auth/logout', (req, res) => {
+    // Clear admin ID from session but keep user ID if present
+    if (req.session) {
+      delete req.session.adminId;
+      
+      // If there's no user ID either, destroy the entire session
+      if (!req.session.userId) {
+        req.session.destroy((err) => {
+          if (err) {
+            console.error('Admin session destroy error:', err);
+          }
+        });
+      }
+    }
+    
     // Clear all authentication cookies immediately with all variations
     res.clearCookie('wagba_admin_token', { path: '/' });
     res.clearCookie('connect.sid', { path: '/' });
     res.clearCookie('connect.sid.sig', { path: '/' });
     res.clearCookie('wagba_session', { path: '/' });
     
-    // Force session destruction
-    if (req.session) {
-      req.session.destroy((err) => {
-        if (err) {
-          console.error('Admin session destroy error:', err);
-        }
-      });
-    }
-    
-    // Clear session data manually as well
-    req.session = null;
-    
-    res.json({ message: 'Logged out successfully' });
+    res.json({ message: 'Admin logged out successfully' });
   });
 
   // User Routes
