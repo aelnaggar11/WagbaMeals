@@ -33,15 +33,8 @@ const Navigation = () => {
 
   const handleLogout = async () => {
     try {
-      if (admin) {
-        // Admin logout
-        await apiRequest('POST', '/api/admin/auth/logout', {});
-        queryClient.invalidateQueries({ queryKey: ['/api/admin/auth/me'] });
-      } else {
-        // User logout
-        await apiRequest('POST', '/api/auth/logout', {});
-        queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-      }
+      // Set logout flag first to prevent any redirects
+      localStorage.setItem('wagba_logging_out', 'true');
       
       // Clear stored authentication tokens
       localStorage.removeItem('wagba_auth_token');
@@ -50,14 +43,22 @@ const Navigation = () => {
       // Clear all queries to ensure proper logout
       queryClient.clear();
       
+      if (admin) {
+        // Admin logout
+        await apiRequest('POST', '/api/admin/auth/logout', {});
+      } else {
+        // User logout
+        await apiRequest('POST', '/api/auth/logout', {});
+      }
+      
       // Show success message
       toast({
         title: "Logged Out",
         description: "You have successfully logged out."
       });
       
-      // Navigate home
-      navigate('/');
+      // Clear logout flag and redirect
+      localStorage.removeItem('wagba_logging_out');
       
       // Force a page reload to clear any auth state in memory
       window.location.href = '/';
@@ -65,6 +66,7 @@ const Navigation = () => {
       // Even if logout fails, clear the tokens and redirect
       localStorage.removeItem('wagba_auth_token');
       localStorage.removeItem('wagba_admin_token');
+      localStorage.removeItem('wagba_logging_out');
       queryClient.clear();
       
       toast({
