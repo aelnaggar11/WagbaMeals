@@ -127,6 +127,11 @@ Wagba is a full-stack meal delivery application focused on weekly meal plans. Th
 - Session persistence across application restarts
 
 ## Changelog
+- July 10, 2025: SUBSCRIPTION MANAGEMENT SYSTEM - Implemented comprehensive subscription management with pause, resume, and cancellation features
+- July 10, 2025: Added subscription status tracking with database columns and backend API endpoints
+- July 10, 2025: Created subscription management tab in account page with status badges and action buttons
+- July 10, 2025: Built SubscriptionManager component with authentication handling and user-friendly error messages
+- July 10, 2025: Fixed queryClient configuration to properly handle subscription API calls
 - July 8, 2025: ONBOARDING UX IMPROVEMENTS - Added back buttons to all onboarding steps for better navigation flow
 - July 8, 2025: Disabled meal selection dropdowns for non-Mix & Match subscriptions to prevent user confusion
 - July 8, 2025: Removed individual meal pricing display from meal cards as all meals of same type have same price

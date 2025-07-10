@@ -8,10 +8,13 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest(
-  method: string,
   url: string,
-  data?: unknown | undefined,
+  options: {
+    method: string;
+    data?: unknown | undefined;
+  },
 ): Promise<any> {
+  const { method, data } = options;
   const headers: Record<string, string> = data ? { "Content-Type": "application/json" } : {};
   
   // Add token header as backup authentication
