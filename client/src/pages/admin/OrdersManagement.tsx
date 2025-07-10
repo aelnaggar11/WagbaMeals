@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Admin, Order, Week, User, Meal } from "@shared/schema";
+import { Admin, Order, Week, User, Meal, Neighborhood } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { CacheManager } from "@/lib/cacheManager";
 import { formatCurrency } from "@/lib/utils";
@@ -102,6 +102,11 @@ const OrdersManagement = () => {
   const { data: mealsData } = useQuery<{ meals: Meal[] }>({
     queryKey: ['/api/meals'],
   });
+
+  // Fetch neighborhoods data
+  const { data: neighborhoodsData } = useQuery<{ neighborhoods: Neighborhood[] }>({
+    queryKey: ['/api/neighborhoods'],
+  });
   
   // Get weeks where the deadline has passed (for Orders List and Meal Prep)
   const pastDeadlineWeeks = weeksData?.weeks.filter(week => {
@@ -185,6 +190,7 @@ const OrdersManagement = () => {
   // Orders List Component
   const OrdersListTab = () => {
     const [statusFilter, setStatusFilter] = useState<string>('active'); // 'all', 'active', 'skipped', 'selected', 'not_selected'
+    const [neighborhoodFilter, setNeighborhoodFilter] = useState<string>('all'); // 'all' or specific neighborhood name
     
     let weekOrders = selectedWeekId ? ordersData?.orders.filter(order => order.weekId === selectedWeekId) || [] : [];
     
@@ -194,6 +200,22 @@ const OrdersManagement = () => {
     } else if (statusFilter !== 'all') {
       weekOrders = weekOrders.filter(order => order.status === statusFilter);
     }
+
+    // Apply neighborhood filter
+    if (neighborhoodFilter !== 'all') {
+      weekOrders = weekOrders.filter(order => {
+        if (!order.deliveryAddress) return false;
+        try {
+          const address = JSON.parse(order.deliveryAddress);
+          return address.area === neighborhoodFilter;
+        } catch (error) {
+          return false;
+        }
+      });
+    }
+
+    // Get serviced neighborhoods for filter dropdown
+    const servicedNeighborhoods = neighborhoodsData?.neighborhoods.filter(n => n.isServiced) || [];
     
     const { data: orderItemsData } = useQuery<any>({
       queryKey: [`/api/orders/items`, selectedWeekId],
@@ -260,6 +282,22 @@ const OrdersManagement = () => {
                 <SelectItem value="selected">Selected Only</SelectItem>
                 <SelectItem value="not_selected">Not Selected Only</SelectItem>
                 <SelectItem value="skipped">Skipped Only</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={neighborhoodFilter}
+              onValueChange={setNeighborhoodFilter}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by neighborhood" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Neighborhoods</SelectItem>
+                {servicedNeighborhoods.map((neighborhood) => (
+                  <SelectItem key={neighborhood.id} value={neighborhood.name}>
+                    {neighborhood.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Select
@@ -417,16 +455,8 @@ const OrdersManagement = () => {
     const mealCounts: { [key: number]: { standard: number; large: number; meal?: Meal } } = {};
     let randomMealsNeeded = { standard: 0, large: 0 };
     
-    // Debug logging
-    console.log('=== MEAL PREP DEBUG ===');
-    console.log('Selected Week ID:', selectedWeekId);
-    console.log('Week Orders:', weekOrders.length);
-    console.log('Orders with selected status:', weekOrders.filter(order => order.status === 'selected').length);
-    console.log('All Order Items:', allOrderItems?.length || 0);
-    
     // Count selected meals
     allOrderItems?.forEach((item: any) => {
-      console.log('Processing item:', item);
       if (!mealCounts[item.mealId]) {
         mealCounts[item.mealId] = { standard: 0, large: 0, meal: getMealById(item.mealId) };
       }
@@ -436,8 +466,6 @@ const OrdersManagement = () => {
         mealCounts[item.mealId].large++;
       }
     });
-    
-    console.log('Final meal counts:', mealCounts);
 
     // Calculate random meals needed for "not_selected" orders
     weekOrders.forEach(order => {
