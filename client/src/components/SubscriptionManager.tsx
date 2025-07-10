@@ -11,8 +11,7 @@ import { format } from 'date-fns';
 import { Calendar, Clock, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 
 interface SubscriptionData {
-  subscriptionStatus: 'active' | 'paused' | 'cancelled';
-  subscriptionPausedAt?: string;
+  subscriptionStatus: 'active' | 'cancelled';
   subscriptionCancelledAt?: string;
   createdAt: string;
 }
@@ -36,28 +35,6 @@ const SubscriptionManager = () => {
       return response.json();
     },
     retry: 1
-  });
-
-  const pauseSubscriptionMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest('/api/user/subscription/pause', {
-        method: 'PATCH'
-      });
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/user/subscription'] });
-      toast({
-        title: "Subscription Paused",
-        description: "Your subscription has been paused successfully.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to pause subscription",
-        variant: "destructive",
-      });
-    }
   });
 
   const resumeSubscriptionMutation = useMutation({
@@ -104,14 +81,7 @@ const SubscriptionManager = () => {
     }
   });
 
-  const handlePauseSubscription = async () => {
-    setIsLoading(true);
-    try {
-      await pauseSubscriptionMutation.mutateAsync();
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
 
   const handleResumeSubscription = async () => {
     setIsLoading(true);
@@ -135,8 +105,6 @@ const SubscriptionManager = () => {
     switch (status) {
       case 'active':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'paused':
-        return <Clock className="h-4 w-4 text-orange-500" />;
       case 'cancelled':
         return <XCircle className="h-4 w-4 text-red-500" />;
       default:
@@ -148,8 +116,6 @@ const SubscriptionManager = () => {
     switch (status) {
       case 'active':
         return <Badge variant="default" className="bg-green-100 text-green-800">Active</Badge>;
-      case 'paused':
-        return <Badge variant="default" className="bg-orange-100 text-orange-800">Paused</Badge>;
       case 'cancelled':
         return <Badge variant="destructive">Cancelled</Badge>;
       default:
@@ -202,8 +168,7 @@ const SubscriptionManager = () => {
               </div>
               <p className="text-sm text-gray-600">
                 {subscriptionData.subscriptionStatus === 'active' && "Your subscription is active and deliveries will continue as scheduled."}
-                {subscriptionData.subscriptionStatus === 'paused' && "Your subscription is paused. No deliveries will be made until you resume."}
-                {subscriptionData.subscriptionStatus === 'cancelled' && "Your subscription has been cancelled. No future deliveries will be made."}
+                {subscriptionData.subscriptionStatus === 'cancelled' && "Your subscription has been cancelled. Resume to continue receiving deliveries."}
               </p>
             </div>
           </div>
@@ -226,17 +191,7 @@ const SubscriptionManager = () => {
             </span>
           </div>
           
-          {subscriptionData.subscriptionPausedAt && (
-            <>
-              <Separator />
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Paused on:</span>
-                <span className="font-medium">
-                  {format(new Date(subscriptionData.subscriptionPausedAt), 'MMM dd, yyyy')}
-                </span>
-              </div>
-            </>
-          )}
+
 
           {subscriptionData.subscriptionCancelledAt && (
             <>
@@ -261,21 +216,41 @@ const SubscriptionManager = () => {
           <div className="space-y-4">
             {subscriptionData.subscriptionStatus === 'active' && (
               <div className="space-y-3">
-                <Button
-                  variant="outline"
-                  onClick={handlePauseSubscription}
-                  disabled={isLoading}
-                  className="w-full"
-                >
-                  {isLoading ? "Processing..." : "Pause Subscription"}
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      disabled={isLoading}
+                    >
+                      Cancel Subscription
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure you want to cancel?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will cancel your subscription and stop all future deliveries. You can resume your subscription at any time from this page.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleCancelSubscription}
+                        className="bg-red-500 hover:bg-red-600"
+                      >
+                        Yes, Cancel Subscription
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
                 <p className="text-sm text-gray-600">
-                  Pausing will stop all future deliveries until you resume. You can resume anytime.
+                  Cancel your subscription. You can resume it anytime.
                 </p>
               </div>
             )}
 
-            {subscriptionData.subscriptionStatus === 'paused' && (
+            {subscriptionData.subscriptionStatus === 'cancelled' && (
               <div className="space-y-3">
                 <Button
                   onClick={handleResumeSubscription}
@@ -286,55 +261,6 @@ const SubscriptionManager = () => {
                 </Button>
                 <p className="text-sm text-gray-600">
                   Resume your subscription to continue receiving weekly deliveries.
-                </p>
-              </div>
-            )}
-
-            {subscriptionData.subscriptionStatus !== 'cancelled' && (
-              <>
-                <Separator />
-                <div className="space-y-3">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="destructive"
-                        className="w-full"
-                        disabled={isLoading}
-                      >
-                        Cancel Subscription
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure you want to cancel?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently cancel your subscription. You will no longer receive weekly meal deliveries. 
-                          This action cannot be undone, but you can always create a new subscription later.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleCancelSubscription}
-                          className="bg-red-500 hover:bg-red-600"
-                        >
-                          Yes, Cancel Subscription
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                  <p className="text-sm text-gray-600">
-                    Permanently cancel your subscription. This cannot be undone.
-                  </p>
-                </div>
-              </>
-            )}
-
-            {subscriptionData.subscriptionStatus === 'cancelled' && (
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <p className="text-gray-600">
-                  Your subscription has been cancelled. To start receiving deliveries again, 
-                  you'll need to create a new subscription.
                 </p>
               </div>
             )}
