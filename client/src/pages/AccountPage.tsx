@@ -427,15 +427,34 @@ const AccountPage = () => {
     try {
       await apiRequest('POST', '/api/auth/logout');
 
-      // Clear cache and redirect to home
-      queryClient.invalidateQueries();
-      navigate('/');
+      // Clear stored authentication tokens
+      localStorage.removeItem('wagba_auth_token');
+      localStorage.removeItem('wagba_admin_token');
+      
+      // Clear all queries to ensure proper logout
+      queryClient.clear();
+      
+      toast({
+        title: "Logged Out",
+        description: "You have successfully logged out."
+      });
+      
+      // Force a page reload to clear any auth state in memory
+      window.location.href = '/';
     } catch (error) {
+      // Even if logout fails, clear the tokens and redirect
+      localStorage.removeItem('wagba_auth_token');
+      localStorage.removeItem('wagba_admin_token');
+      queryClient.clear();
+      
       toast({
         title: "Error",
         description: "There was an error logging out. Please try again.",
         variant: "destructive"
       });
+      
+      // Still redirect to clear any problematic state
+      window.location.href = '/';
     }
   };
 
