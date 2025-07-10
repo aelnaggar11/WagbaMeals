@@ -676,13 +676,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'User not found' });
       }
 
-      if (user.subscriptionStatus === 'cancelled') {
-        return res.status(400).json({ message: 'Cannot resume cancelled subscription' });
+      if (user.subscriptionStatus === 'active') {
+        return res.status(400).json({ message: 'Subscription is already active' });
       }
 
       const updatedUser = await storage.updateUser(req.session.userId!, {
         subscriptionStatus: 'active',
-        subscriptionPausedAt: null
+        subscriptionCancelledAt: null
       });
 
       res.json({

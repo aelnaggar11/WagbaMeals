@@ -45,6 +45,7 @@ const SubscriptionManager = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/user/subscription'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
       toast({
         title: "Subscription Resumed",
         description: "Your subscription has been resumed successfully.",
