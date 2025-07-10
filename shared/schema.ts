@@ -12,6 +12,9 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   phone: text("phone"),
   address: text("address"),
+  subscriptionStatus: text("subscription_status").default("active"), // "active", "paused", "cancelled"
+  subscriptionPausedAt: timestamp("subscription_paused_at"),
+  subscriptionCancelledAt: timestamp("subscription_cancelled_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -22,6 +25,9 @@ export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   phone: true,
   address: true,
+  subscriptionStatus: true,
+  subscriptionPausedAt: true,
+  subscriptionCancelledAt: true,
 });
 
 // Admin Model (completely separate from users)

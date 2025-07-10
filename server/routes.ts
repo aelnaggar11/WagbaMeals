@@ -624,6 +624,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Subscription management routes
+  app.get('/api/user/subscription', authMiddleware, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      res.json({
+        subscriptionStatus: user.subscriptionStatus || 'active',
+        subscriptionPausedAt: user.subscriptionPausedAt,
+        subscriptionCancelledAt: user.subscriptionCancelledAt,
+        createdAt: user.createdAt
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.patch('/api/user/subscription/pause', authMiddleware, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      if (user.subscriptionStatus === 'cancelled') {
+        return res.status(400).json({ message: 'Cannot pause cancelled subscription' });
+      }
+
+      const updatedUser = await storage.updateUser(req.session.userId!, {
+        subscriptionStatus: 'paused',
+        subscriptionPausedAt: new Date()
+      });
+
+      res.json({
+        subscriptionStatus: updatedUser.subscriptionStatus,
+        subscriptionPausedAt: updatedUser.subscriptionPausedAt,
+        message: 'Subscription paused successfully'
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.patch('/api/user/subscription/resume', authMiddleware, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      if (user.subscriptionStatus === 'cancelled') {
+        return res.status(400).json({ message: 'Cannot resume cancelled subscription' });
+      }
+
+      const updatedUser = await storage.updateUser(req.session.userId!, {
+        subscriptionStatus: 'active',
+        subscriptionPausedAt: null
+      });
+
+      res.json({
+        subscriptionStatus: updatedUser.subscriptionStatus,
+        subscriptionPausedAt: updatedUser.subscriptionPausedAt,
+        message: 'Subscription resumed successfully'
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.patch('/api/user/subscription/cancel', authMiddleware, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      if (user.subscriptionStatus === 'cancelled') {
+        return res.status(400).json({ message: 'Subscription already cancelled' });
+      }
+
+      const updatedUser = await storage.updateUser(req.session.userId!, {
+        subscriptionStatus: 'cancelled',
+        subscriptionCancelledAt: new Date()
+      });
+
+      res.json({
+        subscriptionStatus: updatedUser.subscriptionStatus,
+        subscriptionCancelledAt: updatedUser.subscriptionCancelledAt,
+        message: 'Subscription cancelled successfully'
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   // Helper function to generate future weeks
   const generateFutureWeeks = async () => {
     const weeks = await storage.getWeeks();

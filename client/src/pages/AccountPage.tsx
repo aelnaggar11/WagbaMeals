@@ -17,6 +17,7 @@ import { formatDate, getStatusClass } from "@/lib/utils";
 import { useLocation } from "wouter";
 import FixedMealSelector from "@/pages/FixedMealSelector";
 import { PricingService } from "@/lib/pricingService";
+import SubscriptionManager from "@/components/SubscriptionManager";
 
 const AccountPage = () => {
   const [location, navigate] = useLocation();
@@ -694,6 +695,7 @@ const AccountPage = () => {
           <TabsList>
             <TabsTrigger value="upcoming">Upcoming Meals</TabsTrigger>
             <TabsTrigger value="orders">Order History</TabsTrigger>
+            <TabsTrigger value="subscription">Subscription</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
           </TabsList>
 
@@ -954,6 +956,18 @@ const AccountPage = () => {
                   <p>No order history found.</p>
                 </div>
               )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="subscription" className="space-y-8">
+            <div>
+              <h2 className="text-2xl font-bold text-primary mb-6">Subscription Management</h2>
+              
+              <Card>
+                <CardContent className="pt-6">
+                  <SubscriptionManager />
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
