@@ -21,17 +21,21 @@ const SubscriptionManager = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  const { data: subscriptionData, isLoading: isLoadingSubscription } = useQuery<SubscriptionData>({
+  const { data: subscriptionData, isLoading: isLoadingSubscription, error } = useQuery<SubscriptionData>({
     queryKey: ['/api/user/subscription'],
     queryFn: async () => {
       const response = await fetch('/api/user/subscription', {
         credentials: 'include'
       });
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required. Please log in again.');
+        }
         throw new Error('Failed to fetch subscription data');
       }
       return response.json();
-    }
+    },
+    retry: 1
   });
 
   const pauseSubscriptionMutation = useMutation({
@@ -157,6 +161,16 @@ const SubscriptionManager = () => {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center p-8">
+        <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+        <p className="text-red-600 mb-2">Error loading subscription</p>
+        <p className="text-gray-600 text-sm">{error.message}</p>
       </div>
     );
   }
