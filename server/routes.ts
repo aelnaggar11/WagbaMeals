@@ -432,14 +432,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/auth/logout', (req, res) => {
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).json({ message: 'Error logging out' });
-      }
-      // Clear token cookie as well
-      res.clearCookie('wagba_auth_token');
-      res.json({ message: 'Logged out successfully' });
-    });
+    // Clear all authentication cookies immediately with all variations
+    res.clearCookie('wagba_auth_token', { path: '/' });
+    res.clearCookie('connect.sid', { path: '/' });
+    res.clearCookie('connect.sid.sig', { path: '/' });
+    res.clearCookie('wagba_session', { path: '/' });
+    
+    // Force session destruction
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Session destroy error:', err);
+        }
+      });
+    }
+    
+    // Clear session data manually as well
+    req.session = null;
+    
+    res.json({ message: 'Logged out successfully' });
   });
 
   app.post('/api/auth/forgot-password', async (req, res) => {
@@ -573,14 +584,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   app.post('/api/admin/auth/logout', (req, res) => {
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).json({ message: 'Error logging out' });
-      }
-      // Clear admin token cookie as well
-      res.clearCookie('wagba_admin_token');
-      res.json({ message: 'Logged out successfully' });
-    });
+    // Clear all authentication cookies immediately with all variations
+    res.clearCookie('wagba_admin_token', { path: '/' });
+    res.clearCookie('connect.sid', { path: '/' });
+    res.clearCookie('connect.sid.sig', { path: '/' });
+    res.clearCookie('wagba_session', { path: '/' });
+    
+    // Force session destruction
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Admin session destroy error:', err);
+        }
+      });
+    }
+    
+    // Clear session data manually as well
+    req.session = null;
+    
+    res.json({ message: 'Logged out successfully' });
   });
 
   // User Routes

@@ -424,45 +424,28 @@ const AccountPage = () => {
   };
 
   const handleLogout = async () => {
+    // Set logout flag first to prevent any redirects
+    localStorage.setItem('wagba_logging_out', 'true');
+    
+    // Clear stored authentication tokens immediately
+    localStorage.removeItem('wagba_auth_token');
+    localStorage.removeItem('wagba_admin_token');
+    
+    // Clear all queries to ensure proper logout
+    queryClient.clear();
+    
     try {
-      // Set logout flag first to prevent any redirects
-      localStorage.setItem('wagba_logging_out', 'true');
-      
-      // Clear stored authentication tokens
-      localStorage.removeItem('wagba_auth_token');
-      localStorage.removeItem('wagba_admin_token');
-      
-      // Clear all queries to ensure proper logout
-      queryClient.clear();
-      
       await apiRequest('POST', '/api/auth/logout');
-      
-      toast({
-        title: "Logged Out",
-        description: "You have successfully logged out."
-      });
-      
-      // Clear logout flag and redirect
-      localStorage.removeItem('wagba_logging_out');
-      
-      // Force a page reload to clear any auth state in memory
-      window.location.href = '/';
     } catch (error) {
-      // Even if logout fails, clear the tokens and redirect
-      localStorage.removeItem('wagba_auth_token');
-      localStorage.removeItem('wagba_admin_token');
-      localStorage.removeItem('wagba_logging_out');
-      queryClient.clear();
-      
-      toast({
-        title: "Error",
-        description: "There was an error logging out. Please try again.",
-        variant: "destructive"
-      });
-      
-      // Still redirect to clear any problematic state
-      window.location.href = '/';
+      // Ignore API errors - we've already cleared local state
+      console.log('Logout API error (ignored):', error);
     }
+    
+    // Clear logout flag
+    localStorage.removeItem('wagba_logging_out');
+    
+    // Force a hard redirect to clear any auth state in memory
+    window.location.href = '/';
   };
 
   // Open delivery editing dialog
