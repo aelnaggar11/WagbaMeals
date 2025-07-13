@@ -43,6 +43,13 @@ const Dashboard = () => {
     staleTime: 0
   });
 
+  // Redirect unauthenticated users immediately instead of showing access denied
+  useEffect(() => {
+    if (!adminLoading && !admin) {
+      navigate('/admin/login');
+    }
+  }, [admin, adminLoading, navigate]);
+
   // Show loading state while checking authentication
   if (adminLoading) {
     return (
@@ -54,17 +61,9 @@ const Dashboard = () => {
     );
   }
 
-  // Show access denied only after loading completes and no admin found
-  if (!admin && !adminLoading) {
-    return (
-      <div className="container mx-auto px-4 py-16">
-        <div className="flex flex-col items-center justify-center py-12">
-          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-          <p className="text-gray-600 mb-6">You don't have permission to access the admin dashboard.</p>
-          <Button onClick={() => navigate('/admin/login')}>Admin Login</Button>
-        </div>
-      </div>
-    );
+  // Return null while redirecting to avoid showing content briefly
+  if (!admin) {
+    return null;
   }
 
   return (

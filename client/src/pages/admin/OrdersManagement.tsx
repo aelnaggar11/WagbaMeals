@@ -75,9 +75,16 @@ const OrdersManagement = () => {
   const [forceUpdate, setForceUpdate] = useState(0);
   
   // Check if admin is authenticated
-  const { data: admin } = useQuery<Admin>({
+  const { data: admin, isLoading: adminLoading } = useQuery<Admin>({
     queryKey: ['/api/admin/auth/me'],
   });
+
+  // Redirect unauthenticated users immediately instead of showing access denied
+  useEffect(() => {
+    if (!adminLoading && !admin) {
+      navigate('/admin/login');
+    }
+  }, [admin, adminLoading, navigate]);
   
   // State for filtering
   const [selectedWeekId, setSelectedWeekId] = useState<number | null>(null);
@@ -776,16 +783,20 @@ const OrdersManagement = () => {
     );
   };
 
-  if (!admin) {
+  // Show loading state while checking authentication
+  if (adminLoading) {
     return (
       <div className="container mx-auto px-4 py-16">
         <div className="flex flex-col items-center justify-center py-12">
-          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-          <p className="text-gray-600 mb-6">You don't have permission to access the orders management.</p>
-          <Button onClick={() => navigate('/admin/login')}>Admin Login</Button>
+          <p className="text-gray-600">Loading orders management...</p>
         </div>
       </div>
     );
+  }
+
+  // Return null while redirecting to avoid showing content briefly
+  if (!admin) {
+    return null;
   }
   
   return (
