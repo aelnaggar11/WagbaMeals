@@ -1010,7 +1010,9 @@ const AccountPage = () => {
                             </TableCell>
                             <TableCell>
                               <span className="capitalize">
-                                {order.paymentMethod?.replace('_', ' ') || 'Cash'}
+                                {order.paymentMethod === 'card' ? 'Credit Card' : 
+                                 order.paymentMethod === 'instapay' ? 'InstaPay' : 
+                                 order.paymentMethod || 'Not specified'}
                               </span>
                             </TableCell>
                             <TableCell>
@@ -1412,16 +1414,16 @@ const AccountPage = () => {
               <DialogTitle>Order Details</DialogTitle>
               <DialogDescription>
                 {selectedOrder && (
-                  <div className="space-y-1">
-                    <p>Order #{selectedOrder.id}</p>
-                    <p>
+                  <>
+                    <div>Order #{selectedOrder.id}</div>
+                    <div>
                       {selectedOrder.week?.label || `Week ${selectedOrder.weekId}`} - 
                       {selectedOrder.week?.deliveryDate ? 
                         ` Delivered on ${formatDate(new Date(selectedOrder.week.deliveryDate))}` : 
                         ' Delivery date not available'
                       }
-                    </p>
-                  </div>
+                    </div>
+                  </>
                 )}
               </DialogDescription>
             </DialogHeader>
@@ -1443,7 +1445,9 @@ const AccountPage = () => {
                     <div>
                       <p className="text-gray-600">Payment Method:</p>
                       <p className="font-medium capitalize">
-                        {selectedOrder.paymentMethod?.replace('_', ' ') || 'Cash on Delivery'}
+                        {selectedOrder.paymentMethod === 'card' ? 'Credit Card' : 
+                         selectedOrder.paymentMethod === 'instapay' ? 'InstaPay' : 
+                         selectedOrder.paymentMethod || 'Not specified'}
                       </p>
                     </div>
                     <div>
@@ -1461,20 +1465,20 @@ const AccountPage = () => {
                       {selectedOrder.items.map((item: any, index: number) => (
                         <div key={index} className="flex items-center p-3 border rounded-lg">
                           <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden mr-4">
-                            {item.meal?.imageUrl && (
+                            {item.imageUrl && (
                               <img 
-                                src={item.meal.imageUrl} 
-                                alt={item.meal.title} 
+                                src={item.imageUrl} 
+                                alt={item.title} 
                                 className="w-full h-full object-cover"
                               />
                             )}
                           </div>
                           <div className="flex-1">
-                            <h4 className="font-medium">{item.meal?.title || 'Unknown Meal'}</h4>
+                            <h4 className="font-medium">{item.title || 'Unknown Meal'}</h4>
                             <div className="flex items-center mt-1 text-sm text-gray-600">
-                              <span>{item.meal?.calories || 0} cal</span>
+                              <span>{item.calories || 0} cal</span>
                               <span className="mx-2">•</span>
-                              <span>{item.meal?.protein || 0}g protein</span>
+                              <span>{item.protein || 0}g protein</span>
                               <span className="mx-2">•</span>
                               <span className="capitalize">{item.portionSize || 'standard'} portion</span>
                             </div>

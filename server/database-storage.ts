@@ -360,8 +360,29 @@ export class DatabaseStorage implements IStorage {
   // OrderItem methods
   async getOrderItems(orderId: number): Promise<OrderItemFull[]> {
     return await db
-      .select()
+      .select({
+        id: orderItems.id,
+        orderId: orderItems.orderId,
+        mealId: orderItems.mealId,
+        portionSize: orderItems.portionSize,
+        price: orderItems.price,
+        createdAt: orderItems.createdAt,
+        title: meals.title,
+        description: meals.description,
+        imageUrl: meals.imageUrl,
+        calories: meals.calories,
+        protein: meals.protein,
+        carbs: meals.carbs,
+        fat: meals.fat,
+        category: meals.category,
+        isVegetarian: meals.isVegetarian,
+        isGlutenFree: meals.isGlutenFree,
+        tags: meals.tags,
+        ingredients: meals.ingredients,
+        instructions: meals.instructions
+      })
       .from(orderItems)
+      .leftJoin(meals, eq(orderItems.mealId, meals.id))
       .where(eq(orderItems.orderId, orderId));
   }
 
