@@ -995,6 +995,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get order details with items and meal info
+  app.get('/api/orders/:orderId/details', authMiddleware, async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const order = await storage.getOrder(orderId);
+      
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      // Check if user owns this order
+      if (order.userId !== req.session.userId) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      // Get week information
+      const week = await storage.getWeek(order.weekId);
+      
+      // Get order items with meal details
+      const items = await storage.getOrderItems(orderId);
+      
+      // Return order with enriched data
+      res.json({
+        ...order,
+        week,
+        items
+      });
+    } catch (error) {
+      console.error('Error fetching order details:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   // Get upcoming meal selections for a user
   app.get('/api/user/upcoming-meals', authMiddleware, async (req, res) => {
     try {

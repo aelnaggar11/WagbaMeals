@@ -64,6 +64,8 @@ const AccountPage = () => {
     deliveryNotes: ""
   });
   const [largeMealAddOn, setLargeMealAddOn] = useState(99);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
   // ALL QUERIES MUST BE DECLARED BEFORE ANY CONDITIONAL LOGIC
   const { data: currentUser, isLoading: isUserLoading } = useQuery<User | null>({
@@ -433,6 +435,30 @@ const AccountPage = () => {
       toast({
         title: "Error",
         description: "There was an error logging out. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handle order detail viewing
+  const handleViewOrder = async (order: any) => {
+    try {
+      // Fetch order details including items
+      const response = await fetch(`/api/orders/${order.id}/details`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch order details');
+      }
+      
+      const orderDetails = await response.json();
+      setSelectedOrder(orderDetails);
+      setIsOrderModalOpen(true);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load order details. Please try again.",
         variant: "destructive"
       });
     }
@@ -944,56 +970,69 @@ const AccountPage = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="orders" className="space-y-6">```text
+          <TabsContent value="orders" className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold text-primary mb-6">Order History</h2>
 
-              {(ordersData as any)?.orders && (ordersData as any).orders.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Order ID</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(ordersData as any).orders.map((order: any) => (
-                      <TableRow key={order.id}>
-                        <TableCell className="font-medium">#{order.id}</TableCell>
-                        <TableCell>{order.createdAt ? formatDate(new Date(order.createdAt)) : 'N/A'}</TableCell>
-                        <TableCell>
-                          <span className={order.status ? getStatusClass(order.status) : ''}>
-                            {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Unknown'}
-                          </span>
-                        </TableCell>
-                        <TableCell>${order.total ? order.total.toFixed(2) : '0.00'}</TableCell>
-                        <TableCell>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              // Navigate to order details or show modal
-                              toast({
-                                title: "Coming Soon",
-                                description: "Order details view is coming soon."
-                              });
-                            }}
-                          >
-                            View
-                          </Button>
-                        </TableCell>
+              {(() => {
+                const deliveredOrders = (ordersData as any)?.orders?.filter((order: any) => 
+                  order.status === 'selected' && !order.isSkipped
+                ) || [];
+                
+                return deliveredOrders.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Week</TableHead>
+                        <TableHead>Delivery Date</TableHead>
+                        <TableHead>Meals</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Payment</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center py-12">
-                  <p>No order history found.</p>
-                </div>
-              )}
+                    </TableHeader>
+                    <TableBody>
+                      {deliveredOrders.map((order: any) => {
+                        const week = weeksData?.weeks?.find((w: any) => w.id === order.weekId);
+                        return (
+                          <TableRow key={order.id}>
+                            <TableCell className="font-medium">
+                              {week?.label || `Week ${order.weekId}`}
+                            </TableCell>
+                            <TableCell>
+                              {week?.deliveryDate ? formatDate(new Date(week.deliveryDate)) : 'N/A'}
+                            </TableCell>
+                            <TableCell>
+                              {order.mealCount || 0} meals
+                            </TableCell>
+                            <TableCell>
+                              {order.total ? `${order.total} EGP` : 'N/A'}
+                            </TableCell>
+                            <TableCell>
+                              <span className="capitalize">
+                                {order.paymentMethod?.replace('_', ' ') || 'Cash'}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleViewOrder(order)}
+                              >
+                                View Details
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-12">
+                    <p>No delivered orders found.</p>
+                  </div>
+                );
+              })()}
             </div>
           </TabsContent>
 
@@ -1361,6 +1400,104 @@ const AccountPage = () => {
               </Button>
               <Button onClick={handleEditPayment} disabled={isUpdating}>
                 {isUpdating ? "Updating..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Order Details Modal */}
+        <Dialog open={isOrderModalOpen} onOpenChange={setIsOrderModalOpen}>
+          <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Order Details</DialogTitle>
+              <DialogDescription>
+                {selectedOrder && (
+                  <div className="space-y-1">
+                    <p>Order #{selectedOrder.id}</p>
+                    <p>
+                      {selectedOrder.week?.label || `Week ${selectedOrder.weekId}`} - 
+                      {selectedOrder.week?.deliveryDate ? 
+                        ` Delivered on ${formatDate(new Date(selectedOrder.week.deliveryDate))}` : 
+                        ' Delivery date not available'
+                      }
+                    </p>
+                  </div>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedOrder && (
+              <div className="space-y-6">
+                {/* Order Summary */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold mb-2">Order Summary</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600">Meals Ordered:</p>
+                      <p className="font-medium">{selectedOrder.mealCount || 0} meals</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Total Amount:</p>
+                      <p className="font-medium">{selectedOrder.total ? `${selectedOrder.total} EGP` : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Payment Method:</p>
+                      <p className="font-medium capitalize">
+                        {selectedOrder.paymentMethod?.replace('_', ' ') || 'Cash on Delivery'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Status:</p>
+                      <p className="font-medium capitalize">{selectedOrder.status}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Meals List */}
+                <div>
+                  <h3 className="font-semibold mb-3">Meals Delivered</h3>
+                  {selectedOrder.items && selectedOrder.items.length > 0 ? (
+                    <div className="space-y-3">
+                      {selectedOrder.items.map((item: any, index: number) => (
+                        <div key={index} className="flex items-center p-3 border rounded-lg">
+                          <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden mr-4">
+                            {item.meal?.imageUrl && (
+                              <img 
+                                src={item.meal.imageUrl} 
+                                alt={item.meal.title} 
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium">{item.meal?.title || 'Unknown Meal'}</h4>
+                            <div className="flex items-center mt-1 text-sm text-gray-600">
+                              <span>{item.meal?.calories || 0} cal</span>
+                              <span className="mx-2">•</span>
+                              <span>{item.meal?.protein || 0}g protein</span>
+                              <span className="mx-2">•</span>
+                              <span className="capitalize">{item.portionSize || 'standard'} portion</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <h4 className="font-medium text-yellow-800 mb-2">Random Meals Delivered</h4>
+                      <p className="text-yellow-700 text-sm">
+                        {selectedOrder.mealCount || 0} meals were delivered for this week, but no specific meals were selected. 
+                        Our chef prepared a variety of meals from the weekly menu.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button onClick={() => setIsOrderModalOpen(false)}>
+                Close
               </Button>
             </DialogFooter>
           </DialogContent>
