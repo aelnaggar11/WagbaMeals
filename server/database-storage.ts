@@ -359,31 +359,41 @@ export class DatabaseStorage implements IStorage {
 
   // OrderItem methods
   async getOrderItems(orderId: number): Promise<OrderItemFull[]> {
-    return await db
-      .select({
-        id: orderItems.id,
-        orderId: orderItems.orderId,
-        mealId: orderItems.mealId,
-        portionSize: orderItems.portionSize,
-        price: orderItems.price,
-        createdAt: orderItems.createdAt,
-        title: meals.title,
-        description: meals.description,
-        imageUrl: meals.imageUrl,
-        calories: meals.calories,
-        protein: meals.protein,
-        carbs: meals.carbs,
-        fat: meals.fat,
-        category: meals.category,
-        isVegetarian: meals.isVegetarian,
-        isGlutenFree: meals.isGlutenFree,
-        tags: meals.tags,
-        ingredients: meals.ingredients,
-        instructions: meals.instructions
-      })
+    // Get order items first
+    const items = await db
+      .select()
       .from(orderItems)
-      .leftJoin(meals, eq(orderItems.mealId, meals.id))
       .where(eq(orderItems.orderId, orderId));
+    
+    // Then get meal details for each item
+    const itemsWithMeals = await Promise.all(
+      items.map(async (item) => {
+        const meal = await db
+          .select()
+          .from(meals)
+          .where(eq(meals.id, item.mealId))
+          .limit(1);
+        
+        return {
+          ...item,
+          title: meal[0]?.title,
+          description: meal[0]?.description,
+          imageUrl: meal[0]?.imageUrl,
+          calories: meal[0]?.calories,
+          protein: meal[0]?.protein,
+          carbs: meal[0]?.carbs,
+          fat: meal[0]?.fat,
+          category: meal[0]?.category,
+          isVegetarian: meal[0]?.isVegetarian,
+          isGlutenFree: meal[0]?.isGlutenFree,
+          tags: meal[0]?.tags,
+          ingredients: meal[0]?.ingredients,
+          instructions: meal[0]?.instructions
+        };
+      })
+    );
+    
+    return itemsWithMeals;
   }
 
   async addOrderItem(insertOrderItem: InsertOrderItem): Promise<OrderItemFull> {
