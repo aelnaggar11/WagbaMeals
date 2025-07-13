@@ -110,7 +110,7 @@ const AccountPage = () => {
   // ALL useEffect HOOKS MUST BE DECLARED BEFORE CONDITIONAL LOGIC
   useEffect(() => {
     if (!isUserLoading && !currentUser) {
-      navigate('/auth?returnTo=' + encodeURIComponent(location));
+      navigate('/auth?tab=login&skip_progress=true');
     }
   }, [isUserLoading, currentUser, navigate, location]);
 
