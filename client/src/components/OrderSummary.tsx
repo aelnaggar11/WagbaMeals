@@ -78,12 +78,7 @@ const OrderSummary = ({
 
     // Check if user is logged in
     if (!user) {
-      toast({
-        title: "Login Required",
-        description: "You need to be logged in to checkout. Please sign in or create an account.",
-        variant: "destructive"
-      });
-      
+      // For onboarding flow, save selections and redirect to auth instead of showing error
       try {
         // Save selections to backend session storage (more reliable than sessionStorage)
         await apiRequest('POST', '/api/temp/meal-selections', {
@@ -106,7 +101,7 @@ const OrderSummary = ({
         // Continue with just sessionStorage if backend fails
       }
       
-      // Redirect to auth page with return URL
+      // Redirect to auth page with return URL - no error toast for onboarding
       window.location.href = `/auth?returnTo=${encodeURIComponent(window.location.pathname)}`;
       return;
     }
