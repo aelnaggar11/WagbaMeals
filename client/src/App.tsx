@@ -82,12 +82,8 @@ function App() {
       location.startsWith('/meal-plans') || 
       location.startsWith('/menu/');
       
-    // Don't redirect if we're in the middle of a logout
-    const isLoggingOut = localStorage.getItem('wagba_logging_out') === 'true';
-    
     // Redirect authenticated users away from onboarding/landing pages to account
-    // But only if we're not in the middle of logout
-    if (!userLoading && user && isOnboardingRoute && !isLoggingOut) {
+    if (!userLoading && user && isOnboardingRoute) {
       navigate('/account');
       return;
     }

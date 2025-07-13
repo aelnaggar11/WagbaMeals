@@ -17,7 +17,6 @@ import { formatDate, getStatusClass } from "@/lib/utils";
 import { useLocation } from "wouter";
 import FixedMealSelector from "@/pages/FixedMealSelector";
 import { PricingService } from "@/lib/pricingService";
-import SubscriptionManager from "@/components/SubscriptionManager";
 
 const AccountPage = () => {
   const [location, navigate] = useLocation();
@@ -91,12 +90,6 @@ const AccountPage = () => {
   const { data: weeksData } = useQuery({
     queryKey: ['/api/weeks'],
     enabled: !!currentUser
-  });
-
-  const { data: subscriptionData } = useQuery({
-    queryKey: ['/api/user/subscription'],
-    enabled: !!currentUser,
-    retry: 1
   });
 
   const { data: upcomingMealsData, isLoading: isLoadingUpcomingMeals, refetch: refetchUpcomingMeals } = useQuery({
@@ -424,28 +417,19 @@ const AccountPage = () => {
   };
 
   const handleLogout = async () => {
-    // Set logout flag first to prevent any redirects
-    localStorage.setItem('wagba_logging_out', 'true');
-    
-    // Clear stored authentication tokens immediately
-    localStorage.removeItem('wagba_auth_token');
-    localStorage.removeItem('wagba_admin_token');
-    
-    // Clear all queries to ensure proper logout
-    queryClient.clear();
-    
     try {
       await apiRequest('POST', '/api/auth/logout');
+
+      // Clear cache and redirect to home
+      queryClient.invalidateQueries();
+      navigate('/');
     } catch (error) {
-      // Ignore API errors - we've already cleared local state
-      console.log('Logout API error (ignored):', error);
+      toast({
+        title: "Error",
+        description: "There was an error logging out. Please try again.",
+        variant: "destructive"
+      });
     }
-    
-    // Clear logout flag
-    localStorage.removeItem('wagba_logging_out');
-    
-    // Force a hard redirect to clear any auth state in memory
-    window.location.href = '/';
   };
 
   // Open delivery editing dialog
@@ -710,7 +694,6 @@ const AccountPage = () => {
           <TabsList>
             <TabsTrigger value="upcoming">Upcoming Meals</TabsTrigger>
             <TabsTrigger value="orders">Order History</TabsTrigger>
-            <TabsTrigger value="subscription">Subscription</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
           </TabsList>
 
@@ -815,7 +798,7 @@ const AccountPage = () => {
                               </div>
 
                               <div className="space-x-2">
-                                {!isDeadlinePassed && !week.isSkipped && (subscriptionData as any)?.subscriptionStatus !== 'cancelled' && (
+                                {!isDeadlinePassed && !week.isSkipped && (
                                   <Button 
                                     variant="outline" 
                                     size="sm"
@@ -888,22 +871,7 @@ const AccountPage = () => {
                         {/* Meal selection panel */}
                         {!week.isSkipped && (
                           <div id={`meal-selection-${week.weekId}`}>
-                            {(subscriptionData as any)?.subscriptionStatus === 'cancelled' ? (
-                              <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-                                <div className="text-red-600 mb-2">
-                                  <svg className="h-12 w-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                  </svg>
-                                  <p className="font-medium text-lg">Subscription Cancelled</p>
-                                </div>
-                                <p className="text-red-700 mb-4">
-                                  Your subscription has been cancelled. You cannot select meals until you resume your subscription.
-                                </p>
-                                <p className="text-sm text-red-600">
-                                  Go to the "Subscription" tab to resume your subscription and continue selecting meals.
-                                </p>
-                              </div>
-                            ) : isRefreshingWeekData && selectedWeekId === week.weekId ? (
+                            {isRefreshingWeekData && selectedWeekId === week.weekId ? (
                               <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
                                 <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
                                 <p className="text-gray-600">Refreshing meal selections...</p>
@@ -986,18 +954,6 @@ const AccountPage = () => {
                   <p>No order history found.</p>
                 </div>
               )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="subscription" className="space-y-8">
-            <div>
-              <h2 className="text-2xl font-bold text-primary mb-6">Subscription Management</h2>
-              
-              <Card>
-                <CardContent className="pt-6">
-                  <SubscriptionManager />
-                </CardContent>
-              </Card>
             </div>
           </TabsContent>
 

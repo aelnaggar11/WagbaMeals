@@ -32,34 +32,50 @@ const Navigation = () => {
   };
 
   const handleLogout = async () => {
-    // Set logout flag first to prevent any redirects
-    localStorage.setItem('wagba_logging_out', 'true');
-    
-    // Clear stored authentication tokens immediately
-    localStorage.removeItem('wagba_auth_token');
-    localStorage.removeItem('wagba_admin_token');
-    
-    // Clear all queries to ensure proper logout
-    queryClient.clear();
-    
     try {
       if (admin) {
         // Admin logout
         await apiRequest('POST', '/api/admin/auth/logout', {});
+        queryClient.invalidateQueries({ queryKey: ['/api/admin/auth/me'] });
       } else {
         // User logout
         await apiRequest('POST', '/api/auth/logout', {});
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       }
+      
+      // Clear stored authentication tokens
+      localStorage.removeItem('wagba_auth_token');
+      localStorage.removeItem('wagba_admin_token');
+      
+      // Clear all queries to ensure proper logout
+      queryClient.clear();
+      
+      // Show success message
+      toast({
+        title: "Logged Out",
+        description: "You have successfully logged out."
+      });
+      
+      // Navigate home
+      navigate('/');
+      
+      // Force a page reload to clear any auth state in memory
+      window.location.href = '/';
     } catch (error) {
-      // Ignore API errors - we've already cleared local state
-      console.log('Logout API error (ignored):', error);
+      // Even if logout fails, clear the tokens and redirect
+      localStorage.removeItem('wagba_auth_token');
+      localStorage.removeItem('wagba_admin_token');
+      queryClient.clear();
+      
+      toast({
+        title: "Error",
+        description: "There was an error logging out. Please try again.",
+        variant: "destructive"
+      });
+      
+      // Still redirect to clear any problematic state
+      window.location.href = '/';
     }
-    
-    // Clear logout flag
-    localStorage.removeItem('wagba_logging_out');
-    
-    // Force a hard redirect to clear any auth state in memory
-    window.location.href = '/';
   };
 
   // This is a workaround for wouter's Link component to avoid nesting <a> tags

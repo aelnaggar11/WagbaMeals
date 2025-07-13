@@ -432,27 +432,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/auth/logout', (req, res) => {
-    // Clear user ID from session but keep admin ID if present
-    if (req.session) {
-      delete req.session.userId;
-      
-      // If there's no admin ID either, destroy the entire session
-      if (!req.session.adminId) {
-        req.session.destroy((err) => {
-          if (err) {
-            console.error('Session destroy error:', err);
-          }
-        });
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: 'Error logging out' });
       }
-    }
-    
-    // Clear all authentication cookies immediately with all variations
-    res.clearCookie('wagba_auth_token', { path: '/' });
-    res.clearCookie('connect.sid', { path: '/' });
-    res.clearCookie('connect.sid.sig', { path: '/' });
-    res.clearCookie('wagba_session', { path: '/' });
-    
-    res.json({ message: 'User logged out successfully' });
+      // Clear token cookie as well
+      res.clearCookie('wagba_auth_token');
+      res.json({ message: 'Logged out successfully' });
+    });
   });
 
   app.post('/api/auth/forgot-password', async (req, res) => {
@@ -586,27 +573,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   app.post('/api/admin/auth/logout', (req, res) => {
-    // Clear admin ID from session but keep user ID if present
-    if (req.session) {
-      delete req.session.adminId;
-      
-      // If there's no user ID either, destroy the entire session
-      if (!req.session.userId) {
-        req.session.destroy((err) => {
-          if (err) {
-            console.error('Admin session destroy error:', err);
-          }
-        });
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: 'Error logging out' });
       }
-    }
-    
-    // Clear all authentication cookies immediately with all variations
-    res.clearCookie('wagba_admin_token', { path: '/' });
-    res.clearCookie('connect.sid', { path: '/' });
-    res.clearCookie('connect.sid.sig', { path: '/' });
-    res.clearCookie('wagba_session', { path: '/' });
-    
-    res.json({ message: 'Admin logged out successfully' });
+      // Clear admin token cookie as well
+      res.clearCookie('wagba_admin_token');
+      res.json({ message: 'Logged out successfully' });
+    });
   });
 
   // User Routes
@@ -644,103 +618,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: updatedUser.email,
         phone: updatedUser.phone,
         address: updatedUser.address
-      });
-    } catch (error) {
-      res.status(500).json({ message: 'Server error' });
-    }
-  });
-
-  // Subscription management routes
-  app.get('/api/user/subscription', authMiddleware, async (req, res) => {
-    try {
-      const user = await storage.getUser(req.session.userId!);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-
-      res.json({
-        subscriptionStatus: user.subscriptionStatus || 'active',
-        subscriptionPausedAt: user.subscriptionPausedAt,
-        subscriptionCancelledAt: user.subscriptionCancelledAt,
-        createdAt: user.createdAt
-      });
-    } catch (error) {
-      res.status(500).json({ message: 'Server error' });
-    }
-  });
-
-  app.patch('/api/user/subscription/pause', authMiddleware, async (req, res) => {
-    try {
-      const user = await storage.getUser(req.session.userId!);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-
-      if (user.subscriptionStatus === 'cancelled') {
-        return res.status(400).json({ message: 'Cannot pause cancelled subscription' });
-      }
-
-      const updatedUser = await storage.updateUser(req.session.userId!, {
-        subscriptionStatus: 'paused',
-        subscriptionPausedAt: new Date()
-      });
-
-      res.json({
-        subscriptionStatus: updatedUser.subscriptionStatus,
-        subscriptionPausedAt: updatedUser.subscriptionPausedAt,
-        message: 'Subscription paused successfully'
-      });
-    } catch (error) {
-      res.status(500).json({ message: 'Server error' });
-    }
-  });
-
-  app.patch('/api/user/subscription/resume', authMiddleware, async (req, res) => {
-    try {
-      const user = await storage.getUser(req.session.userId!);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-
-      if (user.subscriptionStatus === 'active') {
-        return res.status(400).json({ message: 'Subscription is already active' });
-      }
-
-      const updatedUser = await storage.updateUser(req.session.userId!, {
-        subscriptionStatus: 'active',
-        subscriptionCancelledAt: null
-      });
-
-      res.json({
-        subscriptionStatus: updatedUser.subscriptionStatus,
-        subscriptionPausedAt: updatedUser.subscriptionPausedAt,
-        message: 'Subscription resumed successfully'
-      });
-    } catch (error) {
-      res.status(500).json({ message: 'Server error' });
-    }
-  });
-
-  app.patch('/api/user/subscription/cancel', authMiddleware, async (req, res) => {
-    try {
-      const user = await storage.getUser(req.session.userId!);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-
-      if (user.subscriptionStatus === 'cancelled') {
-        return res.status(400).json({ message: 'Subscription already cancelled' });
-      }
-
-      const updatedUser = await storage.updateUser(req.session.userId!, {
-        subscriptionStatus: 'cancelled',
-        subscriptionCancelledAt: new Date()
-      });
-
-      res.json({
-        subscriptionStatus: updatedUser.subscriptionStatus,
-        subscriptionCancelledAt: updatedUser.subscriptionCancelledAt,
-        message: 'Subscription cancelled successfully'
       });
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
