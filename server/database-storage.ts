@@ -837,4 +837,38 @@ export class DatabaseStorage implements IStorage {
   async deletePricingConfig(id: number): Promise<void> {
     await db.delete(pricingConfigs).where(eq(pricingConfigs.id, id));
   }
+
+  // Subscription management methods
+  async cancelUserSubscription(userId: number): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        subscriptionStatus: "cancelled",
+        subscriptionCancelledAt: new Date()
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    if (!user) {
+      throw new Error(`User not found: ${userId}`);
+    }
+    return user;
+  }
+
+  async resumeUserSubscription(userId: number): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        subscriptionStatus: "active",
+        subscriptionCancelledAt: null,
+        subscriptionPausedAt: null
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    if (!user) {
+      throw new Error(`User not found: ${userId}`);
+    }
+    return user;
+  }
 }

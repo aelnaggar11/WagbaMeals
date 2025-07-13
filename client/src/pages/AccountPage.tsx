@@ -101,6 +101,12 @@ const AccountPage = () => {
     refetchInterval: false
   });
 
+  const { data: subscriptionStatus, refetch: refetchSubscriptionStatus } = useQuery({
+    queryKey: ['/api/user/subscription/status'],
+    enabled: !!currentUser,
+    refetchOnWindowFocus: true,
+  });
+
   // ALL useEffect HOOKS MUST BE DECLARED BEFORE CONDITIONAL LOGIC
   useEffect(() => {
     if (!isUserLoading && !currentUser) {
@@ -694,12 +700,45 @@ const AccountPage = () => {
           <TabsList>
             <TabsTrigger value="upcoming">Upcoming Meals</TabsTrigger>
             <TabsTrigger value="orders">Order History</TabsTrigger>
+            <TabsTrigger value="subscription">Subscription</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
           </TabsList>
 
           <TabsContent value="upcoming" className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold text-primary mb-6">Upcoming Deliveries</h2>
+
+              {/* Subscription Cancelled Warning */}
+              {subscriptionStatus?.subscriptionStatus === 'cancelled' && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <h3 className="font-medium text-red-800 mb-2">Subscription Cancelled</h3>
+                  <p className="text-red-700 mb-3">
+                    Your subscription has been cancelled. You cannot select meals or modify orders while your subscription is inactive.
+                  </p>
+                  <Button
+                    onClick={async () => {
+                      try {
+                        await apiRequest('POST', '/api/user/subscription/resume');
+                        await refetchSubscriptionStatus();
+                        await refetchUpcomingMeals();
+                        toast({
+                          title: "Subscription Resumed",
+                          description: "Your subscription has been resumed. You can now select meals again."
+                        });
+                      } catch (error) {
+                        toast({
+                          title: "Error",
+                          description: "Failed to resume subscription. Please try again.",
+                          variant: "destructive"
+                        });
+                      }
+                    }}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    Resume Subscription
+                  </Button>
+                </div>
+              )}
 
               {displayUpcomingMeals?.upcomingMeals && displayUpcomingMeals.upcomingMeals.length > 0 ? (
                 <div className="space-y-6">
@@ -798,7 +837,7 @@ const AccountPage = () => {
                               </div>
 
                               <div className="space-x-2">
-                                {!isDeadlinePassed && !week.isSkipped && (
+                                {!isDeadlinePassed && !week.isSkipped && subscriptionStatus?.subscriptionStatus !== 'cancelled' && (
                                   <Button 
                                     variant="outline" 
                                     size="sm"
@@ -812,7 +851,7 @@ const AccountPage = () => {
                                   </Button>
                                 )}
 
-                                {week.orderId && week.canSkip && !week.isSkipped && (
+                                {week.orderId && week.canSkip && !week.isSkipped && subscriptionStatus?.subscriptionStatus !== 'cancelled' && (
                                   <Button 
                                     variant="outline" 
                                     disabled={processingWeekId === week.weekId}
@@ -838,7 +877,7 @@ const AccountPage = () => {
                                   </Button>
                                 )}
 
-                                {week.orderId && week.canUnskip && week.isSkipped && (
+                                {week.orderId && week.canUnskip && week.isSkipped && subscriptionStatus?.subscriptionStatus !== 'cancelled' && (
                                   <Button 
                                     variant="outline" 
                                     disabled={processingWeekId === week.weekId}
@@ -856,7 +895,7 @@ const AccountPage = () => {
                                     ) : (
                                       <>
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                         </svg>
                                         Unskip Delivery
                                       </>
@@ -884,6 +923,7 @@ const AccountPage = () => {
                                 mealCount={week.mealCount}
                                 items={week.items || []}
                                 defaultPortionSize={week.defaultPortionSize || 'standard'}
+                                disabled={subscriptionStatus?.subscriptionStatus === 'cancelled'}
                               />
                             )}
                           </div>
@@ -1067,6 +1107,103 @@ const AccountPage = () => {
                   Logout
                 </Button>
               </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="subscription" className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-primary mb-6">Subscription Management</h2>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Subscription Status</CardTitle>
+                  <CardDescription>
+                    Manage your meal subscription preferences
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Current Status</p>
+                        <p className="text-sm text-gray-600">
+                          {subscriptionStatus?.subscriptionStatus === 'cancelled' 
+                            ? 'Cancelled' 
+                            : 'Active'}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        {subscriptionStatus?.subscriptionStatus === 'cancelled' ? (
+                          <Button
+                            onClick={async () => {
+                              try {
+                                await apiRequest('POST', '/api/user/subscription/resume');
+                                await refetchSubscriptionStatus();
+                                await refetchUpcomingMeals();
+                                toast({
+                                  title: "Subscription Resumed",
+                                  description: "Your subscription has been resumed. You can now select meals again."
+                                });
+                              } catch (error) {
+                                toast({
+                                  title: "Error",
+                                  description: "Failed to resume subscription. Please try again.",
+                                  variant: "destructive"
+                                });
+                              }
+                            }}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            Resume Subscription
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={async () => {
+                              try {
+                                await apiRequest('POST', '/api/user/subscription/cancel');
+                                await refetchSubscriptionStatus();
+                                await refetchUpcomingMeals();
+                                toast({
+                                  title: "Subscription Cancelled",
+                                  description: "Your subscription has been cancelled. You can resume it anytime."
+                                });
+                              } catch (error) {
+                                toast({
+                                  title: "Error",
+                                  description: "Failed to cancel subscription. Please try again.",
+                                  variant: "destructive"
+                                });
+                              }
+                            }}
+                            variant="outline"
+                            className="text-red-600 border-red-600 hover:bg-red-50"
+                          >
+                            Cancel Subscription
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    {subscriptionStatus?.subscriptionCancelledAt && (
+                      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p className="text-sm text-yellow-800">
+                          Subscription cancelled on {new Date(subscriptionStatus.subscriptionCancelledAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                      <h4 className="font-medium mb-2">About Subscription Management</h4>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        <li>• Cancel your subscription at any time</li>
+                        <li>• Resume your subscription whenever you're ready</li>
+                        <li>• Cancelled subscriptions prevent meal selection</li>
+                        <li>• No charges while subscription is cancelled</li>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
         </Tabs>

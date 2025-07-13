@@ -30,6 +30,7 @@ interface FixedMealSelectorProps {
   mealCount: number;
   items: WeekItem[];
   defaultPortionSize?: string; // The user's subscription portion size preference
+  disabled?: boolean; // Disable all meal selection functionality
 }
 
 export default function FixedMealSelector({
@@ -37,7 +38,8 @@ export default function FixedMealSelector({
   orderId,
   mealCount = 3,
   items = [],
-  defaultPortionSize = 'standard'
+  defaultPortionSize = 'standard',
+  disabled = false
 }: FixedMealSelectorProps) {
   const { toast } = useToast();
   const [selectedItems, setSelectedItems] = useState<WeekItem[]>([]);
@@ -436,7 +438,19 @@ export default function FixedMealSelector({
   const meals = (data as any)?.meals || [];
 
   return (
-    <div>
+    <div className="relative">
+      {/* Disabled overlay */}
+      {disabled && (
+        <div className="absolute inset-0 bg-gray-50 bg-opacity-90 z-10 flex items-center justify-center">
+          <div className="text-center">
+            <h3 className="text-lg font-medium text-gray-700 mb-2">Meal Selection Disabled</h3>
+            <p className="text-sm text-gray-600">
+              Your subscription is cancelled. Please resume your subscription to select meals.
+            </p>
+          </div>
+        </div>
+      )}
+      
       {isSaved ? (
         // Saved view with grouped meals
         <>

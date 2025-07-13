@@ -624,6 +624,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User subscription management routes
+  app.post('/api/user/subscription/cancel', authMiddleware, async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      const updatedUser = await storage.cancelUserSubscription(userId);
+      
+      res.json({ 
+        message: 'Subscription cancelled successfully',
+        subscriptionStatus: updatedUser.subscriptionStatus,
+        subscriptionCancelledAt: updatedUser.subscriptionCancelledAt
+      });
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.post('/api/user/subscription/resume', authMiddleware, async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      const updatedUser = await storage.resumeUserSubscription(userId);
+      
+      res.json({ 
+        message: 'Subscription resumed successfully',
+        subscriptionStatus: updatedUser.subscriptionStatus,
+        subscriptionCancelledAt: updatedUser.subscriptionCancelledAt
+      });
+    } catch (error) {
+      console.error('Error resuming subscription:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.get('/api/user/subscription/status', authMiddleware, async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      res.json({
+        subscriptionStatus: user.subscriptionStatus || 'active',
+        subscriptionCancelledAt: user.subscriptionCancelledAt,
+        subscriptionPausedAt: user.subscriptionPausedAt
+      });
+    } catch (error) {
+      console.error('Error fetching subscription status:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   // Helper function to generate future weeks
   const generateFutureWeeks = async () => {
     const weeks = await storage.getWeeks();
