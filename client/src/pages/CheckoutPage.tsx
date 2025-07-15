@@ -20,14 +20,6 @@ const CheckoutPage = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderType, setOrderType] = useState<"trial" | "subscription">("trial");
-  
-  // Auto-set order type to subscription if user has already used trial box
-  useEffect(() => {
-    if (userProfile?.hasUsedTrialBox) {
-      setOrderType("subscription");
-      setPaymentMethod("card"); // Force card payment for subscription
-    }
-  }, [userProfile?.hasUsedTrialBox]);
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [deliveryNotes, setDeliveryNotes] = useState("");
   const [deliveryFee, setDeliveryFee] = useState(0);
@@ -71,6 +63,14 @@ const CheckoutPage = () => {
   });
 
   const servicedNeighborhoods = neighborhoodsData?.neighborhoods.filter(n => n.isServiced) || [];
+  
+  // Auto-set order type to subscription if user has already used trial box
+  useEffect(() => {
+    if (userProfile?.hasUsedTrialBox) {
+      setOrderType("subscription");
+      setPaymentMethod("card"); // Force card payment for subscription
+    }
+  }, [userProfile?.hasUsedTrialBox]);
   
   // Initialize address state with neighborhood from localStorage (persistent across navigation)
   const [address, setAddress] = useState(() => {
