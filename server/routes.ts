@@ -664,17 +664,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { paymentMethod, mockPayment } = req.body;
       
+      console.log('Starting subscription for user:', req.session.userId);
+      console.log('Payment method:', paymentMethod);
+      
       // In a real implementation, this would process the payment with Stripe
       // For now, we'll just update the user to be a subscriber
       
       const user = await storage.updateUser(req.session.userId!, {
         userType: 'subscriber',
-        isSubscriber: true,
-        subscriptionStartedAt: new Date().toISOString()
+        subscriptionStartedAt: new Date()
       });
+      
+      console.log('User updated successfully:', user.id);
       
       // Resume subscription if it was cancelled
       await storage.resumeUserSubscription(req.session.userId!);
+      
+      console.log('Subscription resumed successfully');
       
       res.json({ 
         message: 'Subscription started successfully', 
@@ -683,7 +689,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Error starting subscription:', error);
-      res.status(500).json({ message: 'Server error' });
+      console.error('Error details:', error.message);
+      res.status(500).json({ message: 'Server error: ' + error.message });
     }
   });
 

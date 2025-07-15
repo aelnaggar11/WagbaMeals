@@ -87,7 +87,7 @@ const AccountPage = () => {
     retry: 1
   });
 
-  const { data: profile, isLoading: isProfileLoading } = useQuery({
+  const { data: profile, isLoading: isProfileLoading, refetch: refetchProfile } = useQuery({
     queryKey: ['/api/user/profile'],
     enabled: !!currentUser
   });
@@ -473,21 +473,30 @@ const AccountPage = () => {
   const handleStartSubscription = async () => {
     setIsProcessingSubscription(true);
     try {
+      console.log('Starting subscription process...');
+      
       // Mock subscription process - simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 2000));
       
+      console.log('Sending subscription request...');
+      
       // Update user to subscriber status
-      await apiRequest('POST', '/api/user/start-subscription', {
+      const result = await apiRequest('POST', '/api/user/start-subscription', {
         paymentMethod: 'credit_card',
         mockPayment: true
       });
       
+      console.log('Subscription request successful:', result);
+      
       // Refetch user data to reflect subscription status
+      console.log('Refetching user data...');
       await Promise.all([
         refetchProfile(),
         refetchSubscriptionStatus(),
         refetchUpcomingMeals()
       ]);
+      
+      console.log('All data refetched successfully');
       
       setShowSubscriptionModal(false);
       setSubscriptionForm({
@@ -503,6 +512,7 @@ const AccountPage = () => {
       });
       
     } catch (error) {
+      console.error('Subscription error:', error);
       toast({
         title: "Error",
         description: "Failed to start subscription. Please try again.",
