@@ -1704,7 +1704,6 @@ const AccountPage = () => {
                     <li>• Save 10% on every order</li>
                     <li>• Access to all weekly meal plans</li>
                     <li>• Cancel or pause anytime</li>
-                    <li>• Priority customer support</li>
                   </ul>
                 </div>
               </div>
