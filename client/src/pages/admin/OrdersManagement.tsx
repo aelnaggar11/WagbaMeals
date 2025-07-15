@@ -775,8 +775,10 @@ const OrdersManagement = () => {
                       <TableHead>Status</TableHead>
                       <TableHead>Meals</TableHead>
                       <TableHead>Payment Method</TableHead>
+                      <TableHead>Payment Status</TableHead>
                       <TableHead>Total</TableHead>
                       <TableHead>Order Date</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -813,11 +815,80 @@ const OrdersManagement = () => {
                             {userOrder?.paymentMethod || (hasOrder ? allUserOrders[0].paymentMethod : "-") || "-"}
                           </TableCell>
                           <TableCell>
+                            {(() => {
+                              const currentOrder = userOrder || (hasOrder ? allUserOrders[0] : null);
+                              if (!currentOrder) return "-";
+                              
+                              const status = currentOrder.paymentStatus || 'pending';
+                              const getPaymentStatusBadge = (status: string) => {
+                                switch (status) {
+                                  case 'pending':
+                                    return <Badge variant="outline" className="bg-gray-100 text-gray-600">Pending</Badge>;
+                                  case 'processing':
+                                    return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">Processing</Badge>;
+                                  case 'confirmed':
+                                    return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Confirmed</Badge>;
+                                  case 'failed':
+                                    return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Failed</Badge>;
+                                  default:
+                                    return <Badge variant="outline" className="bg-gray-100 text-gray-600">Pending</Badge>;
+                                }
+                              };
+                              
+                              return getPaymentStatusBadge(status);
+                            })()}
+                          </TableCell>
+                          <TableCell>
                             {userOrder ? formatCurrency(userOrder.total) : hasOrder ? formatCurrency(allUserOrders[0].total) : "-"}
                           </TableCell>
                           <TableCell>
                             {userOrder?.createdAt ? new Date(userOrder.createdAt).toLocaleDateString() : 
                              hasOrder && allUserOrders[0].createdAt ? new Date(allUserOrders[0].createdAt).toLocaleDateString() : "-"}
+                          </TableCell>
+                          <TableCell>
+                            {(() => {
+                              const currentOrder = userOrder || (hasOrder ? allUserOrders[0] : null);
+                              if (!currentOrder) return "-";
+                              
+                              // Show InstaPay verification button for processing payments
+                              if (currentOrder.paymentMethod === 'instapay' && currentOrder.paymentStatus === 'processing') {
+                                return (
+                                  <div className="flex gap-2">
+                                    <Button 
+                                      size="sm" 
+                                      onClick={() => handleUpdatePaymentStatus(currentOrder.id, 'confirmed')}
+                                      className="bg-green-600 hover:bg-green-700"
+                                    >
+                                      Mark Received
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      onClick={() => handleUpdatePaymentStatus(currentOrder.id, 'failed')}
+                                      className="border-red-300 text-red-600 hover:bg-red-50"
+                                    >
+                                      Mark Failed
+                                    </Button>
+                                  </div>
+                                );
+                              }
+                              
+                              // Show payment confirmation image link for InstaPay orders
+                              if (currentOrder.paymentMethod === 'instapay' && currentOrder.paymentConfirmationImage) {
+                                return (
+                                  <a 
+                                    href={`/uploads/${currentOrder.paymentConfirmationImage}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-800 underline text-sm"
+                                  >
+                                    View Payment
+                                  </a>
+                                );
+                              }
+                              
+                              return "-";
+                            })()}
                           </TableCell>
                         </TableRow>
                       );

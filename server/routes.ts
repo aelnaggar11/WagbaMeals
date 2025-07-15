@@ -2694,11 +2694,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orderId = parseInt(req.params.id);
       const { paymentStatus } = req.body;
       
+      console.log('DEBUG: Admin payment status update called with:', { orderId, paymentStatus });
+      
       if (!['pending', 'processing', 'confirmed', 'failed'].includes(paymentStatus)) {
         return res.status(400).json({ message: 'Invalid payment status' });
       }
       
       const updatedOrder = await storage.updateOrder(orderId, { paymentStatus });
+      console.log('DEBUG: Order updated successfully:', updatedOrder);
       res.json(updatedOrder);
     } catch (error) {
       console.error('Error updating payment status:', error);

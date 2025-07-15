@@ -985,9 +985,27 @@ const AccountPage = () => {
                             <div className="flex justify-between items-center">
                               <div>
                                 <p className="font-medium">{week.mealCount} meals · {week.defaultPortionSize} size</p>
-                                <p className="text-sm text-gray-500">
-                                  {week.orderId ? "Order confirmed" : "No order yet"}
-                                </p>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm text-gray-500">
+                                    {week.orderId ? "Order confirmed" : "No order yet"}
+                                  </p>
+                                  {week.paymentMethod === 'instapay' && week.paymentStatus && (
+                                    <Badge 
+                                      variant="outline" 
+                                      className={`text-xs ${
+                                        week.paymentStatus === 'confirmed' ? 'bg-green-50 text-green-700 border-green-200' :
+                                        week.paymentStatus === 'processing' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                                        week.paymentStatus === 'failed' ? 'bg-red-50 text-red-700 border-red-200' :
+                                        'bg-gray-50 text-gray-700 border-gray-200'
+                                      }`}
+                                    >
+                                      {week.paymentStatus === 'processing' ? 'Payment Processing' : 
+                                       week.paymentStatus === 'confirmed' ? 'Payment Confirmed' :
+                                       week.paymentStatus === 'failed' ? 'Payment Failed' :
+                                       week.paymentStatus}
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
 
                               <div className="space-x-2">
@@ -1137,11 +1155,29 @@ const AccountPage = () => {
                               {order.total ? `${order.total} EGP` : 'N/A'}
                             </TableCell>
                             <TableCell>
-                              <span className="capitalize">
-                                {order.paymentMethod === 'card' ? 'Credit Card' : 
-                                 order.paymentMethod === 'instapay' ? 'InstaPay' : 
-                                 order.paymentMethod || 'Not specified'}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="capitalize">
+                                  {order.paymentMethod === 'card' ? 'Credit Card' : 
+                                   order.paymentMethod === 'instapay' ? 'InstaPay' : 
+                                   order.paymentMethod || 'Not specified'}
+                                </span>
+                                {order.paymentMethod === 'instapay' && order.paymentStatus && (
+                                  <Badge 
+                                    variant="outline" 
+                                    className={`text-xs ${
+                                      order.paymentStatus === 'confirmed' ? 'bg-green-50 text-green-700 border-green-200' :
+                                      order.paymentStatus === 'processing' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                                      order.paymentStatus === 'failed' ? 'bg-red-50 text-red-700 border-red-200' :
+                                      'bg-gray-50 text-gray-700 border-gray-200'
+                                    }`}
+                                  >
+                                    {order.paymentStatus === 'processing' ? 'Processing' : 
+                                     order.paymentStatus === 'confirmed' ? 'Confirmed' :
+                                     order.paymentStatus === 'failed' ? 'Failed' :
+                                     order.paymentStatus}
+                                  </Badge>
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell>
                               <Button 
