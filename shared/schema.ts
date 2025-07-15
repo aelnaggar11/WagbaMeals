@@ -170,6 +170,8 @@ export const orders = pgTable("orders", {
   deliveryAddress: text("delivery_address"),
   deliveryNotes: text("delivery_notes"),
   paymentMethod: text("payment_method"),
+  paymentStatus: text("payment_status").default("pending"), // "pending" | "processing" | "confirmed" | "failed"
+  paymentConfirmationImage: text("payment_confirmation_image"), // URL to uploaded payment confirmation
   deliveryDate: text("delivery_date"),
   orderType: text("order_type").default("trial"), // "trial", "subscription"
   createdAt: timestamp("created_at").defaultNow(),
@@ -188,6 +190,8 @@ export const insertOrderSchema = createInsertSchema(orders).pick({
   deliveryAddress: true,
   deliveryNotes: true,
   paymentMethod: true,
+  paymentStatus: true,
+  paymentConfirmationImage: true,
   deliveryDate: true,
   orderType: true,
 });

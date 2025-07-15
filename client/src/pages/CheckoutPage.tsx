@@ -23,6 +23,8 @@ const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [deliveryNotes, setDeliveryNotes] = useState("");
   const [deliveryFee, setDeliveryFee] = useState(0);
+  const [paymentConfirmationImage, setPaymentConfirmationImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   
   // Fetch current order with enhanced retry and error handling for onboarding
   const { data: pendingOrder, isLoading, error, refetch } = useQuery<Order>({
@@ -189,6 +191,40 @@ const CheckoutPage = () => {
       area: value
     });
   };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setPaymentConfirmationImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   
   const handleSubmitOrder = async () => {
     // Validation
@@ -201,25 +237,57 @@ const CheckoutPage = () => {
       return;
     }
     
+    // InstaPay specific validation
+    if (paymentMethod === "instapay" && !paymentConfirmationImage) {
+      toast({
+        title: "Payment confirmation required",
+        description: "Please upload your InstaPay payment confirmation image",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
-      await apiRequest('POST', '/api/orders/checkout', {
-        orderId: pendingOrder?.id,
-        paymentMethod,
-        orderType,
-        address,
-        deliveryNotes
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('orderId', pendingOrder?.id?.toString() || '');
+      formData.append('paymentMethod', paymentMethod);
+      formData.append('orderType', orderType);
+      formData.append('address', JSON.stringify(address));
+      formData.append('deliveryNotes', deliveryNotes);
+      
+      if (paymentConfirmationImage) {
+        formData.append('paymentConfirmationImage', paymentConfirmationImage);
+      }
+      
+      const response = await fetch('/api/orders/checkout', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
       });
+      
+      if (!response.ok) {
+        throw new Error('Failed to place order');
+      }
       
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       
-      toast({
-        title: "Order placed successfully!",
-        description: "Your meals will be delivered on the scheduled delivery date.",
-        variant: "default"
-      });
+      if (paymentMethod === "instapay") {
+        toast({
+          title: "Order submitted successfully!",
+          description: "Your payment is being processed. You'll receive confirmation once verified.",
+          variant: "default"
+        });
+      } else {
+        toast({
+          title: "Order placed successfully!",
+          description: "Your meals will be delivered on the scheduled delivery date.",
+          variant: "default"
+        });
+      }
       
       // Redirect to account page
       navigate('/account');
@@ -505,8 +573,55 @@ const CheckoutPage = () => {
                         </div>
                       </TabsContent>
                       
-                      <TabsContent value="instapay">
-                        <p className="text-gray-600">Pay securely using InstaPay. A 7% processing fee will be added to your total.</p>
+                      <TabsContent value="instapay" className="space-y-4">
+                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                          <h4 className="font-medium mb-2">InstaPay Payment Instructions</h4>
+                          <div className="text-sm text-gray-700 space-y-2">
+                            <p>1. Send payment to InstaPay account: <strong>wagba.food</strong></p>
+                            <p>2. Upload your payment confirmation screenshot below</p>
+                            <p>3. Your order will be processed once payment is verified</p>
+                            <p className="text-orange-600">Note: A 7% processing fee will be added to your total</p>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="paymentConfirmation">Payment Confirmation Screenshot *</Label>
+                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                              <input
+                                type="file"
+                                id="paymentConfirmation"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                className="hidden"
+                              />
+                              <label
+                                htmlFor="paymentConfirmation"
+                                className="cursor-pointer flex flex-col items-center space-y-2"
+                              >
+                                {imagePreview ? (
+                                  <div className="space-y-2">
+                                    <img 
+                                      src={imagePreview} 
+                                      alt="Payment confirmation preview" 
+                                      className="max-w-full max-h-32 object-contain rounded"
+                                    />
+                                    <p className="text-sm text-green-600">Image uploaded successfully</p>
+                                    <p className="text-xs text-gray-500">Click to change image</p>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2">
+                                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                    <p className="text-sm text-gray-600">Click to upload payment confirmation</p>
+                                    <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
+                                  </div>
+                                )}
+                              </label>
+                            </div>
+                          </div>
+                        </div>
                       </TabsContent>
                     </Tabs>
                   ) : (

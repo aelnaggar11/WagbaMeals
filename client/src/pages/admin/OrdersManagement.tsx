@@ -193,6 +193,30 @@ const OrdersManagement = () => {
       });
     }
   };
+
+  // Handle payment status update
+  const handleUpdatePaymentStatus = async (orderId: number, paymentStatus: string) => {
+    try {
+      await apiRequest('PATCH', `/api/admin/orders/${orderId}/payment-status`, { paymentStatus });
+      
+      // Force component re-render by updating force update state
+      setForceUpdate(prev => prev + 1);
+      
+      // Also trigger manual refetch
+      await refetchOrders();
+      
+      toast({
+        title: "Payment status updated",
+        description: `Order #${orderId} payment status updated to ${paymentStatus}`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "There was an error updating the payment status. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
   
   // Orders List Component
   const OrdersListTab = () => {
@@ -363,8 +387,33 @@ const OrdersManagement = () => {
                         </div>
                         <div className="flex items-center">
                           <CreditCard size={14} className="mr-2 text-gray-500" />
-                          {order.paymentMethod || "Not specified"}
+                          <span className="capitalize">{order.paymentMethod || "Not specified"}</span>
+                          {order.paymentStatus && (
+                            <Badge 
+                              variant="outline" 
+                              className={`ml-2 ${
+                                order.paymentStatus === 'confirmed' ? 'bg-green-50 text-green-700 border-green-200' :
+                                order.paymentStatus === 'processing' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                order.paymentStatus === 'failed' ? 'bg-red-50 text-red-700 border-red-200' :
+                                'bg-gray-50 text-gray-700 border-gray-200'
+                              }`}
+                            >
+                              {order.paymentStatus}
+                            </Badge>
+                          )}
                         </div>
+                        
+                        {order.paymentMethod === 'instapay' && order.paymentStatus === 'processing' && (
+                          <div className="mt-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleUpdatePaymentStatus(order.id, 'confirmed')}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              Mark Payment Received
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
 

@@ -127,6 +127,12 @@ Wagba is a full-stack meal delivery application focused on weekly meal plans. Th
 - Session persistence across application restarts
 
 ## Changelog
+- July 15, 2025: INSTAPAY PAYMENT SYSTEM - Implemented complete InstaPay payment flow with image upload, email notifications, and admin verification
+- July 15, 2025: Added InstaPay payment option for trial boxes with wagba.food account display and payment confirmation image upload
+- July 15, 2025: Integrated SendGrid email notifications to admin (aelnaggar35@gmail.com) with payment confirmation attachments
+- July 15, 2025: Added payment status tracking (pending/processing/confirmed/failed) with admin dashboard controls
+- July 15, 2025: Enhanced admin order management with InstaPay payment verification and "Mark Payment Received" functionality
+- July 15, 2025: Updated user account interface to show payment processing status for InstaPay orders
 - July 8, 2025: ONBOARDING UX IMPROVEMENTS - Added back buttons to all onboarding steps for better navigation flow
 - July 8, 2025: Disabled meal selection dropdowns for non-Mix & Match subscriptions to prevent user confusion
 - July 8, 2025: Removed individual meal pricing display from meal cards as all meals of same type have same price

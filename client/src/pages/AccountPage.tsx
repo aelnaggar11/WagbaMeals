@@ -1596,11 +1596,34 @@ const AccountPage = () => {
                     </div>
                     <div>
                       <p className="text-gray-600">Payment Method:</p>
-                      <p className="font-medium capitalize">
-                        {selectedOrder.paymentMethod === 'card' ? 'Credit Card' : 
-                         selectedOrder.paymentMethod === 'instapay' ? 'InstaPay' : 
-                         selectedOrder.paymentMethod || 'Not specified'}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium capitalize">
+                          {selectedOrder.paymentMethod === 'card' ? 'Credit Card' : 
+                           selectedOrder.paymentMethod === 'instapay' ? 'InstaPay' : 
+                           selectedOrder.paymentMethod || 'Not specified'}
+                        </p>
+                        {selectedOrder.paymentStatus && (
+                          <Badge 
+                            variant="outline" 
+                            className={`${
+                              selectedOrder.paymentStatus === 'confirmed' ? 'bg-green-50 text-green-700 border-green-200' :
+                              selectedOrder.paymentStatus === 'processing' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                              selectedOrder.paymentStatus === 'failed' ? 'bg-red-50 text-red-700 border-red-200' :
+                              'bg-gray-50 text-gray-700 border-gray-200'
+                            }`}
+                          >
+                            {selectedOrder.paymentStatus === 'processing' ? 'Payment Processing' : 
+                             selectedOrder.paymentStatus === 'confirmed' ? 'Payment Confirmed' :
+                             selectedOrder.paymentStatus === 'failed' ? 'Payment Failed' :
+                             selectedOrder.paymentStatus}
+                          </Badge>
+                        )}
+                      </div>
+                      {selectedOrder.paymentMethod === 'instapay' && selectedOrder.paymentStatus === 'processing' && (
+                        <p className="text-sm text-yellow-600 mt-1">
+                          Your InstaPay payment is being verified. You'll receive confirmation once it's processed.
+                        </p>
+                      )}
                     </div>
                     <div>
                       <p className="text-gray-600">Status:</p>

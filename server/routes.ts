@@ -9,6 +9,9 @@ import MemoryStore from 'memorystore';
 import ConnectPgSimple from 'connect-pg-simple';
 import { pool } from "./db";
 import { getPriceForMealCount, Admin } from "@shared/schema";
+import multer from "multer";
+import { sendEmail } from "./sendgrid";
+import path from "path";
 
 declare module 'express-session' {
   interface SessionData {
@@ -31,6 +34,21 @@ declare module 'express-serve-static-core' {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Configure multer for file uploads
+  const upload = multer({
+    dest: 'uploads/',
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB limit
+    },
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only image files are allowed'), false);
+      }
+    }
+  });
+
   // Session setup with production warning
   const sessionSecret = process.env.SESSION_SECRET;
   if (!sessionSecret && process.env.NODE_ENV === 'production') {
@@ -1931,12 +1949,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/orders/checkout', authMiddleware, async (req, res) => {
+  app.post('/api/orders/checkout', authMiddleware, upload.single('paymentConfirmationImage'), async (req, res) => {
     try {
       const { orderId, paymentMethod, orderType, address, deliveryNotes } = req.body;
+      const parsedAddress = JSON.parse(address);
 
       // Get order
-      const order = await storage.getOrder(orderId);
+      const order = await storage.getOrder(parseInt(orderId));
       if (!order) {
         return res.status(404).json({ message: 'Order not found' });
       }
@@ -1946,28 +1965,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Forbidden' });
       }
 
-      // Update order
-      const updatedOrder = await storage.updateOrder(orderId, {
+      // Prepare order update data
+      const orderUpdateData: any = {
         status: 'selected',
-        deliveryAddress: JSON.stringify(address),
+        deliveryAddress: JSON.stringify(parsedAddress),
         deliveryNotes,
         paymentMethod,
         orderType: orderType || 'trial'
-      });
+      };
+
+      // Handle InstaPay payment
+      if (paymentMethod === 'instapay') {
+        if (!req.file) {
+          return res.status(400).json({ message: 'Payment confirmation image required for InstaPay' });
+        }
+
+        // Set payment status to processing for InstaPay
+        orderUpdateData.paymentStatus = 'processing';
+        orderUpdateData.paymentConfirmationImage = req.file.filename;
+
+        // Get user info for email
+        const user = await storage.getUser(req.session.userId!);
+        if (user) {
+          // Send email notification to admin
+          const emailSent = await sendEmail({
+            to: 'aelnaggar35@gmail.com',
+            from: 'noreply@wagba.food',
+            subject: 'New InstaPay Payment Confirmation - Order #' + orderId,
+            html: `
+              <h2>New InstaPay Payment Confirmation</h2>
+              <p><strong>Order ID:</strong> ${orderId}</p>
+              <p><strong>Customer:</strong> ${user.name || user.username}</p>
+              <p><strong>Email:</strong> ${user.email}</p>
+              <p><strong>Phone:</strong> ${parsedAddress.phone}</p>
+              <p><strong>Order Type:</strong> ${orderType}</p>
+              <p><strong>Total:</strong> ${order.total} EGP</p>
+              
+              <h3>Delivery Address:</h3>
+              <p>${parsedAddress.name}<br/>
+              ${parsedAddress.street}<br/>
+              ${parsedAddress.area}<br/>
+              ${parsedAddress.building ? 'Building: ' + parsedAddress.building + '<br/>' : ''}
+              ${parsedAddress.apartment ? 'Apartment: ' + parsedAddress.apartment + '<br/>' : ''}
+              ${parsedAddress.landmark ? 'Landmark: ' + parsedAddress.landmark + '<br/>' : ''}
+              Phone: ${parsedAddress.phone}</p>
+              
+              <p><strong>Delivery Notes:</strong> ${deliveryNotes || 'None'}</p>
+              
+              <p>Please verify the payment confirmation image attached and update the order status in the admin dashboard.</p>
+            `,
+            attachments: [{
+              content: require('fs').readFileSync(req.file.path).toString('base64'),
+              filename: `payment-confirmation-${orderId}.${req.file.originalname?.split('.').pop() || 'jpg'}`,
+              type: req.file.mimetype,
+              disposition: 'attachment'
+            }]
+          });
+
+          if (!emailSent) {
+            console.error('Failed to send payment confirmation email');
+          }
+        }
+      } else {
+        // For card payments, set status to confirmed
+        orderUpdateData.paymentStatus = 'confirmed';
+      }
+
+      // Update order
+      const updatedOrder = await storage.updateOrder(parseInt(orderId), orderUpdateData);
 
       // Always update user address and phone from checkout
       const user = await storage.getUser(req.session.userId!);
       if (user) {
         // Include delivery notes in the address object for user profile
         const addressWithNotes = {
-          ...address,
+          ...parsedAddress,
           deliveryNotes: deliveryNotes || ""
         };
         
         // Update user with address and trial status
         const userUpdateData: any = {
           address: JSON.stringify(addressWithNotes),
-          phone: address.phone
+          phone: parsedAddress.phone
         };
         
         // If this is a trial box order, mark user as having used their trial
@@ -1986,6 +2065,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(updatedOrder);
     } catch (error) {
+      console.error('Checkout error:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });
@@ -2577,6 +2657,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(safeAdmin);
     } catch (error) {
       console.error('Error fetching admin profile:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Admin endpoint to update payment status
+  app.patch('/api/admin/orders/:id/payment-status', adminMiddleware, async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const { paymentStatus } = req.body;
+      
+      if (!['pending', 'processing', 'confirmed', 'failed'].includes(paymentStatus)) {
+        return res.status(400).json({ message: 'Invalid payment status' });
+      }
+      
+      const updatedOrder = await storage.updateOrder(orderId, { paymentStatus });
+      res.json(updatedOrder);
+    } catch (error) {
+      console.error('Error updating payment status:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });
