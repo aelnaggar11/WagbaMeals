@@ -1977,10 +1977,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle InstaPay payment
       if (paymentMethod === 'instapay') {
+        console.log('Processing InstaPay payment for order:', orderId);
         if (!req.file) {
           return res.status(400).json({ message: 'Payment confirmation image required for InstaPay' });
         }
 
+        console.log('Payment confirmation image uploaded:', req.file.filename);
         // Set payment status to processing for InstaPay
         orderUpdateData.paymentStatus = 'processing';
         orderUpdateData.paymentConfirmationImage = req.file.filename;
@@ -1988,6 +1990,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get user info for email
         const user = await storage.getUser(req.session.userId!);
         if (user) {
+          console.log('Sending InstaPay email notification to admin for order:', orderId);
           // Send email notification to admin
           const emailSent = await sendEmail({
             to: 'aelnaggar35@gmail.com',
@@ -2025,6 +2028,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           if (!emailSent) {
             console.error('Failed to send payment confirmation email');
+          } else {
+            console.log('Email sent successfully to admin for order:', orderId);
           }
         }
       } else {

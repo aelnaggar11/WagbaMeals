@@ -23,6 +23,10 @@ interface EmailParams {
 
 export async function sendEmail(params: EmailParams): Promise<boolean> {
   try {
+    console.log('Attempting to send email to:', params.to);
+    console.log('Email subject:', params.subject);
+    console.log('Attachments count:', params.attachments?.length || 0);
+    
     await mailService.send({
       to: params.to,
       from: params.from,
@@ -31,6 +35,8 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
       html: params.html,
       attachments: params.attachments,
     });
+    
+    console.log('Email sent successfully via SendGrid');
     return true;
   } catch (error) {
     console.error('SendGrid email error:', error);
