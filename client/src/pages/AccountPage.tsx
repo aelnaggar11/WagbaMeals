@@ -66,6 +66,14 @@ const AccountPage = () => {
   const [largeMealAddOn, setLargeMealAddOn] = useState(99);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [subscriptionForm, setSubscriptionForm] = useState({
+    cardNumber: '',
+    expiryDate: '',
+    cvv: '',
+    cardholderName: ''
+  });
+  const [isProcessingSubscription, setIsProcessingSubscription] = useState(false);
 
   // ALL QUERIES MUST BE DECLARED BEFORE ANY CONDITIONAL LOGIC
   const { data: currentUser, isLoading: isUserLoading } = useQuery<User | null>({
@@ -459,6 +467,49 @@ const AccountPage = () => {
         description: "There was an error logging out. Please try again.",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleStartSubscription = async () => {
+    setIsProcessingSubscription(true);
+    try {
+      // Mock subscription process - simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Update user to subscriber status
+      await apiRequest('POST', '/api/user/start-subscription', {
+        paymentMethod: 'credit_card',
+        mockPayment: true
+      });
+      
+      // Refetch user data to reflect subscription status
+      await Promise.all([
+        refetchProfile(),
+        refetchSubscriptionStatus(),
+        refetchUpcomingMeals()
+      ]);
+      
+      setShowSubscriptionModal(false);
+      setSubscriptionForm({
+        cardNumber: '',
+        expiryDate: '',
+        cvv: '',
+        cardholderName: ''
+      });
+      
+      toast({
+        title: "Subscription Started!",
+        description: "Welcome to your meal subscription! You can now select meals for any week."
+      });
+      
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to start subscription. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessingSubscription(false);
     }
   };
 
@@ -867,7 +918,7 @@ const AccountPage = () => {
                         You've tried our service with a trial box. Start a subscription to access all weeks and save 10% on every order.
                       </p>
                       <Button 
-                        onClick={() => navigate('/meal-plans')}
+                        onClick={() => setShowSubscriptionModal(true)}
                         className="bg-blue-600 hover:bg-blue-700 text-white"
                       >
                         Start Subscription
@@ -1245,7 +1296,7 @@ const AccountPage = () => {
                       <div className="flex gap-2">
                         {profile?.userType === 'trial' ? (
                           <Button
-                            onClick={() => navigate('/meal-plans')}
+                            onClick={() => setShowSubscriptionModal(true)}
                             className="bg-blue-600 hover:bg-blue-700"
                           >
                             Start Subscription
@@ -1593,6 +1644,85 @@ const AccountPage = () => {
             <DialogFooter>
               <Button onClick={() => setIsOrderModalOpen(false)}>
                 Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Subscription Modal */}
+        <Dialog open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Start Your Subscription</DialogTitle>
+              <DialogDescription>
+                Enter your payment details to start your meal subscription and get 10% off every order.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="cardholderName">Cardholder Name</Label>
+                <Input
+                  id="cardholderName"
+                  placeholder="John Doe"
+                  value={subscriptionForm.cardholderName}
+                  onChange={(e) => setSubscriptionForm(prev => ({ ...prev, cardholderName: e.target.value }))}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="cardNumber">Card Number</Label>
+                <Input
+                  id="cardNumber"
+                  placeholder="1234 5678 9012 3456"
+                  value={subscriptionForm.cardNumber}
+                  onChange={(e) => setSubscriptionForm(prev => ({ ...prev, cardNumber: e.target.value }))}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="expiryDate">Expiry Date</Label>
+                  <Input
+                    id="expiryDate"
+                    placeholder="MM/YY"
+                    value={subscriptionForm.expiryDate}
+                    onChange={(e) => setSubscriptionForm(prev => ({ ...prev, expiryDate: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="cvv">CVV</Label>
+                  <Input
+                    id="cvv"
+                    placeholder="123"
+                    value={subscriptionForm.cvv}
+                    onChange={(e) => setSubscriptionForm(prev => ({ ...prev, cvv: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <div className="text-sm text-blue-700">
+                  <p className="font-medium">Subscription Benefits:</p>
+                  <ul className="mt-1 space-y-1">
+                    <li>• Save 10% on every order</li>
+                    <li>• Access to all weekly meal plans</li>
+                    <li>• Cancel or pause anytime</li>
+                    <li>• Priority customer support</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowSubscriptionModal(false)}
+                disabled={isProcessingSubscription}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleStartSubscription}
+                disabled={isProcessingSubscription}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isProcessingSubscription ? "Processing..." : "Start Subscription"}
               </Button>
             </DialogFooter>
           </DialogContent>

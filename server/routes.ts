@@ -659,6 +659,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Start subscription (mock implementation)
+  app.post('/api/user/start-subscription', authMiddleware, async (req, res) => {
+    try {
+      const { paymentMethod, mockPayment } = req.body;
+      
+      // In a real implementation, this would process the payment with Stripe
+      // For now, we'll just update the user to be a subscriber
+      
+      const user = await storage.updateUser(req.session.userId!, {
+        userType: 'subscriber',
+        isSubscriber: true,
+        subscriptionStartedAt: new Date().toISOString()
+      });
+      
+      // Resume subscription if it was cancelled
+      await storage.resumeUserSubscription(req.session.userId!);
+      
+      res.json({ 
+        message: 'Subscription started successfully', 
+        user,
+        paymentMethod 
+      });
+    } catch (error) {
+      console.error('Error starting subscription:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   app.get('/api/user/subscription/status', authMiddleware, async (req, res) => {
     try {
       const userId = req.session.userId;

@@ -15,8 +15,10 @@ export const users = pgTable("users", {
   subscriptionStatus: text("subscription_status").default("active"), // "active", "cancelled"
   subscriptionPausedAt: timestamp("subscription_paused_at"),
   subscriptionCancelledAt: timestamp("subscription_cancelled_at"),
+  subscriptionStartedAt: timestamp("subscription_started_at"),
   hasUsedTrialBox: boolean("has_used_trial_box").default(false), // Track if user has used trial box
   userType: text("user_type").default("trial"), // "trial", "subscription"
+  isSubscriber: boolean("is_subscriber").default(false), // Whether user is a subscriber
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -30,8 +32,10 @@ export const insertUserSchema = createInsertSchema(users).pick({
   subscriptionStatus: true,
   subscriptionPausedAt: true,
   subscriptionCancelledAt: true,
+  subscriptionStartedAt: true,
   hasUsedTrialBox: true,
   userType: true,
+  isSubscriber: true,
 });
 
 // Admin Model (completely separate from users)
