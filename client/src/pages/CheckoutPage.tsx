@@ -19,6 +19,15 @@ const CheckoutPage = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderType, setOrderType] = useState<"trial" | "subscription">("trial");
+  
+  // Auto-set order type to subscription if user has already used trial box
+  useEffect(() => {
+    if (userProfile?.hasUsedTrialBox) {
+      setOrderType("subscription");
+      setPaymentMethod("card"); // Force card payment for subscription
+    }
+  }, [userProfile?.hasUsedTrialBox]);
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [deliveryNotes, setDeliveryNotes] = useState("");
   const [deliveryFee, setDeliveryFee] = useState(0);
@@ -44,12 +53,14 @@ const CheckoutPage = () => {
     staleTime: 0, // Always fetch fresh pricing data
   });
   
-  // Fetch user profile for delivery address
+  // Fetch user profile for delivery address and trial status
   const { data: userProfile } = useQuery<{
     name: string;
     email: string;
     phone: string;
     address: string;
+    hasUsedTrialBox: boolean;
+    userType: string;
   }>({
     queryKey: ['/api/user/profile'],
   });
@@ -196,6 +207,7 @@ const CheckoutPage = () => {
       await apiRequest('POST', '/api/orders/checkout', {
         orderId: pendingOrder?.id,
         paymentMethod,
+        orderType,
         address,
         deliveryNotes
       });
@@ -384,51 +396,155 @@ const CheckoutPage = () => {
               </CardContent>
             </Card>
             
-            {/* Payment Method */}
+            {/* Order Type Selection */}
             <Card>
               <CardHeader>
-                <CardTitle>Payment Method</CardTitle>
+                <CardTitle>Choose Your Order Type</CardTitle>
               </CardHeader>
               <CardContent>
-                <Tabs 
-                  defaultValue="card" 
-                  value={paymentMethod}
-                  onValueChange={setPaymentMethod}
-                  className="w-full"
-                >
-                  <TabsList className="grid grid-cols-2 mb-4">
-                    <TabsTrigger value="card">Credit Card</TabsTrigger>
-                    <TabsTrigger value="instapay">InstaPay (+7%)</TabsTrigger>
-                  </TabsList>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  {/* Trial Box Option */}
+                  <div 
+                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                      orderType === 'trial' 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    } ${
+                      userProfile?.hasUsedTrialBox ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                    onClick={() => !userProfile?.hasUsedTrialBox && setOrderType('trial')}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-lg">Trial Box</h3>
+                      {orderType === 'trial' && (
+                        <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      {userProfile?.hasUsedTrialBox 
+                        ? 'You have already used your trial box' 
+                        : 'Try our service for the first time with flexible payment options'
+                      }
+                    </p>
+                    <div className="text-sm">
+                      <div className="text-green-600 font-medium">✓ Card or InstaPay accepted</div>
+                      <div className="text-green-600 font-medium">✓ One-time purchase</div>
+                      <div className="text-green-600 font-medium">✓ No commitment</div>
+                    </div>
+                  </div>
+
+                  {/* Subscription Option */}
+                  <div 
+                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                      orderType === 'subscription' 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setOrderType('subscription')}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-lg">Subscription</h3>
+                      {orderType === 'subscription' && (
+                        <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Join our weekly meal delivery service with recurring orders
+                    </p>
+                    <div className="text-sm">
+                      <div className="text-green-600 font-medium">✓ Credit card required</div>
+                      <div className="text-green-600 font-medium">✓ Weekly recurring delivery</div>
+                      <div className="text-green-600 font-medium">✓ Skip or pause anytime</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Method based on Order Type */}
+                <div className="border-t pt-4">
+                  <h4 className="font-medium mb-3">Payment Method</h4>
                   
-                  <TabsContent value="card" className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="cardNumber">Card Number</Label>
-                        <Input id="cardNumber" placeholder="1234 5678 9012 3456" />
+                  {orderType === 'trial' && !userProfile?.hasUsedTrialBox ? (
+                    <Tabs 
+                      defaultValue="card" 
+                      value={paymentMethod}
+                      onValueChange={setPaymentMethod}
+                      className="w-full"
+                    >
+                      <TabsList className="grid grid-cols-2 mb-4">
+                        <TabsTrigger value="card">Credit Card</TabsTrigger>
+                        <TabsTrigger value="instapay">InstaPay (+7%)</TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="card" className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="cardNumber">Card Number</Label>
+                            <Input id="cardNumber" placeholder="1234 5678 9012 3456" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="cardName">Name on Card</Label>
+                            <Input id="cardName" placeholder="John Doe" />
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="expiryDate">Expiry Date</Label>
+                            <Input id="expiryDate" placeholder="MM/YY" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="cvv">CVV</Label>
+                            <Input id="cvv" placeholder="123" />
+                          </div>
+                        </div>
+                      </TabsContent>
+                      
+                      <TabsContent value="instapay">
+                        <p className="text-gray-600">Pay securely using InstaPay. A 7% processing fee will be added to your total.</p>
+                      </TabsContent>
+                    </Tabs>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-center mb-2">
+                          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center mr-3">
+                            <div className="w-4 h-4 bg-white rounded-full"></div>
+                          </div>
+                          <span className="font-medium">Credit Card</span>
+                        </div>
+                        <p className="text-sm text-gray-600">Subscription orders require a credit card for recurring payments</p>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="cardName">Name on Card</Label>
-                        <Input id="cardName" placeholder="John Doe" />
+                      
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="cardNumber">Card Number</Label>
+                            <Input id="cardNumber" placeholder="1234 5678 9012 3456" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="cardName">Name on Card</Label>
+                            <Input id="cardName" placeholder="John Doe" />
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="expiryDate">Expiry Date</Label>
+                            <Input id="expiryDate" placeholder="MM/YY" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="cvv">CVV</Label>
+                            <Input id="cvv" placeholder="123" />
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="expiryDate">Expiry Date</Label>
-                        <Input id="expiryDate" placeholder="MM/YY" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="cvv">CVV</Label>
-                        <Input id="cvv" placeholder="123" />
-                      </div>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="instapay">
-                    <p className="text-gray-600">Pay securely using InstaPay. A 7% processing fee will be added to your total.</p>
-                  </TabsContent>
-                </Tabs>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>

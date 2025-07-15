@@ -595,7 +595,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: user?.name,
         email: user?.email,
         phone: user?.phone,
-        address: user?.address
+        address: user?.address,
+        hasUsedTrialBox: user?.hasUsedTrialBox || false,
+        userType: user?.userType || 'trial'
       });
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
@@ -1895,7 +1897,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/orders/checkout', authMiddleware, async (req, res) => {
     try {
-      const { orderId, paymentMethod, address, deliveryNotes } = req.body;
+      const { orderId, paymentMethod, orderType, address, deliveryNotes } = req.body;
 
       // Get order
       const order = await storage.getOrder(orderId);
@@ -1913,7 +1915,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'selected',
         deliveryAddress: JSON.stringify(address),
         deliveryNotes,
-        paymentMethod
+        paymentMethod,
+        orderType: orderType || 'trial'
       });
 
       // Always update user address and phone from checkout
@@ -1925,10 +1928,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           deliveryNotes: deliveryNotes || ""
         };
         
-        await storage.updateUser(req.session.userId!, {
+        // Update user with address and trial status
+        const userUpdateData: any = {
           address: JSON.stringify(addressWithNotes),
           phone: address.phone
-        });
+        };
+        
+        // If this is a trial box order, mark user as having used their trial
+        if (orderType === 'trial') {
+          userUpdateData.hasUsedTrialBox = true;
+        }
+        
+        // If this is a subscription order, update user type
+        if (orderType === 'subscription') {
+          userUpdateData.userType = 'subscriber';
+        }
+        
+        await storage.updateUser(req.session.userId!, userUpdateData);
         console.log('Updated user address with delivery notes:', JSON.stringify(addressWithNotes));
       }
 

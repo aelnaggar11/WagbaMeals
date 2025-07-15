@@ -15,6 +15,8 @@ export const users = pgTable("users", {
   subscriptionStatus: text("subscription_status").default("active"), // "active", "cancelled"
   subscriptionPausedAt: timestamp("subscription_paused_at"),
   subscriptionCancelledAt: timestamp("subscription_cancelled_at"),
+  hasUsedTrialBox: boolean("has_used_trial_box").default(false), // Track if user has used trial box
+  userType: text("user_type").default("trial"), // "trial", "subscription"
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -28,6 +30,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
   subscriptionStatus: true,
   subscriptionPausedAt: true,
   subscriptionCancelledAt: true,
+  hasUsedTrialBox: true,
+  userType: true,
 });
 
 // Admin Model (completely separate from users)
@@ -163,6 +167,7 @@ export const orders = pgTable("orders", {
   deliveryNotes: text("delivery_notes"),
   paymentMethod: text("payment_method"),
   deliveryDate: text("delivery_date"),
+  orderType: text("order_type").default("trial"), // "trial", "subscription"
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -180,6 +185,7 @@ export const insertOrderSchema = createInsertSchema(orders).pick({
   deliveryNotes: true,
   paymentMethod: true,
   deliveryDate: true,
+  orderType: true,
 });
 
 // OrderItem Model
