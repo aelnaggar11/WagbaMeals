@@ -1994,7 +1994,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Send email notification to admin
           const emailSent = await sendEmail({
             to: 'aelnaggar35@gmail.com',
-            from: 'noreply@wagba.food',
+            from: 'aelnaggar35@gmail.com',
             subject: 'New InstaPay Payment Confirmation - Order #' + orderId,
             html: `
               <h2>New InstaPay Payment Confirmation</h2>
@@ -2028,6 +2028,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           if (!emailSent) {
             console.error('Failed to send payment confirmation email');
+            // Log InstaPay payment details for manual review
+            console.log('=== INSTAPAY PAYMENT NOTIFICATION ===');
+            console.log('Order ID:', orderId);
+            console.log('Customer:', user.name || user.username);
+            console.log('Email:', user.email);
+            console.log('Phone:', parsedAddress.phone);
+            console.log('Order Type:', orderType);
+            console.log('Total:', order.total, 'EGP');
+            console.log('Area:', parsedAddress.area);
+            console.log('Payment Image:', req.file.filename);
+            console.log('Status: PROCESSING - Please check admin dashboard');
+            console.log('========================================');
           } else {
             console.log('Email sent successfully to admin for order:', orderId);
           }
