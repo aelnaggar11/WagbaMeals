@@ -1952,6 +1952,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/orders/checkout', authMiddleware, upload.single('paymentConfirmationImage'), async (req, res) => {
     try {
+      console.log('=== CHECKOUT REQUEST RECEIVED ===');
+      console.log('Request body:', req.body);
+      console.log('File uploaded:', req.file ? 'YES - ' + req.file.filename : 'NO');
+      console.log('================================');
+      
       const { orderId, paymentMethod, orderType, address, deliveryNotes } = req.body;
       const parsedAddress = JSON.parse(address);
 
@@ -1977,7 +1982,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle InstaPay payment
       if (paymentMethod === 'instapay') {
+        console.log('=== INSTAPAY CHECKOUT DETECTED ===');
         console.log('Processing InstaPay payment for order:', orderId);
+        console.log('Payment method:', paymentMethod);
+        console.log('Order type:', orderType);
+        console.log('File uploaded:', req.file ? 'YES' : 'NO');
         if (!req.file) {
           return res.status(400).json({ message: 'Payment confirmation image required for InstaPay' });
         }
