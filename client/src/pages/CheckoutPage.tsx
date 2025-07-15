@@ -19,7 +19,7 @@ const CheckoutPage = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [orderType, setOrderType] = useState<"trial" | "subscription">("trial");
+  const [orderType, setOrderType] = useState<"trial" | "subscription">("subscription");
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [deliveryNotes, setDeliveryNotes] = useState("");
   const [deliveryFee, setDeliveryFee] = useState(0);
@@ -432,6 +432,7 @@ const CheckoutPage = () => {
                       <div className="text-green-600 font-medium">✓ Card or InstaPay accepted</div>
                       <div className="text-green-600 font-medium">✓ One-time purchase</div>
                       <div className="text-green-600 font-medium">✓ No commitment</div>
+                      <div className="text-orange-600 font-medium">⚠ Available only once</div>
                     </div>
                   </div>
 
@@ -459,6 +460,7 @@ const CheckoutPage = () => {
                       <div className="text-green-600 font-medium">✓ Credit card required</div>
                       <div className="text-green-600 font-medium">✓ Weekly recurring delivery</div>
                       <div className="text-green-600 font-medium">✓ Skip or pause anytime</div>
+                      <div className="text-blue-600 font-medium">💰 Save 10% on all orders</div>
                     </div>
                   </div>
                 </div>

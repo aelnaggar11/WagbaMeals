@@ -375,6 +375,28 @@ const AccountPage = () => {
   // Use local state if available, otherwise fall back to server data
   const displayUpcomingMeals = localUpcomingMeals || upcomingMealsData;
 
+  // Helper function to determine if a week should be disabled
+  const shouldDisableWeek = (week: any) => {
+    // If subscription is cancelled, only allow weeks with existing orders
+    if (subscriptionStatus?.subscriptionStatus === 'cancelled') {
+      return !week.orderId; // Disable if no order exists for this week
+    }
+    
+    // If user has used trial box but isn't subscribed, disable all weeks except trial box week
+    if (profile?.hasUsedTrialBox && profile?.userType === 'trial') {
+      // Find the trial box order week
+      const trialBoxWeek = displayUpcomingMeals?.upcomingMeals?.find((w: any) => 
+        w.orderId && w.orderType === 'trial'
+      );
+      
+      if (trialBoxWeek) {
+        return week.weekId !== trialBoxWeek.weekId; // Only allow the trial box week
+      }
+    }
+    
+    return false; // Don't disable by default
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -774,6 +796,8 @@ const AccountPage = () => {
                       <button
                         key={week.weekId}
                         onClick={async () => {
+                          if (shouldDisableWeek(week)) return; // Prevent interaction with disabled weeks
+                          
                           console.log('Week switch to:', week.weekId);
                           setSelectedWeekId(week.weekId);
                           setIsRefreshingWeekData(true);
@@ -811,7 +835,12 @@ const AccountPage = () => {
                           selectedWeekId === week.weekId 
                             ? 'border-2 border-primary bg-primary/5' 
                             : 'border border-gray-200 hover:bg-gray-50'
-                        } ${week.isSkipped ? 'opacity-50' : ''}`}
+                        } ${week.isSkipped ? 'opacity-50' : ''} ${
+                          shouldDisableWeek(week) 
+                            ? 'bg-gray-100 opacity-50 cursor-not-allowed' 
+                            : ''
+                        }`}
+                        disabled={shouldDisableWeek(week)}
                       >
                         <div className="font-medium">
                           {formatWeekLabel(week.weekLabel)}
@@ -819,9 +848,47 @@ const AccountPage = () => {
                         {week.isSkipped && (
                           <div className="text-sm text-gray-500 mt-1">Skipped</div>
                         )}
+                        {shouldDisableWeek(week) && (
+                          <div className="text-sm text-gray-500 mt-1">
+                            {subscriptionStatus?.subscriptionStatus === 'cancelled' 
+                              ? 'Subscription needed' 
+                              : 'Start subscription'}
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>
+                  
+                  {/* Call to action for subscription */}
+                  {profile?.hasUsedTrialBox && profile?.userType === 'trial' && (
+                    <div className="mb-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h3 className="font-medium text-blue-900 mb-2">Ready to Subscribe?</h3>
+                      <p className="text-blue-700 mb-4">
+                        You've tried our service with a trial box. Start a subscription to access all weeks and save 10% on every order.
+                      </p>
+                      <Button 
+                        onClick={() => navigate('/meal-plans')}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        Start Subscription
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {subscriptionStatus?.subscriptionStatus === 'cancelled' && (
+                    <div className="mb-8 p-6 bg-orange-50 border border-orange-200 rounded-lg">
+                      <h3 className="font-medium text-orange-900 mb-2">Subscription Paused</h3>
+                      <p className="text-orange-700 mb-4">
+                        Your subscription is currently paused. You can only access weeks with existing orders. Resume your subscription to continue ordering.
+                      </p>
+                      <Button 
+                        onClick={() => navigate('/meal-plans')}
+                        className="bg-orange-600 hover:bg-orange-700 text-white"
+                      >
+                        Resume Subscription
+                      </Button>
+                    </div>
+                  )}
 
                   {/* Selected week details */}
                   {selectedWeekId && displayUpcomingMeals.upcomingMeals.map((week: any) => {
