@@ -1235,13 +1235,22 @@ const AccountPage = () => {
                       <div>
                         <p className="font-medium">Current Status</p>
                         <p className="text-sm text-gray-600">
-                          {subscriptionStatus?.subscriptionStatus === 'cancelled' 
+                          {profile?.userType === 'trial' 
+                            ? 'Trial User - No Active Subscription' 
+                            : subscriptionStatus?.subscriptionStatus === 'cancelled' 
                             ? 'Cancelled' 
                             : 'Active'}
                         </p>
                       </div>
                       <div className="flex gap-2">
-                        {subscriptionStatus?.subscriptionStatus === 'cancelled' ? (
+                        {profile?.userType === 'trial' ? (
+                          <Button
+                            onClick={() => navigate('/meal-plans')}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            Start Subscription
+                          </Button>
+                        ) : subscriptionStatus?.subscriptionStatus === 'cancelled' ? (
                           <Button
                             onClick={async () => {
                               try {
@@ -1301,12 +1310,27 @@ const AccountPage = () => {
                     )}
 
                     <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                      <h4 className="font-medium mb-2">About Subscription Management</h4>
+                      <h4 className="font-medium mb-2">
+                        {profile?.userType === 'trial' 
+                          ? 'About Trial Service' 
+                          : 'About Subscription Management'}
+                      </h4>
                       <ul className="text-sm text-gray-600 space-y-1">
-                        <li>• Cancel your subscription at any time</li>
-                        <li>• Resume your subscription whenever you're ready</li>
-                        <li>• Cancelled subscriptions prevent meal selection</li>
-                        <li>• No charges while subscription is cancelled</li>
+                        {profile?.userType === 'trial' ? (
+                          <>
+                            <li>• You've completed your trial box experience</li>
+                            <li>• Start a subscription to access weekly meal plans</li>
+                            <li>• Save 10% on every order with subscription</li>
+                            <li>• Cancel or resume your subscription anytime</li>
+                          </>
+                        ) : (
+                          <>
+                            <li>• Cancel your subscription at any time</li>
+                            <li>• Resume your subscription whenever you're ready</li>
+                            <li>• Cancelled subscriptions prevent meal selection</li>
+                            <li>• No charges while subscription is cancelled</li>
+                          </>
+                        )}
                       </ul>
                     </div>
                   </div>
