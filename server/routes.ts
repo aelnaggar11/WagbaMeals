@@ -12,6 +12,7 @@ import { getPriceForMealCount, Admin } from "@shared/schema";
 import multer from "multer";
 import { sendEmail } from "./sendgrid";
 import path from "path";
+import fs from "fs";
 
 declare module 'express-session' {
   interface SessionData {
@@ -2015,7 +2016,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               <p>Please verify the payment confirmation image attached and update the order status in the admin dashboard.</p>
             `,
             attachments: [{
-              content: require('fs').readFileSync(req.file.path).toString('base64'),
+              content: fs.readFileSync(req.file.path).toString('base64'),
               filename: `payment-confirmation-${orderId}.${req.file.originalname?.split('.').pop() || 'jpg'}`,
               type: req.file.mimetype,
               disposition: 'attachment'
