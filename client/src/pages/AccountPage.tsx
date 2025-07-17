@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Order, User, Meal, OrderItem, PortionSize } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatDate, getStatusClass } from "@/lib/utils";
