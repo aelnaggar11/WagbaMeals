@@ -1985,9 +1985,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'selected',
         deliveryAddress: JSON.stringify(parsedAddress),
         deliveryNotes,
-        paymentMethod,
+        paymentMethod: paymentMethod || null,
         orderType: orderType || 'trial'
       };
+      
+      console.log('=== PAYMENT METHOD DEBUG ===');
+      console.log('Raw payment method from request:', req.body.paymentMethod);
+      console.log('Destructured payment method:', paymentMethod);
+      console.log('Payment method in update data:', orderUpdateData.paymentMethod);
+      console.log('Is payment method truthy?', !!paymentMethod);
+      console.log('Payment method type:', typeof paymentMethod);
+      console.log('============================');
 
       // Handle InstaPay payment
       if (paymentMethod === 'instapay') {
