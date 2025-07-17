@@ -393,9 +393,9 @@ const AccountPage = () => {
     
     // If user has used trial box but isn't subscribed, disable all weeks except trial box week
     if (profile?.hasUsedTrialBox && profile?.userType === 'trial') {
-      // Find the trial box order week
+      // Find the trial box order week (identified by instapay payment method)
       const trialBoxWeek = displayUpcomingMeals?.upcomingMeals?.find((w: any) => 
-        w.orderId && w.orderType === 'trial'
+        w.orderId && w.paymentMethod === 'instapay'
       );
       
       if (trialBoxWeek) {
@@ -917,9 +917,9 @@ const AccountPage = () => {
                               : 'Start subscription'}
                           </div>
                         )}
-                        {/* Show "Trial Box" for trial box week */}
+                        {/* Show "Trial Box" for trial box week - identify by payment method */}
                         {!shouldDisableWeek(week) && profile?.hasUsedTrialBox && profile?.userType === 'trial' && 
-                         week.orderId && week.orderType === 'trial' && (
+                         week.orderId && week.paymentMethod === 'instapay' && (
                           <div className="text-sm text-blue-600 mt-1 font-medium">Trial Box</div>
                         )}
                       </button>
@@ -1127,9 +1127,22 @@ const AccountPage = () => {
               <h2 className="text-2xl font-bold text-primary mb-6">Order History</h2>
 
               {(() => {
-                const deliveredOrders = (ordersData as any)?.orders?.filter((order: any) => 
-                  order.status === 'selected' && !order.isSkipped
-                ) || [];
+                // Get weeks data to check deadlines
+                const weeks = (weeksData as any)?.weeks || [];
+                const now = new Date();
+                
+                // Filter orders where deadline has passed (actual history)
+                const deliveredOrders = (ordersData as any)?.orders?.filter((order: any) => {
+                  if (order.status !== 'selected' || order.isSkipped) return false;
+                  
+                  // Find the week for this order
+                  const orderWeek = weeks.find((week: any) => week.id === order.weekId);
+                  if (!orderWeek) return false;
+                  
+                  // Only show orders where deadline has passed
+                  const deadline = new Date(orderWeek.orderDeadline);
+                  return deadline < now;
+                }) || [];
                 
                 return deliveredOrders.length > 0 ? (
                   <Table>

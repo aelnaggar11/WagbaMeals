@@ -1122,7 +1122,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           continue;
         }
 
+        // Get the most recent order for this week (in case of duplicates)
         let order = await storage.getOrderByUserAndWeek(req.session.userId!, week.id);
+        
+        // If we have multiple orders for the same week, try to find the paid trial box order
+        if (order) {
+          // Get all orders for this user and week to handle duplicates
+          const allUserOrders = await storage.getOrdersByUser(req.session.userId!);
+          const ordersForWeek = allUserOrders.filter(o => o.weekId === week.id);
+          
+          if (ordersForWeek.length > 1) {
+            // Prefer the order with a payment method (InstaPay trial box)
+            const paidOrder = ordersForWeek.find(o => o.paymentMethod === 'instapay');
+            if (paidOrder) {
+              order = paidOrder;
+            } else {
+              // If no paid order, use the most recent one
+              order = ordersForWeek.sort((a, b) => b.id - a.id)[0];
+            }
+          }
+        }
         const orderDeadlinePassed = new Date(week.orderDeadline) <= now;
 
         // If no order exists, create one with user's default meal count and portion preference
