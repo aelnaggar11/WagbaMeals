@@ -127,6 +127,7 @@ Wagba is a full-stack meal delivery application focused on weekly meal plans. Th
 - Session persistence across application restarts
 
 ## Changelog
+- July 15, 2025: INSTAPAY PAYMENT VERIFICATION SYSTEM COMPLETED - Admin can now verify InstaPay payments via Orders Management > Upcoming Orders tab with "Mark Received" and "Mark Failed" buttons
 - July 15, 2025: INSTAPAY EMAIL SYSTEM RESOLVED - Fixed SendGrid sender identity verification issue, InstaPay email notifications now working correctly (emails delivered to spam folder)
 - July 15, 2025: Added InstaPay payment option for trial boxes with wagba.food account display and payment confirmation image upload
 - July 15, 2025: Integrated SendGrid email notifications to admin (aelnaggar35@gmail.com) with payment confirmation attachments
