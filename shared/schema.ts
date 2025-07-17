@@ -77,7 +77,7 @@ export const meals = pgTable("meals", {
   imageUrl: text("image_url").notNull(),
   calories: integer("calories").notNull(),
   protein: integer("protein").notNull(),
-  price: integer("price").notNull(),
+  ingredients: text("ingredients"), // New ingredients field
   tags: text("tags").array(),
   category: text("category").default("Main Dishes"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -89,7 +89,7 @@ export const insertMealSchema = createInsertSchema(meals).pick({
   imageUrl: true,
   calories: true,
   protein: true,
-  price: true,
+  ingredients: true,
   tags: true,
   category: true,
 });

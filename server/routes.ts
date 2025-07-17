@@ -2241,6 +2241,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/admin/meals/:id", adminMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const mealData = req.body;
+      const meal = await storage.updateMeal(id, mealData);
+      res.json(meal);
+    } catch (error) {
+      console.error('Error updating meal:', error);
+      res.status(500).json({ message: "Failed to update meal" });
+    }
+  });
+
   app.delete("/api/admin/meals/:id", adminMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);

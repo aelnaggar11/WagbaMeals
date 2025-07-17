@@ -19,7 +19,7 @@ interface MealFormData {
   category: string;
   calories: number;
   protein: number;
-  price: number;
+  ingredients: string;
   imageUrl: string;
 }
 
@@ -35,7 +35,7 @@ const MealsManager = () => {
     category: "main",
     calories: 0,
     protein: 0,
-    price: 0,
+    ingredients: "",
     imageUrl: ""
   });
 
@@ -140,7 +140,7 @@ const MealsManager = () => {
       category: "main",
       calories: 0,
       protein: 0,
-      price: 0,
+      ingredients: "",
       imageUrl: ""
     });
   };
@@ -154,7 +154,7 @@ const MealsManager = () => {
         category: meal.category,
         calories: meal.calories,
         protein: meal.protein,
-        price: meal.price,
+        ingredients: meal.ingredients || "",
         imageUrl: meal.imageUrl
       });
     } else {
@@ -282,6 +282,17 @@ const MealsManager = () => {
                 </div>
                 
                 <div className="space-y-2">
+                  <Label htmlFor="ingredients">Ingredients</Label>
+                  <Textarea
+                    id="ingredients"
+                    value={formData.ingredients}
+                    onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })}
+                    placeholder="List the main ingredients (e.g., chicken breast, herbs, quinoa, roasted vegetables)"
+                    rows={2}
+                  />
+                </div>
+                
+                <div className="space-y-2">
                   <Label htmlFor="imageUrl">Image URL *</Label>
                   <Input
                     id="imageUrl"
@@ -293,7 +304,7 @@ const MealsManager = () => {
                   />
                 </div>
                 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="calories">Calories</Label>
                     <Input
@@ -315,18 +326,6 @@ const MealsManager = () => {
                       value={formData.protein || ''}
                       onChange={(e) => setFormData({ ...formData, protein: parseFloat(e.target.value) || 0 })}
                       placeholder="0"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Price (EGP)</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.price || ''}
-                      onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                      placeholder="0.00"
                     />
                   </div>
                 </div>
@@ -364,7 +363,6 @@ const MealsManager = () => {
                   <TableHead>Description</TableHead>
                   <TableHead>Calories</TableHead>
                   <TableHead>Protein</TableHead>
-                  <TableHead>Price</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -385,7 +383,6 @@ const MealsManager = () => {
                     </TableCell>
                     <TableCell>{meal.calories} cal</TableCell>
                     <TableCell>{meal.protein}g</TableCell>
-                    <TableCell>EGP {meal.price}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
                         <Button 
