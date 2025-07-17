@@ -34,6 +34,29 @@ declare module 'express-serve-static-core' {
   }
 }
 
+// Helper function to calculate pricing for orders
+function calculateOrderPricing(mealCount: number, defaultPortionSize: string): { subtotal: number; discount: number; total: number } {
+  const pricePerMeal = getPriceForMealCount(mealCount);
+  const largePortionAdditional = 99;
+  
+  let subtotal = 0;
+  
+  if (defaultPortionSize === 'large') {
+    subtotal = (pricePerMeal + largePortionAdditional) * mealCount;
+  } else if (defaultPortionSize === 'standard') {
+    subtotal = pricePerMeal * mealCount;
+  } else if (defaultPortionSize === 'mixed') {
+    // For mixed, use standard price as base (user will adjust portions later)
+    subtotal = pricePerMeal * mealCount;
+  }
+  
+  // Calculate discount based on full price
+  const fullPriceTotal = mealCount * 249;
+  const discount = Math.max(0, fullPriceTotal - subtotal);
+  
+  return { subtotal, discount, total: subtotal };
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configure multer for file uploads
   const upload = multer({
@@ -1179,16 +1202,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   paymentMethod: null
                 });
               } else {
-                // Create normal not_selected order
+                // Create normal not_selected order with proper pricing
+                const pricing = calculateOrderPricing(defaultMealCount, defaultPortionSize);
                 order = await storage.createOrder({
                   userId: req.session.userId!,
                   weekId: week.id,
                   status: 'not_selected',
                   mealCount: defaultMealCount,
                   defaultPortionSize: defaultPortionSize,
-                  subtotal: 0,
-                  discount: 0,
-                  total: 0,
+                  subtotal: pricing.subtotal,
+                  discount: pricing.discount,
+                  total: pricing.total,
                   deliveryDate: week.deliveryDate.toISOString(),
                   deliveryAddress: null,
                   deliveryNotes: null,
@@ -1196,16 +1220,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 });
               }
             } else {
-              // No non-skipped orders found, create normal order
+              // No non-skipped orders found, create normal order with proper pricing
+              const pricing = calculateOrderPricing(defaultMealCount, defaultPortionSize);
               order = await storage.createOrder({
                 userId: req.session.userId!,
                 weekId: week.id,
                 status: 'not_selected',
                 mealCount: defaultMealCount,
                 defaultPortionSize: defaultPortionSize,
-                subtotal: 0,
-                discount: 0,
-                total: 0,
+                subtotal: pricing.subtotal,
+                discount: pricing.discount,
+                total: pricing.total,
                 deliveryDate: week.deliveryDate.toISOString(),
                 deliveryAddress: null,
                 deliveryNotes: null,
@@ -1213,16 +1238,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
             }
           } else {
-            // Existing user, create normal not_selected order
+            // Existing user, create normal not_selected order with proper pricing
+            const pricing = calculateOrderPricing(defaultMealCount, defaultPortionSize);
             order = await storage.createOrder({
               userId: req.session.userId!,
               weekId: week.id,
               status: 'not_selected',
               mealCount: defaultMealCount,
               defaultPortionSize: defaultPortionSize,
-              subtotal: 0,
-              discount: 0,
-              total: 0,
+              subtotal: pricing.subtotal,
+              discount: pricing.discount,
+              total: pricing.total,
               deliveryDate: week.deliveryDate.toISOString(),
               deliveryAddress: null,
               deliveryNotes: null,
