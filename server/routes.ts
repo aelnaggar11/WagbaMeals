@@ -1955,10 +1955,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('=== CHECKOUT REQUEST RECEIVED ===');
       console.log('Request body:', req.body);
       console.log('File uploaded:', req.file ? 'YES - ' + req.file.filename : 'NO');
+      console.log('Payment method from request:', req.body.paymentMethod);
+      console.log('Order type from request:', req.body.orderType);
       console.log('================================');
       
       const { orderId, paymentMethod, orderType, address, deliveryNotes } = req.body;
       const parsedAddress = JSON.parse(address);
+      
+      console.log('=== EXTRACTED VALUES ===');
+      console.log('Order ID:', orderId);
+      console.log('Payment Method:', paymentMethod);
+      console.log('Order Type:', orderType);
+      console.log('Address:', parsedAddress);
+      console.log('========================');
 
       // Get order
       const order = await storage.getOrder(parseInt(orderId));
@@ -2059,7 +2068,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Update order
+      console.log('=== ORDER UPDATE DATA ===');
+      console.log('Order ID to update:', parseInt(orderId));
+      console.log('Order update data:', orderUpdateData);
+      console.log('=========================');
+      
       const updatedOrder = await storage.updateOrder(parseInt(orderId), orderUpdateData);
+      
+      console.log('=== ORDER UPDATED ===');
+      console.log('Updated order payment method:', updatedOrder.paymentMethod);
+      console.log('Updated order payment status:', updatedOrder.paymentStatus);
+      console.log('====================');
 
       // Always update user address and phone from checkout
       const user = await storage.getUser(req.session.userId!);
