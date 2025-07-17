@@ -127,6 +127,10 @@ Wagba is a full-stack meal delivery application focused on weekly meal plans. Th
 - Session persistence across application restarts
 
 ## Changelog
+- July 17, 2025: CRITICAL PRICING FIX - Fixed "not_selected" orders showing EGP 0 instead of proper pricing based on meal count and portion size
+- July 17, 2025: Updated all existing "not_selected" orders in database (140 orders) to display correct pricing for admin dashboard
+- July 17, 2025: Created calculateOrderPricing() helper function to ensure consistent pricing calculations across all order creation endpoints
+- July 17, 2025: Enhanced admin meal management - removed price field since pricing is subscription-based, added ingredients field for meal editing
 - July 15, 2025: INSTAPAY PAYMENT VERIFICATION SYSTEM COMPLETED - Admin can now verify InstaPay payments via Orders Management > Upcoming Orders tab with "Mark Received" and "Mark Failed" buttons
 - July 15, 2025: INSTAPAY EMAIL SYSTEM RESOLVED - Fixed SendGrid sender identity verification issue, InstaPay email notifications now working correctly (emails delivered to spam folder)
 - July 15, 2025: Added InstaPay payment option for trial boxes with wagba.food account display and payment confirmation image upload
