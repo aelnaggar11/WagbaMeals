@@ -917,6 +917,11 @@ const AccountPage = () => {
                               : 'Start subscription'}
                           </div>
                         )}
+                        {/* Show "Trial Box" for trial box week */}
+                        {!shouldDisableWeek(week) && profile?.hasUsedTrialBox && profile?.userType === 'trial' && 
+                         week.orderId && week.orderType === 'trial' && (
+                          <div className="text-sm text-blue-600 mt-1 font-medium">Trial Box</div>
+                        )}
                       </button>
                     ))}
                   </div>
