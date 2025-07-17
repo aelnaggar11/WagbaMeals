@@ -639,7 +639,8 @@ const OrdersManagement = () => {
       upcomingWeeks.length > 0 ? upcomingWeeks[0].id : null
     );
     const [statusFilter, setStatusFilter] = useState<string>('all'); // 'all', 'selected', 'not_selected', 'skipped', 'cancelled'
-    const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>('all'); // 'all', or specific payment methods
+    const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>('instapay'); // Default to InstaPay to show verification needed
+    const [showVerificationNeeded, setShowVerificationNeeded] = useState<boolean>(true); // Show InstaPay orders needing verification
     
     const getStatusBadge = (status: string) => {
       switch (status) {
@@ -668,6 +669,13 @@ const OrdersManagement = () => {
       weekOrders = weekOrders.filter(order => order.paymentMethod === paymentMethodFilter);
     }
     
+    // Apply verification needed filter (InstaPay orders with processing status)
+    if (showVerificationNeeded) {
+      weekOrders = weekOrders.filter(order => 
+        order.paymentMethod === 'instapay' && order.paymentStatus === 'processing'
+      );
+    }
+    
     const allUsers = usersData?.users || [];
     const usersWithOrders = new Set(weekOrders.map(order => order.userId));
     
@@ -680,6 +688,18 @@ const OrdersManagement = () => {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Upcoming Orders</h3>
           <div className="flex gap-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="verificationNeeded"
+                checked={showVerificationNeeded}
+                onChange={(e) => setShowVerificationNeeded(e.target.checked)}
+                className="rounded border-gray-300"
+              />
+              <label htmlFor="verificationNeeded" className="text-sm font-medium">
+                Show InstaPay verification needed only
+              </label>
+            </div>
             <Select
               value={statusFilter}
               onValueChange={setStatusFilter}
@@ -729,7 +749,82 @@ const OrdersManagement = () => {
           </div>
         </div>
 
-        {selectedUpcomingWeekId && (
+        {/* InstaPay Orders Needing Verification - Show across all weeks */}
+        {showVerificationNeeded && (
+          <Card className="border-orange-200 bg-orange-50">
+            <CardHeader>
+              <CardTitle className="text-orange-800">InstaPay Orders Needing Verification</CardTitle>
+              <CardDescription className="text-orange-700">
+                These orders have uploaded payment confirmations and are waiting for admin verification
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Week</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Order ID</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Payment Image</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {ordersData?.orders
+                    .filter(order => order.paymentMethod === 'instapay' && order.paymentStatus === 'processing')
+                    .map((order) => {
+                      const user = allUsers.find(u => u.id === order.userId);
+                      const week = weeksData?.weeks.find(w => w.id === order.weekId);
+                      return (
+                        <TableRow key={order.id}>
+                          <TableCell>{week?.label || `Week ${order.weekId}`}</TableCell>
+                          <TableCell className="font-medium">{user?.name || user?.username}</TableCell>
+                          <TableCell>#{order.id}</TableCell>
+                          <TableCell>{formatCurrency(order.total)}</TableCell>
+                          <TableCell>
+                            {order.paymentConfirmationImage ? (
+                              <a 
+                                href={`/uploads/${order.paymentConfirmationImage}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 underline text-sm"
+                              >
+                                View Payment
+                              </a>
+                            ) : (
+                              <span className="text-gray-500">No image</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                onClick={() => handleUpdatePaymentStatus(order.id, 'confirmed')}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                Mark Received
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleUpdatePaymentStatus(order.id, 'failed')}
+                                className="border-red-300 text-red-600 hover:bg-red-50"
+                              >
+                                Mark Failed
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {selectedUpcomingWeekId && !showVerificationNeeded && (
           <div className="grid gap-6">
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
