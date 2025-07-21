@@ -233,9 +233,9 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
         {/* Week Selection - Hidden during Get Started flow or when coming from account page */}
         {!params.get("fromPlan") && !params.get("fromAccount") && <WeekSelector currentWeekId={weekId} />}
 
-        {/* Delivery Slot Selector - Only show during onboarding flow */}
-        {params.get("fromPlan") && (
-          <div className="max-w-md mx-auto mb-8">
+        {/* Delivery Slot Selector - Show during onboarding flow and when no existing order */}
+        {(params.get("fromPlan") || !existingOrder) && (
+          <div className="max-w-md mx-auto mb-8 bg-white p-6 rounded-lg shadow-sm border">
             <DeliverySlotSelector
               value={deliverySlot}
               onChange={(slot) => {

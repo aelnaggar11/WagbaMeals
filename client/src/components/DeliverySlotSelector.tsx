@@ -23,10 +23,10 @@ export default function DeliverySlotSelector({ value, onChange, className = "" }
             console.log('Morning button clicked');
             onChange('morning');
           }}
-          className={`p-4 rounded-lg border-2 transition-all ${
+          className={`p-4 rounded-lg border-2 transition-all cursor-pointer relative z-10 ${
             value === 'morning'
               ? 'border-primary bg-primary/5 text-primary'
-              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
           }`}
         >
           <div className="text-center">
@@ -41,10 +41,10 @@ export default function DeliverySlotSelector({ value, onChange, className = "" }
             console.log('Evening button clicked');
             onChange('evening');
           }}
-          className={`p-4 rounded-lg border-2 transition-all ${
+          className={`p-4 rounded-lg border-2 transition-all cursor-pointer relative z-10 ${
             value === 'evening'
               ? 'border-primary bg-primary/5 text-primary'
-              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
           }`}
         >
           <div className="text-center">

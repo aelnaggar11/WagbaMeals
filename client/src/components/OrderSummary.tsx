@@ -147,6 +147,7 @@ const OrderSummary = ({
               {deliverySlot === 'morning' ? 'Morning (9:00 AM - 12:00 PM)' : 'Evening (6:00 PM - 9:00 PM)'}
             </span>
           </div>
+          <p className="text-xs text-gray-500 mt-1">You can change your delivery time above if needed</p>
         </div>
 
         {showCheckoutButton && (
