@@ -23,15 +23,15 @@ export default function DeliverySlotSelector({ value, onChange, className = "" }
             console.log('Morning button clicked');
             onChange('morning');
           }}
-          className={`p-4 rounded-lg border-2 transition-all cursor-pointer relative z-10 ${
+          className={`p-3 rounded-lg border-2 transition-all cursor-pointer relative z-10 ${
             value === 'morning'
               ? 'border-primary bg-primary/5 text-primary'
               : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
           }`}
         >
           <div className="text-center">
-            <div className="text-lg font-semibold mb-1">Morning</div>
-            <div className="text-sm opacity-75">9:00 AM - 12:00 PM</div>
+            <div className="font-semibold">Morning</div>
+            <div className="text-xs opacity-75">9:00 AM - 12:00 PM</div>
           </div>
         </button>
         
@@ -41,15 +41,15 @@ export default function DeliverySlotSelector({ value, onChange, className = "" }
             console.log('Evening button clicked');
             onChange('evening');
           }}
-          className={`p-4 rounded-lg border-2 transition-all cursor-pointer relative z-10 ${
+          className={`p-3 rounded-lg border-2 transition-all cursor-pointer relative z-10 ${
             value === 'evening'
               ? 'border-primary bg-primary/5 text-primary'
               : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
           }`}
         >
           <div className="text-center">
-            <div className="text-lg font-semibold mb-1">Evening</div>
-            <div className="text-sm opacity-75">6:00 PM - 9:00 PM</div>
+            <div className="font-semibold">Evening</div>
+            <div className="text-xs opacity-75">6:00 PM - 9:00 PM</div>
           </div>
         </button>
       </div>
