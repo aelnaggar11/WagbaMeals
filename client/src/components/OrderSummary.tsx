@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { Meal, OrderItem, getPriceForMealCount } from "@shared/schema";
+import { Meal, OrderItem, getPriceForMealCount, DeliverySlot } from "@shared/schema";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -12,6 +12,7 @@ interface OrderSummaryProps {
   mealCount: number;
   portionSize: string;
   weekId: string;
+  deliverySlot?: DeliverySlot;
   onEdit?: (section: 'plan' | 'meals') => void;
   showCheckoutButton?: boolean;
 }
@@ -21,6 +22,7 @@ const OrderSummary = ({
   mealCount, 
   portionSize,
   weekId,
+  deliverySlot = "morning",
   onEdit,
   showCheckoutButton = true
 }: OrderSummaryProps) => {
@@ -85,7 +87,8 @@ const OrderSummary = ({
           weekId,
           mealCount,
           portionSize,
-          selectedMeals
+          selectedMeals,
+          deliverySlot
         });
         
         // Also save to sessionStorage as fallback
@@ -93,7 +96,8 @@ const OrderSummary = ({
           selectedMeals,
           mealCount,
           portionSize,
-          weekId
+          weekId,
+          deliverySlot
         };
         sessionStorage.setItem('mealSelections', JSON.stringify(selections));
       } catch (error) {
@@ -113,7 +117,8 @@ const OrderSummary = ({
         weekId,
         mealCount,
         defaultPortionSize: portionSize,
-        items: selectedMeals
+        items: selectedMeals,
+        deliverySlot
       });
 
       // Redirect to checkout page
@@ -133,6 +138,17 @@ const OrderSummary = ({
   return (
     <Card className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
       <CardContent className="p-6 md:p-8">
+        {/* Delivery Information */}
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+          <h3 className="font-semibold text-gray-800 mb-2">Delivery Information</h3>
+          <div className="flex items-center">
+            <span className="text-sm text-gray-600 mr-2">Time:</span>
+            <span className="font-medium">
+              {deliverySlot === 'morning' ? 'Morning (9:00 AM - 12:00 PM)' : 'Evening (6:00 PM - 9:00 PM)'}
+            </span>
+          </div>
+        </div>
+
         {showCheckoutButton && (
           <Button 
             className="w-full bg-primary hover:bg-primary/90 text-white py-3 rounded-lg font-medium transition duration-300"

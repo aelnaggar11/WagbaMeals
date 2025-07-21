@@ -5,7 +5,8 @@ import WeekSelector from "@/components/WeekSelector";
 import MealCard from "@/components/MealCard";
 import OrderSummary from "@/components/OrderSummary";
 import ProgressIndicator from "@/components/ProgressIndicator";
-import { Meal, PortionSize, OrderItem } from "@shared/schema";
+import DeliverySlotSelector from "@/components/DeliverySlotSelector";
+import { Meal, PortionSize, OrderItem, DeliverySlot } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +27,7 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
   const [mealCount, setMealCount] = useState(initialMealCount);
   const [portionSize, setPortionSize] = useState<string>(initialPortionSize);
   const [selectedMeals, setSelectedMeals] = useState<OrderItem[]>([]);
+  const [deliverySlot, setDeliverySlot] = useState<DeliverySlot>("morning");
 
   // Fetch menu data
   const { data: menuData, isLoading } = useQuery<{ meals: Meal[] }>({
@@ -68,6 +70,9 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
           setMealCount(storedSelections.mealCount);
           setPortionSize(storedSelections.portionSize);
           setSelectedMeals(storedSelections.selectedMeals);
+          if (storedSelections.deliverySlot) {
+            setDeliverySlot(storedSelections.deliverySlot);
+          }
           // Clear the stored selections to avoid reusing them unintentionally
           sessionStorage.removeItem('mealSelections');
 
@@ -228,6 +233,16 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
         {/* Week Selection - Hidden during Get Started flow or when coming from account page */}
         {!params.get("fromPlan") && !params.get("fromAccount") && <WeekSelector currentWeekId={weekId} />}
 
+        {/* Delivery Slot Selector - Only show during onboarding flow */}
+        {params.get("fromPlan") && (
+          <div className="max-w-md mx-auto mb-8">
+            <DeliverySlotSelector
+              value={deliverySlot}
+              onChange={setDeliverySlot}
+            />
+          </div>
+        )}
+
         {/* Meal Selection Count */}
         <div className="max-w-6xl mx-auto mb-6 flex items-center justify-between px-4">
           <h3 className="text-lg font-medium">
@@ -374,6 +389,7 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
             mealCount={mealCount}
             portionSize={portionSize}
             weekId={weekId}
+            deliverySlot={deliverySlot}
           />
         </div>
       </div>

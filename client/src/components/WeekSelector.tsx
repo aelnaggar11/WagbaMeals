@@ -98,7 +98,7 @@ const WeekSelector = ({ currentWeekId }: WeekSelectorProps) => {
     <div className="flex flex-col items-center mb-8">
       <div className="max-w-md w-full mx-auto">
         <label htmlFor="week-select" className="block text-sm font-medium text-gray-700 mb-1">
-          Choose your delivery week
+          When would you like your 1st delivery?
         </label>
         <Select value={selectedWeekId} onValueChange={handleWeekChange}>
           <SelectTrigger className="w-full bg-white border border-gray-300 rounded-lg py-3 px-4 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50">

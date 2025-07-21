@@ -265,7 +265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Temporary meal selection storage for onboarding
   app.post('/api/temp/meal-selections', async (req, res) => {
     try {
-      const { weekId, mealCount, portionSize, selectedMeals } = req.body;
+      const { weekId, mealCount, portionSize, selectedMeals, deliverySlot } = req.body;
       
       if (!weekId || !mealCount || !selectedMeals) {
         return res.status(400).json({ message: 'Missing required meal selection data' });
@@ -276,7 +276,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         weekId,
         mealCount,
         portionSize,
-        selectedMeals
+        selectedMeals,
+        deliverySlot
       };
 
       res.json({ message: 'Meal selections stored successfully' });
@@ -1031,7 +1032,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/orders', authMiddleware, async (req, res) => {
     try {
-      const { weekId, mealCount, defaultPortionSize, items, totalPrice } = req.body;
+      const { weekId, mealCount, defaultPortionSize, items, totalPrice, deliverySlot } = req.body;
 
       // Create the order
       const order = await storage.createOrder({
@@ -1046,6 +1047,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deliveryDate: new Date().toISOString(),
         deliveryAddress: null,
         deliveryNotes: null,
+        deliverySlot: deliverySlot || 'morning',
         paymentMethod: null
       });
 
@@ -1054,7 +1056,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const item of items) {
           const meal = await storage.getMeal(item.mealId);
           if (meal) {
-            const basePrice = meal.price || 249;
+            const basePrice = 249;
             const price = item.portionSize === 'large' ? basePrice * 1.2 : basePrice;
             
             await storage.addOrderItem({

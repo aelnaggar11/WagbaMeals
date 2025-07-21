@@ -169,6 +169,7 @@ export const orders = pgTable("orders", {
   total: real("total").notNull(),
   deliveryAddress: text("delivery_address"),
   deliveryNotes: text("delivery_notes"),
+  deliverySlot: text("delivery_slot").default("morning"), // "morning" | "evening"
   paymentMethod: text("payment_method"),
   paymentStatus: text("payment_status").default("pending"), // "pending" | "processing" | "confirmed" | "failed"
   paymentConfirmationImage: text("payment_confirmation_image"), // URL to uploaded payment confirmation
@@ -189,6 +190,7 @@ export const insertOrderSchema = createInsertSchema(orders).pick({
   total: true,
   deliveryAddress: true,
   deliveryNotes: true,
+  deliverySlot: true,
   paymentMethod: true,
   paymentStatus: true,
   paymentConfirmationImage: true,
@@ -322,6 +324,7 @@ export type PricingConfig = typeof pricingConfigs.$inferSelect;
 export type InsertPricingConfig = z.infer<typeof insertPricingConfigSchema>;
 
 export type PortionSize = "standard" | "large" | "mixed";
+export type DeliverySlot = "morning" | "evening";
 
 export type OrderStatus = "not_selected" | "selected" | "skipped" | "cancelled";
 
