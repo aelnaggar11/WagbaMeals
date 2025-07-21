@@ -1000,9 +1000,6 @@ const AccountPage = () => {
                                   Delivery: {week.deliverySlot === 'morning' ? 'Morning (9:00 AM - 12:00 PM)' : 'Evening (6:00 PM - 9:00 PM)'}
                                 </p>
                                 <div className="flex items-center gap-2">
-                                  <p className="text-sm text-gray-500">
-                                    {week.orderId ? "Order confirmed" : "No order yet"}
-                                  </p>
                                   {week.paymentMethod === 'instapay' && week.paymentStatus && (
                                     <Badge 
                                       variant="outline" 
