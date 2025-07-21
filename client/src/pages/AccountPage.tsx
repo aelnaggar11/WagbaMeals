@@ -50,7 +50,7 @@ const AccountPage = () => {
     paymentMethod: 'credit_card' as 'credit_card' | 'cash' | 'bank_transfer',
     applyToFuture: false
   });
-  const [localUpcomingMeals, setLocalUpcomingMeals] = useState<any>(null);
+  const [localUpcomingMeals, setLocalUpcomingMeals = useState<any>(null);
   const [availableMeals, setAvailableMeals] = useState<Meal[]>([]);
   const [selectedMeals, setSelectedMeals] = useState<OrderItem[]>([]);
   const [selectedWeekId, setSelectedWeekId] = useState<number | null>(null);
@@ -135,10 +135,10 @@ const AccountPage = () => {
       dataLength: (upcomingMealsData as any)?.upcomingMeals?.length,
       selectedWeekId: selectedWeekId
     });
-    
+
     if ((upcomingMealsData as any)?.upcomingMeals && (upcomingMealsData as any).upcomingMeals.length > 0 && !selectedWeekId) {
       console.log('Auto-selecting first available week...');
-      
+
       // Always update local state with fresh server data
       setLocalUpcomingMeals(upcomingMealsData);
 
@@ -153,20 +153,20 @@ const AccountPage = () => {
         : (upcomingMealsData as any).upcomingMeals[0].weekId;
 
       console.log('Auto-selected week:', weekToSelect, 'from weeks:', (upcomingMealsData as any).upcomingMeals.map((w: any) => ({ id: w.weekId, skipped: w.isSkipped })));
-      
+
       // Set the selected week and immediately sync its meal data
       setSelectedWeekId(weekToSelect);
-      
+
       // Find and set the meal data for the auto-selected week
       const selectedWeekData = (upcomingMealsData as any).upcomingMeals.find((week: any) => week.weekId === weekToSelect);
       if (selectedWeekData) {
         setMealCount(selectedWeekData.mealCount || 0);
-        
+
         const orderItems: OrderItem[] = (selectedWeekData.items || []).map((item: any) => ({
           mealId: item.mealId,
           portionSize: item.portionSize as PortionSize
         }));
-        
+
         setSelectedMeals(orderItems);
         console.log('Auto-loaded meal selections:', orderItems.length, 'meals for week', weekToSelect);
       }
@@ -179,7 +179,7 @@ const AccountPage = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const weekParam = urlParams.get('week');
-    
+
     if (weekParam && !selectedWeekId) {
       const weekId = parseInt(weekParam);
       console.log('URL week parameter found:', weekId);
@@ -197,7 +197,7 @@ const AccountPage = () => {
       });
       const freshData = await response.json();
       setLocalUpcomingMeals(freshData);
-      
+
       // Update current week's selections if we have a selected week
       if (selectedWeekId) {
         const currentWeek = freshData.upcomingMeals?.find((week: any) => week.weekId === selectedWeekId);
@@ -210,7 +210,7 @@ const AccountPage = () => {
           setMealCount(currentWeek.mealCount || 0);
         }
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
     } catch (error) {
       console.error('Failed to refresh meal data:', error);
@@ -222,7 +222,7 @@ const AccountPage = () => {
     if (profile) {
       const profileData = profile as any;
       console.log('Profile data received:', profileData);
-      
+
       // Parse address data if it exists
       let addressData = {};
       if (profileData.address) {
@@ -237,11 +237,11 @@ const AccountPage = () => {
           console.error('Error parsing address data:', e);
         }
       }
-      
+
       // Get neighborhood from localStorage (not sessionStorage) for consistency
       const preOnboardingNeighborhood = localStorage.getItem('preOnboardingNeighborhood');
       const neighborhoodValue = (addressData as any).area || preOnboardingNeighborhood || "";
-      
+
       const newFormData = {
         name: profileData.name || "",
         email: profileData.email || "",
@@ -253,12 +253,12 @@ const AccountPage = () => {
         landmark: (addressData as any).landmark || "",
         deliveryNotes: (addressData as any).deliveryNotes || ""
       };
-      
+
       console.log('Setting form data:', newFormData);
-      
+
       // Force update by setting form data directly without checking previous state
       setFormData(newFormData);
-      
+
       // Force a re-render by triggering state change
       setTimeout(() => {
         setFormData(prev => ({ ...prev, ...newFormData }));
@@ -276,7 +276,7 @@ const AccountPage = () => {
         console.error('Failed to load large meal pricing:', error);
       }
     };
-    
+
     loadPricing();
   }, []);
 
@@ -393,19 +393,19 @@ const AccountPage = () => {
     if (subscriptionStatus?.subscriptionStatus === 'cancelled') {
       return !week.orderId; // Disable if no order exists for this week
     }
-    
+
     // If user has used trial box but isn't subscribed, disable all weeks except trial box week
     if (profile?.hasUsedTrialBox && profile?.userType === 'trial') {
       // Find the trial box order week (identified by instapay payment method)
       const trialBoxWeek = displayUpcomingMeals?.upcomingMeals?.find((w: any) => 
         w.orderId && w.paymentMethod === 'instapay'
       );
-      
+
       if (trialBoxWeek) {
         return week.weekId !== trialBoxWeek.weekId; // Only allow the trial box week
       }
     }
-    
+
     return false; // Don't disable by default
   };
 
@@ -478,20 +478,20 @@ const AccountPage = () => {
     setIsProcessingSubscription(true);
     try {
       console.log('Starting subscription process...');
-      
+
       // Mock subscription process - simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       console.log('Sending subscription request...');
-      
+
       // Update user to subscriber status
       const result = await apiRequest('POST', '/api/user/start-subscription', {
         paymentMethod: 'credit_card',
         mockPayment: true
       });
-      
+
       console.log('Subscription request successful:', result);
-      
+
       // Refetch user data to reflect subscription status
       console.log('Refetching user data...');
       await Promise.all([
@@ -499,9 +499,9 @@ const AccountPage = () => {
         refetchSubscriptionStatus(),
         refetchUpcomingMeals()
       ]);
-      
+
       console.log('All data refetched successfully');
-      
+
       setShowSubscriptionModal(false);
       setSubscriptionForm({
         cardNumber: '',
@@ -509,12 +509,12 @@ const AccountPage = () => {
         cvv: '',
         cardholderName: ''
       });
-      
+
       toast({
         title: "Subscription Started!",
         description: "Welcome to your meal subscription! You can now select meals for any week."
       });
-      
+
     } catch (error) {
       console.error('Subscription error:', error);
       toast({
@@ -534,11 +534,11 @@ const AccountPage = () => {
       const response = await fetch(`/api/orders/${order.id}/details`, {
         credentials: 'include'
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch order details');
       }
-      
+
       const orderDetails = await response.json();
       setSelectedOrder(orderDetails);
       setIsOrderModalOpen(true);
@@ -862,13 +862,12 @@ const AccountPage = () => {
                     {displayUpcomingMeals.upcomingMeals.map((week: any) => (
                       <button
                         key={week.weekId}
-                        onClick={async () => {
-                          if (shouldDisableWeek(week)) return; // Prevent interaction with disabled weeks
-                          
+                        onClick={async () => {                          if (shouldDisableWeek(week)) return; // Prevent interaction with disabled weeks
+
                           console.log('Week switch to:', week.weekId);
                           setSelectedWeekId(week.weekId);
                           setIsRefreshingWeekData(true);
-                          
+
                           try {
                             // Always fetch fresh data for accurate meal selections
                             const response = await fetch(`/api/user/upcoming-meals?t=${Date.now()}`, {
@@ -878,7 +877,7 @@ const AccountPage = () => {
                             });
                             const freshData = await response.json();
                             setLocalUpcomingMeals(freshData);
-                            
+
                             // Set correct meal selections for the selected week
                             const selectedWeek = freshData.upcomingMeals?.find((w: any) => w.weekId === week.weekId);
                             if (selectedWeek) {
@@ -890,7 +889,7 @@ const AccountPage = () => {
                               setMealCount(selectedWeek.mealCount || 0);
                               console.log('Fresh week data loaded for week', week.weekId, 'with', items.length, 'meals');
                             }
-                            
+
                             queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
                           } catch (error) {
                             console.error('Week switch error:', error);
@@ -930,7 +929,7 @@ const AccountPage = () => {
                       </button>
                     ))}
                   </div>
-                  
+
                   {/* Call to action for subscription */}
                   {profile?.hasUsedTrialBox && profile?.userType === 'trial' && (
                     <div className="mb-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
@@ -946,7 +945,7 @@ const AccountPage = () => {
                       </Button>
                     </div>
                   )}
-                  
+
                   {subscriptionStatus?.subscriptionStatus === 'cancelled' && (
                     <div className="mb-8 p-6 bg-orange-50 border border-orange-200 rounded-lg">
                       <h3 className="font-medium text-orange-900 mb-2">Subscription Paused</h3>
@@ -997,7 +996,7 @@ const AccountPage = () => {
                               <div>
                                 <p className="font-medium">{week.mealCount} meals · {week.defaultPortionSize} size</p>
                                 <p className="text-sm text-gray-600">
-                                  Delivery: {week.deliverySlot === 'morning' ? 'Morning (9:00 AM - 12:00 PM)' : 'Evening (6:00 PM - 9:00 PM)'}
+                                  Delivery: {week.deliverySlot === 'morning' ? 'Morning (09:00 - 12:00)' : 'Evening (18:00 - 21:00)'}
                                 </p>
                                 <div className="flex items-center gap-2">
                                   {week.paymentMethod === 'instapay' && week.paymentStatus && (
@@ -1135,20 +1134,20 @@ const AccountPage = () => {
                 // Get weeks data to check deadlines
                 const weeks = (weeksData as any)?.weeks || [];
                 const now = new Date();
-                
+
                 // Filter orders where deadline has passed (actual history)
                 const deliveredOrders = (ordersData as any)?.orders?.filter((order: any) => {
                   if (order.status !== 'selected' || order.isSkipped) return false;
-                  
+
                   // Find the week for this order
                   const orderWeek = weeks.find((week: any) => week.id === order.weekId);
                   if (!orderWeek) return false;
-                  
+
                   // Only show orders where deadline has passed
                   const deadline = new Date(orderWeek.orderDeadline);
                   return deadline < now;
                 }) || [];
-                
+
                 return deliveredOrders.length > 0 ? (
                   <Table>
                     <TableHeader>
@@ -1282,7 +1281,7 @@ const AccountPage = () => {
                     {/* Address Fields */}
                     <div className="border-t pt-4 mt-6">
                       <h3 className="font-semibold text-lg mb-4">Delivery Address</h3>
-                      
+
                       <div className="space-y-4">
                         <div className="space-y-2">
                           <Label htmlFor="street">Street Address</Label>
@@ -1313,7 +1312,7 @@ const AccountPage = () => {
                     {/* Delivery Notes */}
                     <div className="border-t pt-4 mt-6">
                       <h3 className="font-semibold text-lg mb-4">Delivery Notes</h3>
-                      
+
                       <div className="space-y-2">
                         <Label htmlFor="deliveryNotes">Special Instructions (Optional)</Label>
                         <Textarea
@@ -1342,7 +1341,7 @@ const AccountPage = () => {
           <TabsContent value="subscription" className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold text-primary mb-6">Subscription Management</h2>
-              
+
               <Card>
                 <CardHeader>
                   <CardTitle>Subscription Status</CardTitle>
@@ -1641,8 +1640,7 @@ const AccountPage = () => {
                   <>
                     <div>Order #{selectedOrder.id}</div>
                     <div>
-                      {selectedOrder.week?.label || `Week ${selectedOrder.weekId}`} - 
-                      {selectedOrder.week?.deliveryDate ? 
+                      {selectedOrder.week?.label || `Week ${selectedOrder.weekId}`} - {selectedOrder.week?.deliveryDate ? 
                         ` Delivered on ${formatDate(new Date(selectedOrder.week.deliveryDate))}` : 
                         ' Delivery date not available'
                       }
@@ -1651,7 +1649,7 @@ const AccountPage = () => {
                 )}
               </DialogDescription>
             </DialogHeader>
-            
+
             {selectedOrder && (
               <div className="space-y-6">
                 {/* Order Summary */}

@@ -144,7 +144,7 @@ const OrderSummary = ({
           <div className="flex items-center">
             <span className="text-sm text-gray-600 mr-2">Time:</span>
             <span className="font-medium">
-              {deliverySlot === 'morning' ? 'Morning (9:00 AM - 12:00 PM)' : 'Evening (6:00 PM - 9:00 PM)'}
+              {deliverySlot === 'morning' ? 'Morning (09:00 - 12:00)' : 'Evening (18:00 - 21:00)'}
             </span>
           </div>
           <p className="text-xs text-gray-500 mt-1">You can change your delivery time above if needed</p>
