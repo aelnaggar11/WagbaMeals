@@ -238,7 +238,10 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
           <div className="max-w-md mx-auto mb-8">
             <DeliverySlotSelector
               value={deliverySlot}
-              onChange={setDeliverySlot}
+              onChange={(slot) => {
+                console.log('Delivery slot changed to:', slot);
+                setDeliverySlot(slot);
+              }}
             />
           </div>
         )}

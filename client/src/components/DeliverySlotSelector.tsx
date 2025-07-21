@@ -8,6 +8,8 @@ interface DeliverySlotSelectorProps {
 }
 
 export default function DeliverySlotSelector({ value, onChange, className = "" }: DeliverySlotSelectorProps) {
+  console.log('DeliverySlotSelector render:', { value });
+  
   return (
     <div className={`space-y-3 ${className}`}>
       <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -17,7 +19,10 @@ export default function DeliverySlotSelector({ value, onChange, className = "" }
       <div className="grid grid-cols-2 gap-3">
         <button
           type="button"
-          onClick={() => onChange('morning')}
+          onClick={() => {
+            console.log('Morning button clicked');
+            onChange('morning');
+          }}
           className={`p-4 rounded-lg border-2 transition-all ${
             value === 'morning'
               ? 'border-primary bg-primary/5 text-primary'
@@ -32,7 +37,10 @@ export default function DeliverySlotSelector({ value, onChange, className = "" }
         
         <button
           type="button"
-          onClick={() => onChange('evening')}
+          onClick={() => {
+            console.log('Evening button clicked');
+            onChange('evening');
+          }}
           className={`p-4 rounded-lg border-2 transition-all ${
             value === 'evening'
               ? 'border-primary bg-primary/5 text-primary'

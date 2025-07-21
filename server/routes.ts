@@ -375,6 +375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             weekId: selections.weekId,
             mealCount: selections.mealCount,
             defaultPortionSize: selections.portionSize,
+            deliverySlot: selections.deliverySlot || 'morning',
             subtotal,
             discount,
             total
