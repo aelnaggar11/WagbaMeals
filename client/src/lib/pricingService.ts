@@ -27,6 +27,12 @@ const defaultPricing: Map<string, number> = new Map([
 export class PricingService {
   private static async fetchPricingConfigs(): Promise<Map<string, number>> {
     try {
+      // Check if we're running in browser environment
+      if (typeof window === 'undefined') {
+        console.warn('PricingService: Running in server environment, using default pricing');
+        return defaultPricing;
+      }
+      
       const response = await fetch('/api/pricing');
       if (!response.ok) {
         console.warn('Failed to fetch pricing configs, using default pricing');
@@ -159,7 +165,9 @@ export class PricingCache {
   }
 }
 
-// Initialize cache on module load for better UX
-PricingService.getAllMealPricing().catch(() => {
-  // Silently handle initialization errors
-});
+// Initialize cache on module load for better UX (only in browser environment)
+if (typeof window !== 'undefined') {
+  PricingService.getAllMealPricing().catch(() => {
+    // Silently handle initialization errors
+  });
+}

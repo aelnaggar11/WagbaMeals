@@ -23,6 +23,7 @@ declare module 'express-session' {
       mealCount: number;
       portionSize: string;
       selectedMeals: any[];
+      deliverySlot?: string;
     };
   }
 }
@@ -68,7 +69,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (file.mimetype.startsWith('image/')) {
         cb(null, true);
       } else {
-        cb(new Error('Only image files are allowed'), false);
+        cb(null, false);
       }
     }
   });
@@ -674,6 +675,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/user/subscription/cancel', authMiddleware, async (req, res) => {
     try {
       const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized - No user session' });
+      }
       const updatedUser = await storage.cancelUserSubscription(userId);
       
       res.json({ 
@@ -690,6 +694,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/user/subscription/resume', authMiddleware, async (req, res) => {
     try {
       const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized - No user session' });
+      }
       const updatedUser = await storage.resumeUserSubscription(userId);
       
       res.json({ 
@@ -733,14 +740,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Error starting subscription:', error);
-      console.error('Error details:', error.message);
-      res.status(500).json({ message: 'Server error: ' + error.message });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Error details:', errorMessage);
+      res.status(500).json({ message: 'Server error: ' + errorMessage });
     }
   });
 
   app.get('/api/user/subscription/status', authMiddleware, async (req, res) => {
     try {
       const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized - No user session' });
+      }
       const user = await storage.getUser(userId);
       
       if (!user) {

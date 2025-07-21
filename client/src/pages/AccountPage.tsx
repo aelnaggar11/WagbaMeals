@@ -50,7 +50,7 @@ const AccountPage = () => {
     paymentMethod: 'credit_card' as 'credit_card' | 'cash' | 'bank_transfer',
     applyToFuture: false
   });
-  const [localUpcomingMeals, setLocalUpcomingMeals = useState<any>(null);
+  const [localUpcomingMeals, setLocalUpcomingMeals] = useState<any>(null);
   const [availableMeals, setAvailableMeals] = useState<Meal[]>([]);
   const [selectedMeals, setSelectedMeals] = useState<OrderItem[]>([]);
   const [selectedWeekId, setSelectedWeekId] = useState<number | null>(null);
@@ -91,22 +91,22 @@ const AccountPage = () => {
     retry: 1
   });
 
-  const { data: profile, isLoading: isProfileLoading, refetch: refetchProfile } = useQuery({
+  const { data: profile, isLoading: isProfileLoading, refetch: refetchProfile } = useQuery<any>({
     queryKey: ['/api/user/profile'],
     enabled: !!currentUser
   });
 
-  const { data: ordersData } = useQuery({
+  const { data: ordersData } = useQuery<any>({
     queryKey: ['/api/orders'],
     enabled: !!currentUser
   });
 
-  const { data: weeksData } = useQuery({
+  const { data: weeksData } = useQuery<any>({
     queryKey: ['/api/weeks'],
     enabled: !!currentUser
   });
 
-  const { data: upcomingMealsData, isLoading: isLoadingUpcomingMeals, refetch: refetchUpcomingMeals } = useQuery({
+  const { data: upcomingMealsData, isLoading: isLoadingUpcomingMeals, refetch: refetchUpcomingMeals } = useQuery<any>({
     queryKey: ['/api/user/upcoming-meals'],
     enabled: !!currentUser,
     refetchOnWindowFocus: true,
@@ -115,7 +115,7 @@ const AccountPage = () => {
     refetchInterval: false
   });
 
-  const { data: subscriptionStatus, refetch: refetchSubscriptionStatus } = useQuery({
+  const { data: subscriptionStatus, refetch: refetchSubscriptionStatus } = useQuery<any>({
     queryKey: ['/api/user/subscription/status'],
     enabled: !!currentUser,
     refetchOnWindowFocus: true,
