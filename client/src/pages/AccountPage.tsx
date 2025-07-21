@@ -12,7 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Order, User, Meal, OrderItem, PortionSize } from "@shared/schema";
+import { Order, User, Meal, OrderItem, PortionSize, DeliverySlot } from "@shared/schema";
+import DeliverySlotSelector from "@/components/DeliverySlotSelector";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatDate, getStatusClass } from "@/lib/utils";
 import { useLocation } from "wouter";
@@ -32,10 +33,12 @@ const AccountPage = () => {
     weekId: number;
     currentMealCount: number;
     currentPortionSize: string;
+    currentDeliverySlot: string;
   } | null>(null);
   const [editForm, setEditForm] = useState({
     mealCount: 0,
     portionSize: 'standard' as 'standard' | 'large' | 'mixed',
+    deliverySlot: 'morning' as 'morning' | 'evening',
     applyToFuture: false
   });
   const [editingPayment, setEditingPayment] = useState<{
@@ -549,11 +552,12 @@ const AccountPage = () => {
   };
 
   // Open delivery editing dialog
-  const openEditDelivery = (weekId: number, mealCount: number, portionSize: string) => {
-    setEditingDelivery({ weekId, currentMealCount: mealCount, currentPortionSize: portionSize });
+  const openEditDelivery = (weekId: number, mealCount: number, portionSize: string, deliverySlot: string = 'morning') => {
+    setEditingDelivery({ weekId, currentMealCount: mealCount, currentPortionSize: portionSize, currentDeliverySlot: deliverySlot });
     setEditForm({
       mealCount,
       portionSize: portionSize as 'standard' | 'large',
+      deliverySlot: deliverySlot as 'morning' | 'evening',
       applyToFuture: false
     });
   };
@@ -574,10 +578,11 @@ const AccountPage = () => {
     try {
       setIsUpdating(true);
 
-      // Update the order with new meal count and portion size
+      // Update the order with new meal count, portion size, and delivery slot
       await apiRequest('PATCH', `/api/orders/${editingDelivery.weekId}/delivery`, {
         mealCount: editForm.mealCount,
         defaultPortionSize: editForm.portionSize,
+        deliverySlot: editForm.deliverySlot,
         applyToFuture: editForm.applyToFuture
       });
 
@@ -991,6 +996,9 @@ const AccountPage = () => {
                             <div className="flex justify-between items-center">
                               <div>
                                 <p className="font-medium">{week.mealCount} meals · {week.defaultPortionSize} size</p>
+                                <p className="text-sm text-gray-600">
+                                  Delivery: {week.deliverySlot === 'morning' ? 'Morning (9:00 AM - 12:00 PM)' : 'Evening (6:00 PM - 9:00 PM)'}
+                                </p>
                                 <div className="flex items-center gap-2">
                                   <p className="text-sm text-gray-500">
                                     {week.orderId ? "Order confirmed" : "No order yet"}
@@ -1019,7 +1027,7 @@ const AccountPage = () => {
                                   <Button 
                                     variant="outline" 
                                     size="sm"
-                                    onClick={() => openEditDelivery(week.weekId, week.mealCount, week.defaultPortionSize)}
+                                    onClick={() => openEditDelivery(week.weekId, week.mealCount, week.defaultPortionSize, week.deliverySlot)}
                                     className="flex items-center"
                                   >
                                     <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1462,7 +1470,7 @@ const AccountPage = () => {
             <DialogHeader>
               <DialogTitle>Edit Delivery Preferences</DialogTitle>
               <DialogDescription>
-                Change your meal count and portion size for this delivery. You can apply changes to future deliveries too.
+                Change your meal count, portion size, and delivery time for this delivery. You can apply changes to future deliveries too.
               </DialogDescription>
             </DialogHeader>
 
@@ -1512,6 +1520,18 @@ const AccountPage = () => {
                     <SelectItem value="mixed">Mix & Match</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="delivery-slot" className="text-right">
+                  Delivery Time
+                </Label>
+                <div className="col-span-3">
+                  <DeliverySlotSelector
+                    value={editForm.deliverySlot}
+                    onChange={(slot) => setEditForm({...editForm, deliverySlot: slot})}
+                  />
+                </div>
               </div>
 
               <div className="flex items-center space-x-2 mt-4">

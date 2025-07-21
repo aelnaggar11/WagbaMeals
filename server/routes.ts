@@ -1416,12 +1416,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/orders/:weekId/delivery', authMiddleware, async (req, res) => {
     try {
       const weekId = parseInt(req.params.weekId);
-      const { mealCount, defaultPortionSize, applyToFuture } = req.body;
+      const { mealCount, defaultPortionSize, deliverySlot, applyToFuture } = req.body;
       const userId = req.session.userId!;
 
       // Validate input
       if (!mealCount || !defaultPortionSize) {
         return res.status(400).json({ message: 'Meal count and portion size are required' });
+      }
+
+      // Validate delivery slot
+      if (deliverySlot && !['morning', 'evening'].includes(deliverySlot)) {
+        return res.status(400).json({ message: 'Invalid delivery slot' });
       }
 
       // Validate meal count (4-15 meals allowed)
@@ -1472,6 +1477,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           weekId,
           mealCount: parseInt(mealCount),
           defaultPortionSize,
+          deliverySlot: deliverySlot || 'morning',
           subtotal,
           discount,
           total: subtotal
@@ -1505,6 +1511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         order = await storage.updateOrder(order.id, {
           mealCount: parseInt(mealCount),
           defaultPortionSize,
+          deliverySlot: deliverySlot || order.deliverySlot || 'morning',
           subtotal,
           discount,
           total: subtotal,
@@ -1547,6 +1554,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               weekId: futureWeek.id,
               mealCount: parseInt(mealCount),
               defaultPortionSize,
+              deliverySlot: deliverySlot || 'morning',
               subtotal,
               discount,
               total: subtotal
@@ -1556,6 +1564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.updateOrder(futureOrder.id, {
               mealCount: parseInt(mealCount),
               defaultPortionSize,
+              deliverySlot: deliverySlot || futureOrder.deliverySlot || 'morning',
               subtotal,
               discount,
               total: subtotal
