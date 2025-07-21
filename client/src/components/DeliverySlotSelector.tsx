@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { DeliverySlot } from '@shared/schema';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface DeliverySlotSelectorProps {
   value: DeliverySlot;
@@ -9,50 +9,24 @@ interface DeliverySlotSelectorProps {
 
 export default function DeliverySlotSelector({ value, onChange, className = "" }: DeliverySlotSelectorProps) {
   console.log('DeliverySlotSelector render:', { value });
-  
+
   return (
-    <div className={`space-y-3 ${className}`}>
-      <label className="block text-sm font-medium text-gray-700 mb-3">
-        Choose your delivery time
-      </label>
-      
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={() => {
-            console.log('Morning button clicked');
-            onChange('morning');
-          }}
-          className={`p-3 rounded-lg border-2 transition-all cursor-pointer relative z-10 ${
-            value === 'morning'
-              ? 'border-primary bg-primary/5 text-primary'
-              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
-          }`}
-        >
-          <div className="text-center">
-            <div className="font-semibold">Morning</div>
-            <div className="text-xs opacity-75">9:00 AM - 12:00 PM</div>
-          </div>
-        </button>
-        
-        <button
-          type="button"
-          onClick={() => {
-            console.log('Evening button clicked');
-            onChange('evening');
-          }}
-          className={`p-3 rounded-lg border-2 transition-all cursor-pointer relative z-10 ${
-            value === 'evening'
-              ? 'border-primary bg-primary/5 text-primary'
-              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
-          }`}
-        >
-          <div className="text-center">
-            <div className="font-semibold">Evening</div>
-            <div className="text-xs opacity-75">6:00 PM - 9:00 PM</div>
-          </div>
-        </button>
-      </div>
+    <div className={`${className}`}>
+      <Select 
+        value={value} 
+        onValueChange={(selectedValue) => {
+          console.log(`${selectedValue} option selected`);
+          onChange(selectedValue as DeliverySlot);
+        }}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Select delivery time" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="morning">Morning (09:00 - 12:00)</SelectItem>
+          <SelectItem value="evening">Evening (18:00 - 21:00)</SelectItem>
+        </SelectContent>
+      </Select>
     </div>
   );
 }
