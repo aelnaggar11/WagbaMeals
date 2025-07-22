@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { Calendar, Clock, DollarSign, User } from "lucide-react";
+import { Calendar, Clock, DollarSign, User, Sunrise, Sunset, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Order, User as UserType } from "@shared/schema";
 import { formatCurrency, formatDate, getStatusClass } from "@/lib/utils";
@@ -20,6 +21,7 @@ interface OrderListProps {
 
 const OrderList = ({ orders, showActions = false, onUpdateStatus, onToggleDelivery }: OrderListProps) => {
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
+  const [deliverySlotFilter, setDeliverySlotFilter] = useState<string>("all");
   const { toast } = useToast();
 
   // Internal status update handler with cache management
@@ -98,24 +100,61 @@ const OrderList = ({ orders, showActions = false, onUpdateStatus, onToggleDelive
         return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">{status}</Badge>;
     }
   };
+
+  const getDeliverySlotBadge = (slot: string) => {
+    const slotText = slot === 'morning' ? 'Morning' : 'Evening';
+    const icon = slot === 'morning' ? <Sunrise size={12} /> : <Sunset size={12} />;
+    const colorClass = slot === 'morning' ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-purple-50 text-purple-700 border-purple-200';
+    
+    return (
+      <Badge variant="outline" className={`${colorClass} flex items-center gap-1`}>
+        {icon}
+        {slotText}
+      </Badge>
+    );
+  };
+
+  // Filter orders by delivery slot
+  const filteredOrders = orders.filter(order => {
+    if (deliverySlotFilter === "all") return true;
+    return order.deliverySlot === deliverySlotFilter;
+  });
   
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Order ID</TableHead>
-            {showActions && <TableHead>Customer</TableHead>}
-            <TableHead>Date</TableHead>
-            <TableHead>Items</TableHead>
-            <TableHead>Total</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Delivery Date</TableHead>
-            {showActions && <TableHead className="text-right">Actions</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {orders.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()).map((order) => (
+    <div className="space-y-4">
+      {/* Delivery Slot Filter */}
+      <div className="flex items-center gap-2">
+        <Filter size={16} className="text-gray-500" />
+        <span className="text-sm font-medium">Filter by delivery slot:</span>
+        <Select value={deliverySlotFilter} onValueChange={setDeliverySlotFilter}>
+          <SelectTrigger className="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Slots</SelectItem>
+            <SelectItem value="morning">Morning</SelectItem>
+            <SelectItem value="evening">Evening</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Order ID</TableHead>
+              {showActions && <TableHead>Customer</TableHead>}
+              <TableHead>Date</TableHead>
+              <TableHead>Items</TableHead>
+              <TableHead>Total</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Delivery Slot</TableHead>
+              <TableHead>Delivery Date</TableHead>
+              {showActions && <TableHead className="text-right">Actions</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredOrders.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()).map((order) => (
             <React.Fragment key={order.id}>
               <TableRow className={expandedOrderId === order.id ? "border-b-0" : ""}>
                 <TableCell className="font-medium">#{order.id}</TableCell>
@@ -159,6 +198,9 @@ const OrderList = ({ orders, showActions = false, onUpdateStatus, onToggleDelive
                     )}
                   </div>
                 </TableCell>
+                <TableCell>
+                  {getDeliverySlotBadge(order.deliverySlot || 'morning')}
+                </TableCell>
                 <TableCell className="whitespace-nowrap">
                   <div className="flex items-center">
                     <Clock size={14} className="mr-1 text-gray-500" />
@@ -193,13 +235,14 @@ const OrderList = ({ orders, showActions = false, onUpdateStatus, onToggleDelive
               {/* Expanded order details */}
               {expandedOrderId === order.id && (
                 <TableRow>
-                  <TableCell colSpan={showActions ? 8 : 7} className="bg-gray-50 p-4">
+                  <TableCell colSpan={showActions ? 9 : 8} className="bg-gray-50 p-4">
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <div>
                           <h4 className="text-sm font-medium mb-2">Order Details</h4>
                           <div className="text-sm space-y-1">
                             <p><span className="font-medium">Portion Size:</span> {order.defaultPortionSize.charAt(0).toUpperCase() + order.defaultPortionSize.slice(1)}</p>
+                            <p><span className="font-medium">Delivery Slot:</span> {order.deliverySlot === 'morning' ? 'Morning' : 'Evening'}</p>
                             <p><span className="font-medium">Subtotal:</span> {formatCurrency(order.subtotal)}</p>
                             {order.discount > 0 && (
                               <p><span className="font-medium">Discount:</span> {formatCurrency(order.discount)}</p>
@@ -235,10 +278,11 @@ const OrderList = ({ orders, showActions = false, onUpdateStatus, onToggleDelive
                   </TableCell>
                 </TableRow>
               )}
-            </React.Fragment>
-          ))}
-        </TableBody>
-      </Table>
+              </React.Fragment>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };

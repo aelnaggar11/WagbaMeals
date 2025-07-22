@@ -2416,8 +2416,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/admin/neighborhoods', adminMiddleware, async (req, res) => {
     try {
-      const { name, isServiced } = req.body;
-      const neighborhood = await storage.createNeighborhood({ name, isServiced });
+      const { name, isServiced, availableDeliverySlots, preferredDeliverySlot } = req.body;
+      const neighborhood = await storage.createNeighborhood({ 
+        name, 
+        isServiced, 
+        availableDeliverySlots: availableDeliverySlots || ['morning', 'evening'], 
+        preferredDeliverySlot: preferredDeliverySlot || 'morning'
+      });
       res.status(201).json(neighborhood);
     } catch (error) {
       console.error('Error creating neighborhood:', error);
