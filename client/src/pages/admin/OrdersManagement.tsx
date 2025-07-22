@@ -222,6 +222,7 @@ const OrdersManagement = () => {
   const OrdersListTab = () => {
     const [statusFilter, setStatusFilter] = useState<string>('active'); // 'all', 'active', 'skipped', 'selected', 'not_selected'
     const [neighborhoodFilter, setNeighborhoodFilter] = useState<string>('all'); // 'all' or specific neighborhood name
+    const [deliverySlotFilter, setDeliverySlotFilter] = useState<string>('all'); // 'all', 'morning', 'evening'
     
     let weekOrders = selectedWeekId ? ordersData?.orders.filter(order => order.weekId === selectedWeekId) || [] : [];
     
@@ -242,6 +243,13 @@ const OrdersManagement = () => {
         } catch (error) {
           return false;
         }
+      });
+    }
+
+    // Apply delivery slot filter
+    if (deliverySlotFilter !== 'all') {
+      weekOrders = weekOrders.filter(order => {
+        return order.deliverySlot === deliverySlotFilter;
       });
     }
 
@@ -329,6 +337,19 @@ const OrdersManagement = () => {
                     {neighborhood.name}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={deliverySlotFilter}
+              onValueChange={setDeliverySlotFilter}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by delivery slot" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Delivery Slots</SelectItem>
+                <SelectItem value="morning">Morning</SelectItem>
+                <SelectItem value="evening">Evening</SelectItem>
               </SelectContent>
             </Select>
             <Select
@@ -428,6 +449,21 @@ const OrdersManagement = () => {
                             {order.deliveryNotes && (
                               <div className="text-gray-600 mt-1">Note: {order.deliveryNotes}</div>
                             )}
+                          </div>
+                        </div>
+                        <div className="flex items-center">
+                          <Clock size={14} className="mr-2 text-gray-500" />
+                          <div className="flex items-center gap-2">
+                            <span>Delivery slot:</span>
+                            <Badge variant="outline" className={`
+                              ${order.deliverySlot === 'morning' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 
+                                order.deliverySlot === 'evening' ? 'bg-purple-50 text-purple-700 border-purple-200' : 
+                                'bg-gray-50 text-gray-700 border-gray-200'}
+                            `}>
+                              {order.deliverySlot === 'morning' ? '🌅 Morning' : 
+                               order.deliverySlot === 'evening' ? '🌆 Evening' : 
+                               order.deliverySlot || 'Not specified'}
+                            </Badge>
                           </div>
                         </div>
                       </div>
@@ -681,7 +717,7 @@ const OrdersManagement = () => {
     
     // Get unique payment methods from all orders for filter options
     const allWeekOrders = selectedUpcomingWeekId ? ordersData?.orders.filter(order => order.weekId === selectedUpcomingWeekId) || [] : [];
-    const uniquePaymentMethods = [...new Set(allWeekOrders.map(order => order.paymentMethod).filter(Boolean))];
+    const uniquePaymentMethods = Array.from(new Set(allWeekOrders.map(order => order.paymentMethod).filter(Boolean)));
 
     return (
       <div className="space-y-6">
