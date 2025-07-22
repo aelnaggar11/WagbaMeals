@@ -19,6 +19,7 @@ import { formatDate, getStatusClass } from "@/lib/utils";
 import { useLocation } from "wouter";
 import FixedMealSelector from "@/pages/FixedMealSelector";
 import { PricingService } from "@/lib/pricingService";
+import SkipDeliveryModal from "@/components/SkipDeliveryModal";
 
 const AccountPage = () => {
   const [location, navigate] = useLocation();
@@ -71,6 +72,12 @@ const AccountPage = () => {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showSkipModal, setShowSkipModal] = useState(false);
+  const [skipModalData, setSkipModalData] = useState<{
+    orderId: number;
+    weekId: number;
+    deadline: string;
+  } | null>(null);
   const [subscriptionForm, setSubscriptionForm] = useState({
     cardNumber: '',
     expiryDate: '',
@@ -780,6 +787,25 @@ const AccountPage = () => {
     }
   };
 
+  const handleSkipConfirm = async () => {
+    if (!skipModalData) return;
+    
+    try {
+      await handleSkipToggle(skipModalData.orderId, skipModalData.weekId, true);
+      setShowSkipModal(false);
+      setSkipModalData(null);
+    } catch (error) {
+      // Error handling is already done in handleSkipToggle
+      setShowSkipModal(false);
+      setSkipModalData(null);
+    }
+  };
+
+  const handleSkipCancel = () => {
+    setShowSkipModal(false);
+    setSkipModalData(null);
+  };
+
   // Handle subscription defaults update
   const handleUpdateSubscriptionDefaults = async () => {
     try {
@@ -1079,7 +1105,14 @@ const AccountPage = () => {
                                   <Button 
                                     variant="outline" 
                                     disabled={processingWeekId === week.weekId}
-                                    onClick={() => handleSkipToggle(week.orderId as number, week.weekId, true)}
+                                    onClick={() => {
+                                      setSkipModalData({
+                                        orderId: week.orderId as number,
+                                        weekId: week.weekId,
+                                        deadline: week.orderDeadline
+                                      });
+                                      setShowSkipModal(true);
+                                    }}
                                     className="flex items-center"
                                   >
                                     {processingWeekId === week.weekId ? (
@@ -2027,6 +2060,15 @@ const AccountPage = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Skip Delivery Confirmation Modal */}
+        <SkipDeliveryModal
+          isOpen={showSkipModal}
+          onClose={handleSkipCancel}
+          onConfirm={handleSkipConfirm}
+          deadline={skipModalData?.deadline || ''}
+          isLoading={skipModalData ? processingWeekId === skipModalData.weekId : false}
+        />
       </div>
     </div>
   );
