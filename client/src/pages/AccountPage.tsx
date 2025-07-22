@@ -78,6 +78,13 @@ const AccountPage = () => {
     cardholderName: ''
   });
   const [isProcessingSubscription, setIsProcessingSubscription] = useState(false);
+  const [showSubscriptionEditModal, setShowSubscriptionEditModal] = useState(false);
+  const [subscriptionEditForm, setSubscriptionEditForm] = useState({
+    mealCount: 6,
+    portionSize: 'standard' as 'standard' | 'large',
+    deliverySlot: 'morning' as 'morning' | 'evening'
+  });
+  const [activeTab, setActiveTab] = useState("upcoming");
 
   // ALL QUERIES MUST BE DECLARED BEFORE ANY CONDITIONAL LOGIC
   const { data: currentUser, isLoading: isUserLoading } = useQuery<User | null>({
@@ -773,7 +780,42 @@ const AccountPage = () => {
     }
   };
 
+  // Handle subscription defaults update
+  const handleUpdateSubscriptionDefaults = async () => {
+    try {
+      await apiRequest('PATCH', '/api/user/subscription/defaults', {
+        mealCount: subscriptionEditForm.mealCount,
+        portionSize: subscriptionEditForm.portionSize,
+        deliverySlot: subscriptionEditForm.deliverySlot
+      });
 
+      await refetchSubscriptionStatus();
+      await refetchUpcomingMeals();
+      setShowSubscriptionEditModal(false);
+
+      toast({
+        title: "Subscription Updated",
+        description: "Your default subscription settings have been updated for future orders."
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update subscription settings. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Initialize subscription edit form with current values
+  useEffect(() => {
+    if (subscriptionStatus && showSubscriptionEditModal) {
+      setSubscriptionEditForm({
+        mealCount: subscriptionStatus.defaultMealCount || 6,
+        portionSize: subscriptionStatus.defaultPortionSize || 'standard',
+        deliverySlot: subscriptionStatus.defaultDeliverySlot || 'morning'
+      });
+    }
+  }, [subscriptionStatus, showSubscriptionEditModal]);
 
   // Show loading while authentication is in progress
   if (isUserLoading) {
@@ -811,7 +853,7 @@ const AccountPage = () => {
   return (
     <div className="container mx-auto px-4 py-16">
       <div className="max-w-6xl mx-auto">
-        <Tabs defaultValue="upcoming" className="space-y-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList>
             <TabsTrigger value="upcoming">Upcoming Meals</TabsTrigger>
             <TabsTrigger value="orders">Order History</TabsTrigger>
@@ -1429,6 +1471,80 @@ const AccountPage = () => {
                       </div>
                     )}
 
+                    {/* Subscription Settings Section - Only show for active subscriptions */}
+                    {profile?.userType !== 'trial' && subscriptionStatus?.subscriptionStatus === 'active' && (
+                      <div className="mt-6 space-y-4">
+                        <div className="border-t pt-6">
+                          <h4 className="font-medium mb-4">Subscription Settings</h4>
+                          
+                          {/* Current subscription details */}
+                          <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                            <h5 className="font-medium text-blue-900 mb-2">Current Settings</h5>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <p className="text-blue-700">Default Meal Count:</p>
+                                <p className="font-medium text-blue-900">
+                                  {subscriptionStatus?.defaultMealCount || 6} meals per week
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-blue-700">Default Portion Size:</p>
+                                <p className="font-medium text-blue-900 capitalize">
+                                  {subscriptionStatus?.defaultPortionSize || 'standard'} size
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-blue-700">Default Delivery Slot:</p>
+                                <p className="font-medium text-blue-900">
+                                  {subscriptionStatus?.defaultDeliverySlot === 'evening' 
+                                    ? '🌆 Evening (18:00 - 21:00)' 
+                                    : '🌅 Morning (09:00 - 12:00)'}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-blue-700">Delivery Address:</p>
+                                <p className="font-medium text-blue-900">
+                                  {(() => {
+                                    try {
+                                      const address = profile?.address ? JSON.parse(profile.address) : null;
+                                      return address ? `${address.area}, ${address.street}` : 'Not set';
+                                    } catch {
+                                      return 'Not set';
+                                    }
+                                  })()}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Edit buttons */}
+                          <div className="flex flex-wrap gap-3">
+                            <Button
+                              variant="outline"
+                              onClick={() => setShowSubscriptionEditModal(true)}
+                              className="flex items-center"
+                            >
+                              <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                              Edit Subscription Defaults
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setActiveTab('profile')}
+                              className="flex items-center"
+                            >
+                              <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              Edit Delivery Address
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                       <h4 className="font-medium mb-2">
                         {profile?.userType === 'trial' 
@@ -1449,6 +1565,9 @@ const AccountPage = () => {
                             <li>• Resume your subscription whenever you're ready</li>
                             <li>• Cancelled subscriptions prevent meal selection</li>
                             <li>• No charges while subscription is cancelled</li>
+                            {subscriptionStatus?.subscriptionStatus === 'active' && (
+                              <li>• Edit your default meal preferences for future orders</li>
+                            )}
                           </>
                         )}
                       </ul>
@@ -1825,6 +1944,85 @@ const AccountPage = () => {
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 {isProcessingSubscription ? "Processing..." : "Start Subscription"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Subscription Edit Modal */}
+        <Dialog open={showSubscriptionEditModal} onOpenChange={setShowSubscriptionEditModal}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Edit Subscription Defaults</DialogTitle>
+              <DialogDescription>
+                Update your default meal preferences for all future orders. These settings will apply to new weekly orders.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="subscription-meal-count">Default Meal Count</Label>
+                <Select 
+                  value={subscriptionEditForm.mealCount.toString()} 
+                  onValueChange={(value) => setSubscriptionEditForm(prev => ({ ...prev, mealCount: parseInt(value) }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select meal count" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((count) => (
+                      <SelectItem key={count} value={count.toString()}>
+                        {count} meals per week
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="subscription-portion-size">Default Portion Size</Label>
+                <Select 
+                  value={subscriptionEditForm.portionSize} 
+                  onValueChange={(value) => setSubscriptionEditForm(prev => ({ ...prev, portionSize: value as 'standard' | 'large' }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select portion size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Standard Portion</SelectItem>
+                    <SelectItem value="large">Large Portion (+50 EGP per meal)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="subscription-delivery-slot">Default Delivery Slot</Label>
+                <Select 
+                  value={subscriptionEditForm.deliverySlot} 
+                  onValueChange={(value) => setSubscriptionEditForm(prev => ({ ...prev, deliverySlot: value as 'morning' | 'evening' }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select delivery slot" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="morning">🌅 Morning (09:00 - 12:00)</SelectItem>
+                    <SelectItem value="evening">🌆 Evening (18:00 - 21:00)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  <strong>Note:</strong> These settings will apply to all future weekly orders. 
+                  You can still modify individual orders before their deadline.
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowSubscriptionEditModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateSubscriptionDefaults}>
+                Save Changes
               </Button>
             </DialogFooter>
           </DialogContent>

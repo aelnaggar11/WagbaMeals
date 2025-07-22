@@ -761,10 +761,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         subscriptionStatus: user.subscriptionStatus || 'active',
         subscriptionCancelledAt: user.subscriptionCancelledAt,
-        subscriptionPausedAt: user.subscriptionPausedAt
+        subscriptionPausedAt: user.subscriptionPausedAt,
+        defaultMealCount: user.defaultMealCount || 6,
+        defaultPortionSize: user.defaultPortionSize || 'standard',
+        defaultDeliverySlot: user.defaultDeliverySlot || 'morning'
       });
     } catch (error) {
       console.error('Error fetching subscription status:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.patch('/api/user/subscription/defaults', authMiddleware, async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized - No user session' });
+      }
+
+      const { mealCount, portionSize, deliverySlot } = req.body;
+
+      // Validate input
+      if (!mealCount || mealCount < 4 || mealCount > 15) {
+        return res.status(400).json({ message: 'Invalid meal count. Must be between 4 and 15.' });
+      }
+
+      if (!['standard', 'large'].includes(portionSize)) {
+        return res.status(400).json({ message: 'Invalid portion size. Must be standard or large.' });
+      }
+
+      if (!['morning', 'evening'].includes(deliverySlot)) {
+        return res.status(400).json({ message: 'Invalid delivery slot. Must be morning or evening.' });
+      }
+
+      // Update user defaults
+      const updatedUser = await storage.updateUser(userId, {
+        defaultMealCount: mealCount,
+        defaultPortionSize: portionSize,
+        defaultDeliverySlot: deliverySlot
+      });
+
+      res.json({
+        message: 'Subscription defaults updated successfully',
+        defaultMealCount: updatedUser.defaultMealCount,
+        defaultPortionSize: updatedUser.defaultPortionSize,
+        defaultDeliverySlot: updatedUser.defaultDeliverySlot
+      });
+    } catch (error) {
+      console.error('Error updating subscription defaults:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });
