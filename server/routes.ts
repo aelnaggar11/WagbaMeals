@@ -1298,7 +1298,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           canUnskip: !orderDeadlinePassed && order.status === 'skipped',
           mealCount: order.mealCount,
           defaultPortionSize: order.defaultPortionSize || 'standard',
+          deliverySlot: order.deliverySlot || 'morning',
           paymentMethod: order.paymentMethod,
+          paymentStatus: order.paymentStatus,
           orderType: order.orderType || 'trial'
         });
       }
