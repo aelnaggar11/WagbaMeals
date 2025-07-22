@@ -801,11 +801,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
         defaultDeliverySlot: deliverySlot
       });
 
+      // Apply these defaults to all existing upcoming orders
+      const now = new Date();
+      const allWeeks = await storage.getWeeks();
+      const futureWeeks = allWeeks.filter(w => {
+        const wDeadline = new Date(w.orderDeadline);
+        return wDeadline > now;
+      });
+
+      let updatedOrdersCount = 0;
+      for (const week of futureWeeks) {
+        let order = await storage.getOrderByUserAndWeek(userId, week.id);
+        
+        const pricePerMeal = getPriceForMealCount(mealCount);
+        let itemPrice = pricePerMeal;
+        
+        if (portionSize === 'large') {
+          itemPrice = pricePerMeal + 99;
+        }
+        
+        const subtotal = itemPrice * mealCount;
+        const fullPriceTotal = mealCount * 249;
+        const discount = Math.max(0, fullPriceTotal - subtotal);
+
+        if (!order) {
+          // Create new order with defaults
+          await storage.createOrder({
+            userId,
+            weekId: week.id,
+            mealCount: mealCount,
+            defaultPortionSize: portionSize,
+            deliverySlot: deliverySlot,
+            subtotal,
+            discount,
+            total: subtotal
+          });
+          updatedOrdersCount++;
+        } else {
+          // Update existing order with new defaults
+          const currentOrderItems = await storage.getOrderItems(order.id);
+          if (currentOrderItems.length > 0 && order.mealCount !== mealCount) {
+            // Remove existing meal selections when meal count changes
+            for (const item of currentOrderItems) {
+              await storage.removeOrderItem(item.id);
+            }
+          }
+
+          await storage.updateOrder(order.id, {
+            mealCount: mealCount,
+            defaultPortionSize: portionSize,
+            deliverySlot: deliverySlot,
+            subtotal,
+            discount,
+            total: subtotal,
+            status: order.mealCount !== mealCount ? 'not_selected' : order.status
+          });
+          updatedOrdersCount++;
+        }
+      }
+
       res.json({
         message: 'Subscription defaults updated successfully',
         defaultMealCount: updatedUser.defaultMealCount,
         defaultPortionSize: updatedUser.defaultPortionSize,
-        defaultDeliverySlot: updatedUser.defaultDeliverySlot
+        defaultDeliverySlot: updatedUser.defaultDeliverySlot,
+        updatedOrdersCount
       });
     } catch (error) {
       console.error('Error updating subscription defaults:', error);
@@ -1576,8 +1636,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // If applyToFuture is true, update all future weeks as well
+      // If applyToFuture is true, update all future weeks and user defaults
       if (applyToFuture) {
+        // First, update the user's subscription defaults
+        await storage.updateUser(userId, {
+          defaultMealCount: mealCountNum,
+          defaultPortionSize: defaultPortionSize === 'mixed' ? 'standard' : defaultPortionSize,
+          defaultDeliverySlot: deliverySlot || 'morning'
+        });
+
         const allWeeks = await storage.getWeeks();
         const futureWeeks = allWeeks.filter(w => {
           const wDeliveryDate = new Date(w.deliveryDate);
@@ -1617,6 +1684,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               total: subtotal
             });
           } else {
+            // Clear existing meal selections when meal count changes
+            const currentOrderItems = await storage.getOrderItems(futureOrder.id);
+            if (currentOrderItems.length > 0 && futureOrder.mealCount !== mealCountNum) {
+              for (const item of currentOrderItems) {
+                await storage.removeOrderItem(item.id);
+              }
+            }
+
             // Update existing future order
             await storage.updateOrder(futureOrder.id, {
               mealCount: parseInt(mealCount),
@@ -1624,7 +1699,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               deliverySlot: deliverySlot || futureOrder.deliverySlot || 'morning',
               subtotal,
               discount,
-              total: subtotal
+              total: subtotal,
+              status: futureOrder.mealCount !== mealCountNum ? 'not_selected' : futureOrder.status
             });
           }
         }
