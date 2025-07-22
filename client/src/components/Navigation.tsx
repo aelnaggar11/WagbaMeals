@@ -27,18 +27,22 @@ const Navigation = () => {
     return location === path;
   };
 
+  // Only show admin controls when on admin routes
+  const isOnAdminRoute = location.startsWith('/admin');
+  const showAdminNav = admin && isOnAdminRoute;
+
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
 
   const handleLogout = async () => {
     try {
-      if (admin) {
-        // Admin logout
+      if (showAdminNav) {
+        // Admin logout when on admin routes
         await apiRequest('POST', '/api/admin/auth/logout', {});
         queryClient.invalidateQueries({ queryKey: ['/api/admin/auth/me'] });
       } else {
-        // User logout
+        // User logout (for regular users or admins on user-facing pages)
         await apiRequest('POST', '/api/auth/logout', {});
         queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       }
@@ -109,7 +113,7 @@ const Navigation = () => {
         </nav>
         
         <div className="flex items-center space-x-4">
-          {admin ? (
+          {showAdminNav ? (
             <>
               <span className="text-sm text-gray-600 font-medium">
                 Admin
