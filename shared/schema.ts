@@ -220,16 +220,12 @@ export const neighborhoods = pgTable("neighborhoods", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   isServiced: boolean("is_serviced").default(false),
-  availableDeliverySlots: text("available_delivery_slots").array().default(['morning', 'evening']), // Available delivery slots
-  preferredDeliverySlot: text("preferred_delivery_slot").default("morning"), // Default slot for the area
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const insertNeighborhoodSchema = createInsertSchema(neighborhoods).pick({
   name: true,
   isServiced: true,
-  availableDeliverySlots: true,
-  preferredDeliverySlot: true,
 });
 
 // Invitation Code Model (for controlling onboarding capacity)
