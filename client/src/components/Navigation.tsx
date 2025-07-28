@@ -108,11 +108,19 @@ const Navigation = () => {
       style={{ 
         backgroundColor: '#A80906',
         backgroundImage: `
-          radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 2px, transparent 2px),
-          radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 2px, transparent 2px)
+          radial-gradient(ellipse 80px 40px at 0px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
+          radial-gradient(ellipse 80px 40px at 80px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
+          radial-gradient(ellipse 80px 40px at 160px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
+          radial-gradient(ellipse 80px 40px at 240px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
+          radial-gradient(ellipse 80px 40px at 320px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
+          radial-gradient(ellipse 80px 40px at 400px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
+          radial-gradient(ellipse 80px 40px at 480px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
+          radial-gradient(ellipse 80px 40px at 560px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
+          radial-gradient(ellipse 80px 40px at 640px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
+          radial-gradient(ellipse 80px 40px at 720px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
+          radial-gradient(ellipse 80px 40px at 800px 20px, rgba(255,255,255,0.08) 40%, transparent 50%)
         `,
-        backgroundSize: '20px 20px',
-        backgroundPosition: '0 0, 10px 10px'
+        backgroundRepeat: 'repeat-x'
       }}
     >
       <div className="container mx-auto px-4 py-3 flex justify-between items-center relative z-10">
