@@ -37,11 +37,11 @@ const Home = () => {
         >
           {/* Background Pattern */}
           <div 
-            className="absolute inset-0 opacity-30"
+            className="absolute inset-0 opacity-20"
             style={{
-              backgroundImage: 'url(/attached_assets/Header BG Pattern_1753742643683.png)',
+              backgroundImage: 'url(/attached_assets/Header%20BG%20Pattern_1753742643683.png)',
               backgroundRepeat: 'repeat',
-              backgroundSize: 'auto'
+              backgroundSize: '100px 100px'
             }}
           />
           
