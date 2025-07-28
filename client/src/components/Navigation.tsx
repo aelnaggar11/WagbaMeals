@@ -109,11 +109,11 @@ const Navigation = () => {
     >
       {/* Background Pattern */}
       <div 
-        className="absolute inset-0 opacity-40"
+        className="absolute inset-0 opacity-70"
         style={{
           backgroundImage: 'url(/attached_assets/Header%20BG%20Pattern_1753742643683.png)',
           backgroundRepeat: 'repeat',
-          backgroundSize: '60px 60px'
+          backgroundSize: '50px 50px'
         }}
       />
       
