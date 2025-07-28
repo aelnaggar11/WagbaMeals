@@ -103,8 +103,21 @@ const Navigation = () => {
   );
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-md">
-      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+    <header 
+      className="sticky top-0 z-50 shadow-md relative"
+      style={{ backgroundColor: '#A80906' }}
+    >
+      {/* Background Pattern */}
+      <div 
+        className="absolute inset-0 opacity-20"
+        style={{
+          backgroundImage: 'url(/attached_assets/Header%20BG%20Pattern_1753742643683.png)',
+          backgroundRepeat: 'repeat',
+          backgroundSize: '100px 100px'
+        }}
+      />
+      
+      <div className="container mx-auto px-4 py-3 flex justify-between items-center relative z-10">
         <div className="flex items-center">
           <Logo />
         </div>
@@ -115,12 +128,12 @@ const Navigation = () => {
         <div className="flex items-center space-x-4">
           {showAdminNav ? (
             <>
-              <span className="text-sm text-gray-600 font-medium">
+              <span className="text-sm text-white font-medium">
                 Admin
               </span>
               <Button 
                 variant="outline" 
-                className="text-accent-foreground hover:text-primary font-medium"
+                className="text-white border-white hover:bg-white hover:text-primary font-medium"
                 onClick={handleLogout}
               >
                 Log Out
@@ -130,13 +143,13 @@ const Navigation = () => {
             <>
               <NavLink 
                 href="/account"
-                className="text-accent-foreground hover:text-primary font-medium"
+                className="text-white hover:text-gray-200 font-medium"
               >
                 My Account
               </NavLink>
               <Button 
                 variant="ghost" 
-                className="text-accent-foreground hover:text-primary font-medium"
+                className="text-white hover:bg-white hover:text-primary font-medium"
                 onClick={handleLogout}
               >
                 Logout
@@ -146,13 +159,13 @@ const Navigation = () => {
             <>
               <NavLink
                 href="/auth?tab=login&skip_progress=true"
-                className="text-accent-foreground hover:text-primary font-medium"
+                className="text-white hover:text-gray-200 font-medium"
               >
                 Login
               </NavLink>
               <Button 
                 variant="default" 
-                className="bg-primary hover:bg-primary/90 text-white"
+                className="bg-white text-primary hover:bg-gray-100"
                 onClick={() => setShowPreOnboardingModal(true)}
               >
                 Get Started
