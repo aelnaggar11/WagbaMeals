@@ -35,15 +35,7 @@ const Home = () => {
           className="p-4 flex justify-between items-center relative overflow-hidden"
           style={{ backgroundColor: '#A80906' }}
         >
-          {/* Background Pattern */}
-          <div 
-            className="absolute inset-0 opacity-20"
-            style={{
-              backgroundImage: 'url(/attached_assets/Header%20BG%20Pattern_1753742643683.png)',
-              backgroundRepeat: 'repeat',
-              backgroundSize: '100px 100px'
-            }}
-          />
+          
           
           {/* Logo */}
           <div className="text-white text-2xl font-bold relative z-10">
