@@ -105,18 +105,14 @@ const Navigation = () => {
   return (
     <header 
       className="sticky top-0 z-50 shadow-md relative"
-      style={{ backgroundColor: '#A80906' }}
+      style={{ 
+        backgroundColor: '#A80906',
+        backgroundImage: 'url(/attached_assets/Header%20BG%20Pattern_1753742643683.png)',
+        backgroundRepeat: 'repeat',
+        backgroundSize: '40px 40px',
+        backgroundBlendMode: 'multiply'
+      }}
     >
-      {/* Background Pattern */}
-      <div 
-        className="absolute inset-0 opacity-70"
-        style={{
-          backgroundImage: 'url(/attached_assets/Header%20BG%20Pattern_1753742643683.png)',
-          backgroundRepeat: 'repeat',
-          backgroundSize: '50px 50px'
-        }}
-      />
-      
       <div className="container mx-auto px-4 py-3 flex justify-between items-center relative z-10">
         <div className="flex items-center">
           <Logo color="light" />
