@@ -108,17 +108,26 @@ const Navigation = () => {
       style={{ 
         backgroundColor: '#A80906',
         backgroundImage: `
-          radial-gradient(ellipse 80px 40px at 0px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
-          radial-gradient(ellipse 80px 40px at 80px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
-          radial-gradient(ellipse 80px 40px at 160px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
-          radial-gradient(ellipse 80px 40px at 240px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
-          radial-gradient(ellipse 80px 40px at 320px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
-          radial-gradient(ellipse 80px 40px at 400px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
-          radial-gradient(ellipse 80px 40px at 480px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
-          radial-gradient(ellipse 80px 40px at 560px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
-          radial-gradient(ellipse 80px 40px at 640px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
-          radial-gradient(ellipse 80px 40px at 720px 20px, rgba(255,255,255,0.08) 40%, transparent 50%),
-          radial-gradient(ellipse 80px 40px at 800px 20px, rgba(255,255,255,0.08) 40%, transparent 50%)
+          radial-gradient(circle 60px at 0px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
+          radial-gradient(circle 60px at 80px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
+          radial-gradient(circle 60px at 160px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
+          radial-gradient(circle 60px at 240px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
+          radial-gradient(circle 60px at 320px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
+          radial-gradient(circle 60px at 400px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
+          radial-gradient(circle 60px at 480px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
+          radial-gradient(circle 60px at 560px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
+          radial-gradient(circle 60px at 640px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
+          radial-gradient(circle 60px at 720px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
+          radial-gradient(circle 60px at 800px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
+          radial-gradient(circle 60px at 880px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
+          radial-gradient(circle 60px at 960px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
+          radial-gradient(circle 60px at 1040px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
+          radial-gradient(circle 60px at 1120px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
+          radial-gradient(circle 60px at 1200px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
+          radial-gradient(circle 60px at 1280px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
+          radial-gradient(circle 60px at 1360px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
+          radial-gradient(circle 60px at 1440px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
+          radial-gradient(circle 60px at 1520px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%)
         `,
         backgroundRepeat: 'repeat-x'
       }}
