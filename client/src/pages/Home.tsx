@@ -30,38 +30,7 @@ const Home = () => {
     <>
       {/* Hero Section */}
       <section className="bg-white relative overflow-hidden min-h-screen">
-        {/* Header with Logo and Login */}
-        <div 
-          className="p-4 flex justify-between items-center relative overflow-hidden"
-          style={{ backgroundColor: '#A80906' }}
-        >
-          
-          
-          {/* Logo */}
-          <div className="text-white text-2xl font-bold relative z-10">
-            Wagba™
-          </div>
-          
-          {/* Login Button with Circle Background */}
-          <div className="relative z-10">
-            <div 
-              className="w-16 h-16 flex items-center justify-center"
-              style={{
-                backgroundImage: 'url(/attached_assets/Login Circle_1753742724844.png)',
-                backgroundSize: 'contain',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'center'
-              }}
-            >
-              <Button 
-                variant="ghost" 
-                className="text-red-600 font-semibold hover:bg-transparent text-sm"
-              >
-                Login
-              </Button>
-            </div>
-          </div>
-        </div>
+        
 
         <div className="container mx-auto px-4 py-8">
           {/* Hero Image and Text */}
