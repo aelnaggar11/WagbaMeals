@@ -107,10 +107,11 @@ const Navigation = () => {
       className="sticky top-0 z-50 shadow-md relative"
       style={{ 
         backgroundColor: '#A80906',
-        backgroundImage: 'url(/attached_assets/Header%20BG%20Pattern_1753742643683.png)',
+        backgroundImage: 'url("/attached_assets/Header BG Pattern_1753742643683.png")',
         backgroundRepeat: 'repeat',
-        backgroundSize: '40px 40px',
-        backgroundBlendMode: 'multiply'
+        backgroundSize: '30px 30px',
+        backgroundBlendMode: 'overlay',
+        opacity: 0.9
       }}
     >
       <div className="container mx-auto px-4 py-3 flex justify-between items-center relative z-10">
