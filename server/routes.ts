@@ -13,6 +13,7 @@ import multer from "multer";
 import { sendEmail } from "./sendgrid";
 import path from "path";
 import fs from "fs";
+import { validateEgyptianPhoneNumber } from "./utils/phoneValidation";
 
 declare module 'express-session' {
   interface SessionData {
@@ -303,6 +304,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/register', async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
+
+      // Validate phone number if provided
+      if (userData.phone) {
+        const phoneValidation = validateEgyptianPhoneNumber(userData.phone);
+        if (!phoneValidation.isValid) {
+          return res.status(400).json({ message: phoneValidation.error });
+        }
+        // Use normalized phone number
+        userData.phone = phoneValidation.normalizedPhone;
+      }
 
       // Check if username already exists
       const existingUser = await storage.getUserByUsername(userData.username);
@@ -653,10 +664,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { name, email, phone, address } = req.body;
 
+      // Validate phone number if provided
+      let validatedPhone = phone;
+      if (phone) {
+        const phoneValidation = validateEgyptianPhoneNumber(phone);
+        if (!phoneValidation.isValid) {
+          return res.status(400).json({ message: phoneValidation.error });
+        }
+        validatedPhone = phoneValidation.normalizedPhone;
+      }
+
       const updatedUser = await storage.updateUser(req.session.userId!, {
         name,
         email,
-        phone,
+        phone: validatedPhone,
         address
       });
 
@@ -2151,6 +2172,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { orderId, paymentMethod, orderType, address, deliveryNotes } = req.body;
       const parsedAddress = JSON.parse(address);
+      
+      // Validate phone number in address
+      if (parsedAddress.phone) {
+        const phoneValidation = validateEgyptianPhoneNumber(parsedAddress.phone);
+        if (!phoneValidation.isValid) {
+          return res.status(400).json({ message: phoneValidation.error });
+        }
+        parsedAddress.phone = phoneValidation.normalizedPhone;
+      }
       
       console.log('=== EXTRACTED VALUES ===');
       console.log('Order ID:', orderId);

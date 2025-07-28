@@ -20,6 +20,7 @@ import { useLocation } from "wouter";
 import FixedMealSelector from "@/pages/FixedMealSelector";
 import { PricingService } from "@/lib/pricingService";
 import SkipDeliveryModal from "@/components/SkipDeliveryModal";
+import PhoneInput from "@/components/PhoneInput";
 
 const AccountPage = () => {
   const [location, navigate] = useLocation();
@@ -1343,13 +1344,11 @@ const AccountPage = () => {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Phone</Label>
-                      <Input
-                        id="phone"
-                        name="phone"
+                      <PhoneInput
                         value={formData.phone}
-                        onChange={handleInputChange}
+                        onChange={(value) => setFormData(prev => ({ ...prev, phone: value }))}
                         disabled={!isEditing}
+                        label="Phone"
                       />
                     </div>
 

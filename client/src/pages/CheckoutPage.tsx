@@ -13,6 +13,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { Order } from "@shared/schema";
 import ProgressIndicator from "@/components/ProgressIndicator";
+import PhoneInput from "@/components/PhoneInput";
 import { PricingService } from "@/lib/pricingService";
 
 const CheckoutPage = () => {
@@ -439,14 +440,12 @@ const CheckoutPage = () => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number *</Label>
-                    <Input 
-                      id="phone" 
-                      name="phone" 
-                      value={address.phone} 
-                      onChange={handleAddressChange} 
-                      placeholder="Phone number for delivery" 
+                    <PhoneInput
+                      value={address.phone}
+                      onChange={(value) => setAddress(prev => ({ ...prev, phone: value }))}
                       required
+                      label="Phone Number"
+                      placeholder="1XXXXXXXXX"
                     />
                   </div>
                 </div>
