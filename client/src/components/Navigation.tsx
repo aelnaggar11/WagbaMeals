@@ -109,17 +109,17 @@ const Navigation = () => {
     >
       {/* Background Pattern */}
       <div 
-        className="absolute inset-0 opacity-20"
+        className="absolute inset-0 opacity-40"
         style={{
           backgroundImage: 'url(/attached_assets/Header%20BG%20Pattern_1753742643683.png)',
           backgroundRepeat: 'repeat',
-          backgroundSize: '100px 100px'
+          backgroundSize: '60px 60px'
         }}
       />
       
       <div className="container mx-auto px-4 py-3 flex justify-between items-center relative z-10">
         <div className="flex items-center">
-          <Logo />
+          <Logo color="light" />
         </div>
         
         <nav className="hidden md:flex space-x-8">
