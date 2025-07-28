@@ -107,11 +107,12 @@ const Navigation = () => {
       className="sticky top-0 z-50 shadow-md relative"
       style={{ 
         backgroundColor: '#A80906',
-        backgroundImage: 'url("/attached_assets/Header BG Pattern_1753742643683.png")',
-        backgroundRepeat: 'repeat',
-        backgroundSize: '30px 30px',
-        backgroundBlendMode: 'overlay',
-        opacity: 0.9
+        backgroundImage: `
+          radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 2px, transparent 2px),
+          radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 2px, transparent 2px)
+        `,
+        backgroundSize: '20px 20px',
+        backgroundPosition: '0 0, 10px 10px'
       }}
     >
       <div className="container mx-auto px-4 py-3 flex justify-between items-center relative z-10">
