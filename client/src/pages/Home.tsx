@@ -9,6 +9,7 @@ import { Week } from "@shared/schema";
 import logoImage from "@assets/Logo tm.png";
 import headerPatternImage from "@assets/Header BG Pattern_1753742643683.png";
 import loginCircleImage from "@assets/Login Circle_1753742724844.png";
+import quoteBgPatternImage from "@assets/Quote BG Pattern_1753819991596.png";
 
 const Home = () => {
   const [, navigate] = useLocation();
@@ -140,20 +141,21 @@ const Home = () => {
           </div>
 
           {/* Quote Section */}
-          <div className="bg-red-50 rounded-2xl p-6 mb-8 relative overflow-hidden">
-            {/* Decorative circles pattern */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="grid grid-cols-6 gap-4 h-full">
-                {[...Array(30)].map((_, i) => (
-                  <div key={i} className="w-8 h-8 bg-red-200 rounded-full"></div>
-                ))}
-              </div>
-            </div>
-            <div className="relative z-10">
-              <h2 className="text-2xl md:text-3xl font-bold text-red-800 mb-4 leading-tight">
-                Make it look simple- the very complicated thing.
+          <div 
+            className="rounded-2xl p-8 mb-8 relative overflow-hidden"
+            style={{
+              backgroundImage: `url(${quoteBgPatternImage})`,
+              backgroundSize: 'cover',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center',
+              minHeight: '200px'
+            }}
+          >
+            <div className="relative z-10 flex flex-col justify-center h-full">
+              <h2 className="text-2xl md:text-3xl font-bold text-red-800 mb-6 leading-tight">
+                Make it look simple-<br/>the very complicated thing.
               </h2>
-              <p className="text-red-600 font-medium text-right">
+              <p className="text-red-700 font-bold text-right text-lg">
                 MASSIMO BOTTURA
               </p>
             </div>
