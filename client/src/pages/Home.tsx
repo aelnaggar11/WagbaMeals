@@ -56,7 +56,7 @@ const Home = () => {
           {/* Login Button with Circle Background - positioned to align with pattern circle */}
           <div className="relative z-10" style={{ marginRight: '10px' }}>
             <div 
-              className="w-16 h-16 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity relative"
+              className="w-20 h-20 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity relative"
               style={{
                 backgroundImage: `url(${loginCircleImage})`,
                 backgroundSize: 'cover',
@@ -301,6 +301,17 @@ const Home = () => {
           
         </div>
       </section>
+
+      {/* Floating Get Started Button */}
+      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+        <Button 
+          size="lg" 
+          onClick={handleGetStarted}
+          className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 animate-pulse"
+        >
+          Get Started
+        </Button>
+      </div>
 
       {/* Pre-onboarding Modal */}
       <PreOnboardingModal
