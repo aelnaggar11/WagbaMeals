@@ -165,39 +165,85 @@ const Home = () => {
           <div className="mb-8">
             <div className="text-center mb-6">
               <h2 className="text-2xl md:text-3xl font-bold text-red-600 flex items-center justify-center gap-2">
-                <span className="text-red-500">♦</span>
+                <span className="text-yellow-300">✦</span>
                 THE MENU
-                <span className="text-red-500">♦</span>
+                <span className="text-yellow-300">✦</span>
               </h2>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                {
-                  name: "Tarsh bel Tarsh",
-                  description: "Drizzled with tarsh bel matroosh saleh"
-                },
-                {
-                  name: "Tarsh a la Tarsh", 
-                  description: "Steamed with torshi metmatrash saleh"
-                },
-                {
-                  name: "Torsheeni Scalop bel Boloneezi",
-                  description: "Tale3 tarsheen ommo"
-                }
-              ].map((meal, index) => (
-                <div key={index} className="bg-white rounded-lg overflow-hidden shadow-sm">
-                  <img 
-                    src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c" 
-                    alt={meal.name}
-                    className="w-full h-32 object-cover"
-                  />
-                  <div className="p-3">
-                    <h3 className="font-bold text-sm mb-1">{meal.name}</h3>
-                    <p className="text-xs text-gray-600">{meal.description}</p>
+            {/* Carousel Container */}
+            <div className="relative overflow-hidden">
+              <div className="flex gap-4 animate-scroll">
+                {[
+                  {
+                    name: "Tarsh bel Tarsh",
+                    description: "Drizzled with tarsh bel matroosh saleh",
+                    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"
+                  },
+                  {
+                    name: "Tarsh a la Tarsh", 
+                    description: "Steamed with torshi metmatrash saleh",
+                    image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b"
+                  },
+                  {
+                    name: "Torsheeni Scalop bel Boloneezi",
+                    description: "Tale3 tarsheen ommo",
+                    image: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445"
+                  },
+                  {
+                    name: "Mediterranean Delight",
+                    description: "Fresh herbs with olive oil drizzle",
+                    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd"
+                  },
+                  {
+                    name: "Spiced Garden Bowl",
+                    description: "Seasonal vegetables with aromatic spices",
+                    image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061"
+                  }
+                ].map((meal, index) => (
+                  <div key={index} className="bg-white rounded-lg overflow-hidden shadow-sm flex-shrink-0 w-64">
+                    <img 
+                      src={meal.image}
+                      alt={meal.name}
+                      className="w-full h-32 object-cover"
+                    />
+                    <div className="p-3">
+                      <h3 className="font-bold text-sm mb-1">{meal.name}</h3>
+                      <p className="text-xs text-gray-600">{meal.description}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+                {/* Duplicate items for seamless loop */}
+                {[
+                  {
+                    name: "Tarsh bel Tarsh",
+                    description: "Drizzled with tarsh bel matroosh saleh",
+                    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"
+                  },
+                  {
+                    name: "Tarsh a la Tarsh", 
+                    description: "Steamed with torshi metmatrash saleh",
+                    image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b"
+                  },
+                  {
+                    name: "Torsheeni Scalop bel Boloneezi",
+                    description: "Tale3 tarsheen ommo",
+                    image: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445"
+                  }
+                ].map((meal, index) => (
+                  <div key={`duplicate-${index}`} className="bg-white rounded-lg overflow-hidden shadow-sm flex-shrink-0 w-64">
+                    <img 
+                      src={meal.image}
+                      alt={meal.name}
+                      className="w-full h-32 object-cover"
+                    />
+                    <div className="p-3">
+                      <h3 className="font-bold text-sm mb-1">{meal.name}</h3>
+                      <p className="text-xs text-gray-600">{meal.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -312,7 +358,7 @@ const Home = () => {
           onClick={handleGetStarted}
           className="bg-red-600 dark:bg-red-600 text-white border-red-500 dark:border-red-500 px-8 py-2 text-lg font-semibold"
           containerClassName="h-16 w-48"
-          borderClassName="bg-[radial-gradient(var(--red-500)_40%,transparent_60%)]"
+          borderClassName="bg-[radial-gradient(var(--yellow-300)_40%,transparent_60%)]"
         >
           Get Started
         </MovingBorderButton>
