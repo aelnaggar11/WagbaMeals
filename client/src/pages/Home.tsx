@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import PreOnboardingModal from "@/components/PreOnboardingModal";
 import { useQuery } from "@tanstack/react-query";
 import { Week } from "@shared/schema";
+import logoImage from "@assets/Logo tm.png";
+import headerPatternImage from "@assets/Header BG Pattern_1753742643683.png";
+import loginCircleImage from "@assets/Login Circle_1753742724844.png";
 
 const Home = () => {
   const [, navigate] = useLocation();
@@ -35,7 +38,7 @@ const Home = () => {
           className="relative overflow-hidden h-20 flex items-center justify-between px-6"
           style={{ 
             backgroundColor: '#A80906',
-            backgroundImage: `url('/attached_assets/Header%20BG%20Pattern_1753742643683.png')`,
+            backgroundImage: `url(${headerPatternImage})`,
             backgroundRepeat: 'repeat-x',
             backgroundSize: 'auto 50px',
             backgroundPosition: 'center'
@@ -44,7 +47,7 @@ const Home = () => {
           {/* Logo */}
           <div className="relative z-10 h-12">
             <img 
-              src="/attached_assets/Logo tm.png" 
+              src={logoImage} 
               alt="Wagba Logo" 
               className="h-full w-auto"
             />
@@ -55,7 +58,7 @@ const Home = () => {
             <div 
               className="w-16 h-16 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity relative"
               style={{
-                backgroundImage: `url('/attached_assets/Login%20Circle_1753742724844.png')`,
+                backgroundImage: `url(${loginCircleImage})`,
                 backgroundSize: 'contain',
                 backgroundRepeat: 'no-repeat',
                 backgroundPosition: 'center'
