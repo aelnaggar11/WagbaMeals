@@ -40,7 +40,7 @@ const Home = () => {
             backgroundColor: '#A80906',
             backgroundImage: `url(${headerPatternImage})`,
             backgroundRepeat: 'repeat-x',
-            backgroundSize: 'auto 60px',
+            backgroundSize: 'auto 96px',
             backgroundPosition: 'center'
           }}
         >
