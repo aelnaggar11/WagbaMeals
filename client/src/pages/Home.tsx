@@ -35,29 +35,33 @@ const Home = () => {
           className="relative overflow-hidden h-20 flex items-center justify-between px-6"
           style={{ 
             backgroundColor: '#A80906',
-            backgroundImage: 'url(/attached_assets/Header%20BG%20Pattern_1753817480865.png)',
+            backgroundImage: 'url(/attached_assets/Header%20BG%20Pattern_1753742643683.png)',
             backgroundRepeat: 'repeat',
-            backgroundSize: '80px 80px'
+            backgroundSize: '60px 60px'
           }}
         >
           {/* Logo */}
-          <div className="text-white text-3xl font-bold tracking-wide">
-            Wagba™
+          <div className="relative z-10 h-12">
+            <img 
+              src="/attached_assets/Logo tm.png" 
+              alt="Wagba Logo" 
+              className="h-full w-auto"
+            />
           </div>
           
           {/* Login Button with Circle Background */}
-          <div className="relative">
+          <div className="relative z-10">
             <div 
-              className="w-20 h-20 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity"
+              className="w-16 h-16 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity relative"
               style={{
-                backgroundImage: 'url(/attached_assets/Login%20Circle_1753817468187.png)',
-                backgroundSize: 'contain',
+                backgroundImage: 'url(/attached_assets/Login%20Circle_1753742724844.png)',
+                backgroundSize: 'cover',
                 backgroundRepeat: 'no-repeat',
                 backgroundPosition: 'center'
               }}
               onClick={() => navigate('/auth')}
             >
-              <span className="text-red-700 font-bold text-lg">
+              <span className="text-red-800 font-bold text-sm absolute">
                 Login
               </span>
             </div>
