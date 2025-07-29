@@ -35,9 +35,10 @@ const Home = () => {
           className="relative overflow-hidden h-20 flex items-center justify-between px-6"
           style={{ 
             backgroundColor: '#A80906',
-            backgroundImage: 'url(/attached_assets/Header%20BG%20Pattern_1753742643683.png)',
-            backgroundRepeat: 'repeat',
-            backgroundSize: '60px 60px'
+            backgroundImage: `url('/attached_assets/Header%20BG%20Pattern_1753742643683.png')`,
+            backgroundRepeat: 'repeat-x',
+            backgroundSize: 'auto 50px',
+            backgroundPosition: 'center'
           }}
         >
           {/* Logo */}
@@ -54,14 +55,14 @@ const Home = () => {
             <div 
               className="w-16 h-16 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity relative"
               style={{
-                backgroundImage: 'url(/attached_assets/Login%20Circle_1753742724844.png)',
-                backgroundSize: 'cover',
+                backgroundImage: `url('/attached_assets/Login%20Circle_1753742724844.png')`,
+                backgroundSize: 'contain',
                 backgroundRepeat: 'no-repeat',
                 backgroundPosition: 'center'
               }}
               onClick={() => navigate('/auth')}
             >
-              <span className="text-red-800 font-bold text-sm absolute">
+              <span className="text-red-700 font-bold text-sm">
                 Login
               </span>
             </div>
