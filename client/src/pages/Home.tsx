@@ -298,22 +298,7 @@ const Home = () => {
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="bg-gray-100 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6">
-            <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center">
-              <div className="w-16 h-20 bg-red-500 rounded-lg"></div>
-            </div>
-            <div className="text-center md:text-left flex-1">
-              <div className="text-red-600 text-sm space-y-1">
-                <p>hello@wagba.food</p>
-                <p>+0 111 234 5678</p>
-                <p>Cairo, Egypt</p>
-              </div>
-            </div>
-            <div className="text-red-600 text-2xl font-bold">
-              Wagba™
-            </div>
-          </div>
+          
         </div>
       </section>
 
