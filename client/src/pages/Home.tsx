@@ -35,31 +35,31 @@ const Home = () => {
       <section className="bg-white relative overflow-hidden min-h-screen">
         {/* Header with Logo and Login */}
         <div 
-          className="relative overflow-hidden h-20 flex items-center justify-between px-6"
+          className="relative overflow-hidden h-24 flex items-center justify-between px-8"
           style={{ 
             backgroundColor: '#A80906',
             backgroundImage: `url(${headerPatternImage})`,
             backgroundRepeat: 'repeat-x',
-            backgroundSize: 'auto 50px',
+            backgroundSize: 'auto 60px',
             backgroundPosition: 'center'
           }}
         >
           {/* Logo */}
-          <div className="relative z-10 h-12">
+          <div className="relative z-10 h-14">
             <img 
               src={logoImage} 
               alt="Wagba Logo" 
-              className="h-full w-auto"
+              className="h-full w-auto brightness-0 invert"
             />
           </div>
           
-          {/* Login Button with Circle Background */}
-          <div className="relative z-10">
+          {/* Login Button with Circle Background - positioned to align with pattern circle */}
+          <div className="relative z-10" style={{ marginRight: '10px' }}>
             <div 
               className="w-16 h-16 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity relative"
               style={{
                 backgroundImage: `url(${loginCircleImage})`,
-                backgroundSize: 'contain',
+                backgroundSize: 'cover',
                 backgroundRepeat: 'no-repeat',
                 backgroundPosition: 'center'
               }}
