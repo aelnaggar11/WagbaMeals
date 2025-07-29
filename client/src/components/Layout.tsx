@@ -11,14 +11,13 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const [location] = useLocation();
   
-  // Hide navbar on flow pages and home page (has custom header)
+  // Hide navbar on flow pages
   const hideNavbar = [
-    '/',
     '/meal-plans',
     '/menu',
     '/auth',
     '/checkout'
-  ].some(path => location === path || location.startsWith(path));
+  ].some(path => location.startsWith(path));
 
   return (
     <div className="flex flex-col min-h-screen">

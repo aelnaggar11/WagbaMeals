@@ -5,9 +5,6 @@ import { Button } from "@/components/ui/button";
 import PreOnboardingModal from "@/components/PreOnboardingModal";
 import { useQuery } from "@tanstack/react-query";
 import { Week } from "@shared/schema";
-import logoImage from "@assets/Logo tm.png";
-import headerPatternImage from "@assets/Header BG Pattern_1753742643683.png";
-import loginCircleImage from "@assets/Login Circle_1753742724844.png";
 
 const Home = () => {
   const [, navigate] = useLocation();
@@ -33,44 +30,7 @@ const Home = () => {
     <>
       {/* Hero Section */}
       <section className="bg-white relative overflow-hidden min-h-screen">
-        {/* Header with Logo and Login */}
-        <div 
-          className="relative overflow-hidden h-24 flex items-center justify-between px-8"
-          style={{ 
-            backgroundColor: '#A80906',
-            backgroundImage: `url(${headerPatternImage})`,
-            backgroundRepeat: 'repeat-x',
-            backgroundSize: 'auto 60px',
-            backgroundPosition: 'center'
-          }}
-        >
-          {/* Logo */}
-          <div className="relative z-10 h-14">
-            <img 
-              src={logoImage} 
-              alt="Wagba Logo" 
-              className="h-full w-auto brightness-0 invert"
-            />
-          </div>
-          
-          {/* Login Button with Circle Background - positioned to align with pattern circle */}
-          <div className="relative z-10" style={{ marginRight: '10px' }}>
-            <div 
-              className="w-16 h-16 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity relative"
-              style={{
-                backgroundImage: `url(${loginCircleImage})`,
-                backgroundSize: 'cover',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'center'
-              }}
-              onClick={() => navigate('/auth')}
-            >
-              <span className="text-red-700 font-bold text-sm">
-                Login
-              </span>
-            </div>
-          </div>
-        </div>
+        
 
         <div className="container mx-auto px-4 py-8">
           {/* Hero Image and Text */}
