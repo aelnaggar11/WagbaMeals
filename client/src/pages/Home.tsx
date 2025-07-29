@@ -48,13 +48,14 @@ const Home = () => {
           {/* Login Button with Circle Background */}
           <div className="relative">
             <div 
-              className="w-20 h-20 flex items-center justify-center cursor-pointer"
+              className="w-20 h-20 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity"
               style={{
                 backgroundImage: 'url(/attached_assets/Login%20Circle_1753817468187.png)',
                 backgroundSize: 'contain',
                 backgroundRepeat: 'no-repeat',
                 backgroundPosition: 'center'
               }}
+              onClick={() => navigate('/auth')}
             >
               <span className="text-red-700 font-bold text-lg">
                 Login
