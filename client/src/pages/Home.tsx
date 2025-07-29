@@ -302,16 +302,7 @@ const Home = () => {
             </div>
           </div>
 
-          {/* CTA Button */}
-          <div className="text-center mb-8">
-            <Button 
-              size="lg" 
-              onClick={handleGetStarted}
-              className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 text-lg rounded-full"
-            >
-              Start Your Plan
-            </Button>
-          </div>
+          
 
           {/* FAQ Section */}
           <div className="mb-8">
