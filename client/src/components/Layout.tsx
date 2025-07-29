@@ -2,7 +2,7 @@
 import { ReactNode } from "react";
 import { useLocation } from "wouter";
 import Navigation from "@/components/Navigation";
-import Footer from "@/components/Footer";
+
 
 interface LayoutProps {
   children: ReactNode;
@@ -26,7 +26,7 @@ const Layout = ({ children }: LayoutProps) => {
       <main className="flex-grow">
         {children}
       </main>
-      <Footer />
+      
     </div>
   );
 };
