@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Button as MovingBorderButton } from "@/components/ui/moving-border";
 import PreOnboardingModal from "@/components/PreOnboardingModal";
 import { useQuery } from "@tanstack/react-query";
 import { Week } from "@shared/schema";
@@ -304,13 +305,15 @@ const Home = () => {
 
       {/* Floating Get Started Button */}
       <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
-        <Button 
-          size="lg" 
+        <MovingBorderButton
+          borderRadius="1.75rem"
           onClick={handleGetStarted}
-          className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 animate-pulse"
+          className="bg-red-600 dark:bg-red-600 text-white border-red-500 dark:border-red-500 px-8 py-2 text-lg font-semibold"
+          containerClassName="h-16 w-48"
+          borderClassName="bg-[radial-gradient(var(--red-500)_40%,transparent_60%)]"
         >
           Get Started
-        </Button>
+        </MovingBorderButton>
       </div>
 
       {/* Pre-onboarding Modal */}
