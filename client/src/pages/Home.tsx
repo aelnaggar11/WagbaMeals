@@ -347,9 +347,9 @@ const Home = () => {
         <MovingBorderButton
           borderRadius="1.75rem"
           onClick={handleGetStarted}
-          className="bg-red-600 dark:bg-red-600 text-white border-red-500 dark:border-red-500 px-8 py-2 text-lg font-semibold"
+          className="bg-yellow-300 dark:bg-yellow-300 text-black border-yellow-400 dark:border-yellow-400 px-8 py-2 text-lg font-semibold"
           containerClassName="h-16 w-48"
-          borderClassName="bg-[radial-gradient(var(--yellow-300)_40%,transparent_60%)]"
+          borderClassName="bg-[radial-gradient(var(--red-600)_40%,transparent_60%)]"
         >
           Get Started
         </MovingBorderButton>
