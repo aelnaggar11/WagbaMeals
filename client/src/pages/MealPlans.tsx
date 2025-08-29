@@ -10,7 +10,7 @@ import { PricingService } from "@/lib/pricingService";
 
 const MealPlans = () => {
   const [, navigate] = useLocation();
-  const [selectedMealCount, setSelectedMealCount] = useState(6);
+  const [selectedMealCount, setSelectedMealCount] = useState(10);
   const [selectedPortionSize, setSelectedPortionSize] = useState("standard");
   const [pricing, setPricing] = useState<Record<number, { standard: number; large: number }>>({});
   const [largeMealAddOn, setLargeMealAddOn] = useState(99);
