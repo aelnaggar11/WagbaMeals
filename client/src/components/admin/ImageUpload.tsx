@@ -156,7 +156,7 @@ export function ImageUpload({ value, onChange, label = "Image", placeholder = "E
       {/* URL Input */}
       <div className="space-y-2">
         <Input
-          type="url"
+          type="text"
           placeholder={placeholder}
           value={value}
           onChange={handleUrlChange}
