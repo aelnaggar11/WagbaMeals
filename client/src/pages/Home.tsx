@@ -10,9 +10,9 @@ import logoImage from "@assets/Logo tm.png";
 import headerPatternImage from "@assets/Header BG Pattern_1753742643683.png";
 import loginCircleImage from "@assets/Login Circle_1753742724844.png";
 import quoteBgPatternImage from "@assets/Quote BG Pattern_1753819991596.png";
-import wiwIcon1 from "@assets/wiw-icon-1.svg";
-import wiwIcon2 from "@assets/wiw-icon-2.svg";
-import wiwIcon3 from "@assets/wiw-icon-3.svg";
+import wiwIcon1 from "@assets/WIW Icon 1_1756464641444.png";
+import wiwIcon2 from "@assets/WIW Icon 2_1756464653354.png";
+import wiwIcon3 from "@assets/WIW Icon 3_1756464677092.png";
 
 const Home = () => {
   const [, navigate] = useLocation();
