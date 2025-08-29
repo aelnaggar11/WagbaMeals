@@ -267,23 +267,8 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
         {/* Week Selection - Hidden during Get Started flow or when coming from account page */}
         {!params.get("fromPlan") && !params.get("fromAccount") && <WeekSelector currentWeekId={weekId} />}
 
-        {/* Delivery Slot Selector - Always show during onboarding, or when no existing order for non-onboarding */}
-        {(() => {
-          const isOnboarding = params.get("fromPlan");
-          const hasExistingOrder = !!existingOrder;
-          const fromAccount = params.get("fromAccount");
-          
-          const shouldShow = isOnboarding || (!hasExistingOrder && !fromAccount);
-          
-          console.log('Delivery slot selector visibility check:', {
-            isOnboarding,
-            hasExistingOrder,
-            fromAccount,
-            shouldShow
-          });
-          
-          return shouldShow;
-        })() && (
+        {/* Delivery Slot Selector - Show during onboarding or when no existing order */}
+        {(params.get("fromPlan") || !existingOrder) && (
           <div className="max-w-md mx-auto mb-8 bg-white p-6 rounded-lg shadow-sm border">
             <DeliverySlotSelector
               value={deliverySlot}
