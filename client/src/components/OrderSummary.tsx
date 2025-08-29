@@ -82,39 +82,43 @@ const OrderSummary = ({
     const isOnboardingFlow = window.location.search.includes('fromPlan') || 
                            window.location.pathname.includes('/menu/') && !window.location.search.includes('fromAccount');
 
-    // During onboarding, only go to auth page if user is not authenticated
-    if (isOnboardingFlow && !user) {
-      try {
-        // Save selections to backend session storage (more reliable than sessionStorage)
-        await apiRequest('POST', '/api/temp/meal-selections', {
-          weekId,
-          mealCount,
-          portionSize,
-          selectedMeals,
-          deliverySlot
-        });
-        
-        // Also save to sessionStorage as fallback
-        const selections = {
-          selectedMeals,
-          mealCount,
-          portionSize,
-          weekId,
-          deliverySlot
-        };
-        sessionStorage.setItem('mealSelections', JSON.stringify(selections));
-        
-        // Add onboarding context to URL parameters
-        const authUrl = `/auth?fromSelection=true&weekId=${weekId}&mealCount=${mealCount}&portionSize=${portionSize}`;
-        window.location.href = authUrl;
-        return;
-      } catch (error) {
-        console.error('Error saving meal selections:', error);
-        // Continue with just sessionStorage if backend fails
-        const authUrl = `/auth?fromSelection=true&weekId=${weekId}&mealCount=${mealCount}&portionSize=${portionSize}`;
-        window.location.href = authUrl;
-        return;
+    // During onboarding, go to auth page if user is not authenticated, skip to checkout if already authenticated
+    if (isOnboardingFlow) {
+      if (!user) {
+        // User not authenticated - go to Step 3 (Create Account)
+        try {
+          // Save selections to backend session storage (more reliable than sessionStorage)
+          await apiRequest('POST', '/api/temp/meal-selections', {
+            weekId,
+            mealCount,
+            portionSize,
+            selectedMeals,
+            deliverySlot
+          });
+          
+          // Also save to sessionStorage as fallback
+          const selections = {
+            selectedMeals,
+            mealCount,
+            portionSize,
+            weekId,
+            deliverySlot
+          };
+          sessionStorage.setItem('mealSelections', JSON.stringify(selections));
+          
+          // Add onboarding context to URL parameters
+          const authUrl = `/auth?fromSelection=true&weekId=${weekId}&mealCount=${mealCount}&portionSize=${portionSize}`;
+          window.location.href = authUrl;
+          return;
+        } catch (error) {
+          console.error('Error saving meal selections:', error);
+          // Continue with just sessionStorage if backend fails
+          const authUrl = `/auth?fromSelection=true&weekId=${weekId}&mealCount=${mealCount}&portionSize=${portionSize}`;
+          window.location.href = authUrl;
+          return;
+        }
       }
+      // If user IS authenticated during onboarding, continue to create order directly (skip Step 3)
     }
 
     // For non-onboarding flow, check authentication
