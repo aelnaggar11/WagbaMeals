@@ -264,8 +264,8 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
           )}
         </div>
 
-        {/* Week Selection - Hidden during Get Started flow or when coming from account page */}
-        {!params.get("fromPlan") && !params.get("fromAccount") && <WeekSelector currentWeekId={weekId} />}
+        {/* Week Selection - Always show */}
+        <WeekSelector currentWeekId={weekId} />
 
         {/* Delivery Slot Selector - Always show */}
         <div className="max-w-md mx-auto mb-8 bg-white p-6 rounded-lg shadow-sm border">
