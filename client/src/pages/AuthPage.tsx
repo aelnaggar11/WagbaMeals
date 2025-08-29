@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import Logo from "@/components/Logo";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Eye, EyeOff } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import ProgressIndicator from "@/components/ProgressIndicator";
@@ -32,6 +33,8 @@ const AuthPage = () => {
     confirmPassword: "",
     email: ""
   });
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
 
   // Check if user is already authenticated
   const { data: user } = useQuery<{ id: number } | null>({
@@ -468,15 +471,29 @@ const AuthPage = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="login-password">Password</Label>
-                  <Input 
-                    id="login-password" 
-                    name="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    onKeyPress={(e) => handleKeyPress(e, 'login')}
-                    placeholder="Enter your password"
-                  />
+                  <div className="relative">
+                    <Input 
+                      id="login-password" 
+                      name="password"
+                      type={showLoginPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      onKeyPress={(e) => handleKeyPress(e, 'login')}
+                      placeholder="Enter your password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    >
+                      {showLoginPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <div className="text-right">
                   <button 
@@ -524,16 +541,30 @@ const AuthPage = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="register-password">Password</Label>
-                  <Input 
-                    id="register-password" 
-                    name="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    onKeyPress={(e) => handleKeyPress(e, 'register')}
-                    placeholder="Choose a password (min. 6 characters)"
-                    required
-                  />
+                  <div className="relative">
+                    <Input 
+                      id="register-password" 
+                      name="password"
+                      type={showRegisterPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      onKeyPress={(e) => handleKeyPress(e, 'register')}
+                      placeholder="Choose a password (min. 6 characters)"
+                      className="pr-10"
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                      onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                    >
+                      {showRegisterPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </CardContent>
               <CardFooter>

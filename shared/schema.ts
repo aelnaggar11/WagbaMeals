@@ -291,6 +291,23 @@ export const insertPricingConfigSchema = createInsertSchema(pricingConfigs).pick
   isActive: true,
 });
 
+// Password Reset Tokens Model
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTokens).pick({
+  userId: true,
+  token: true,
+  expiresAt: true,
+  usedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -332,6 +349,9 @@ export type InsertWaitlistEntry = z.infer<typeof insertWaitlistSchema>;
 
 export type PricingConfig = typeof pricingConfigs.$inferSelect;
 export type InsertPricingConfig = z.infer<typeof insertPricingConfigSchema>;
+
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
 
 export type PortionSize = "standard" | "large" | "mixed";
 export type DeliverySlot = "morning" | "evening";
@@ -404,6 +424,12 @@ export interface IStorage {
   // Subscription management methods
   cancelUserSubscription(userId: number): Promise<User>;
   resumeUserSubscription(userId: number): Promise<User>;
+  
+  // Password reset token methods
+  createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken>;
+  getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
+  markPasswordResetTokenUsed(tokenId: number): Promise<void>;
+  cleanupExpiredTokens(): Promise<void>;
 }
 
 // Helper functions for pricing

@@ -514,11 +514,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ message: 'Password reset instructions sent if email exists' });
       }
 
-      // In a real application, we would generate a token and send an email with reset instructions
-      // For this demo, we'll just return a success message
+      // Generate a secure token
+      const crypto = await import('crypto');
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      
+      // Token expires in 1 hour
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+      // Store the reset token in the database
+      await storage.createPasswordResetToken({
+        userId: user.id,
+        token: resetToken,
+        expiresAt,
+      });
+
+      // Send email with reset instructions
+      const emailService = await import('./emailService');
+      const emailSent = await emailService.emailService.sendPasswordResetEmail(user.email, resetToken);
+
+      if (!emailSent) {
+        console.log('Failed to send password reset email, but continuing for security');
+      }
+
+      // Clean up expired tokens
+      await storage.cleanupExpiredTokens();
 
       res.json({ message: 'Password reset instructions sent if email exists' });
     } catch (error) {
+      console.error('Error in forgot password:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Reset password endpoint
+  app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: 'Token and new password are required' });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+      }
+
+      // Find the reset token
+      const resetToken = await storage.getPasswordResetToken(token);
+      if (!resetToken) {
+        return res.status(400).json({ message: 'Invalid or expired reset token' });
+      }
+
+      // Check if token is expired
+      const now = new Date();
+      if (resetToken.expiresAt < now) {
+        return res.status(400).json({ message: 'Reset token has expired' });
+      }
+
+      // Check if token has been used
+      if (resetToken.usedAt) {
+        return res.status(400).json({ message: 'Reset token has already been used' });
+      }
+
+      // Get user
+      const user = await storage.getUser(resetToken.userId);
+      if (!user) {
+        return res.status(400).json({ message: 'User not found' });
+      }
+
+      // Hash the new password
+      const bcrypt = await import('bcryptjs');
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update user's password
+      await storage.updateUser(user.id, { password: hashedPassword });
+
+      // Mark token as used
+      await storage.markPasswordResetTokenUsed(resetToken.id);
+
+      res.json({ message: 'Password reset successfully' });
+    } catch (error) {
+      console.error('Error in reset password:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });

@@ -30,7 +30,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Plus, Edit, Trash2, UserCog, Shield, Crown } from "lucide-react";
+import { Plus, Edit, Trash2, UserCog, Shield, Crown, Eye, EyeOff } from "lucide-react";
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -54,6 +54,8 @@ const AdminsManager = () => {
     email: "",
     role: "admin"
   });
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const [showEditPassword, setShowEditPassword] = useState(false);
   const { toast } = useToast();
 
   // Get current admin for role checking
@@ -313,13 +315,27 @@ const AdminsManager = () => {
                 </div>
                 <div>
                   <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="Enter password"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showCreatePassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      placeholder="Enter password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                      onClick={() => setShowCreatePassword(!showCreatePassword)}
+                    >
+                      {showCreatePassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="name">Full Name</Label>
@@ -436,13 +452,27 @@ const AdminsManager = () => {
             </div>
             <div>
               <Label htmlFor="edit-password">Password (leave blank to keep current)</Label>
-              <Input
-                id="edit-password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder="Enter new password or leave blank"
-              />
+              <div className="relative">
+                <Input
+                  id="edit-password"
+                  type={showEditPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="Enter new password or leave blank"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  onClick={() => setShowEditPassword(!showEditPassword)}
+                >
+                  {showEditPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
             <div>
               <Label htmlFor="edit-name">Full Name</Label>

@@ -1,7 +1,7 @@
 import { db } from "./db";
-import { and, eq, inArray, or } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import * as schema from "@shared/schema";
-import { users, admins, meals, weeks, weekMeals, orders, orderItems, userWeekStatuses, neighborhoods, invitationCodes, waitlist, pricingConfigs } from "@shared/schema";
+import { users, admins, meals, weeks, weekMeals, orders, orderItems, userWeekStatuses, neighborhoods, invitationCodes, waitlist, pricingConfigs, passwordResetTokens } from "@shared/schema";
 import type { 
   User, InsertUser, 
   Admin, InsertAdmin,
@@ -15,6 +15,7 @@ import type {
   InvitationCode, InsertInvitationCode,
   WaitlistEntry, InsertWaitlistEntry,
   PricingConfig, InsertPricingConfig,
+  PasswordResetToken, InsertPasswordResetToken,
   IStorage 
 } from "@shared/schema";
 
@@ -901,5 +902,40 @@ export class DatabaseStorage implements IStorage {
       throw new Error(`User not found: ${userId}`);
     }
     return user;
+  }
+
+  // Password reset token methods
+  async createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken> {
+    const [newToken] = await db
+      .insert(passwordResetTokens)
+      .values(token)
+      .returning();
+    return newToken;
+  }
+
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    const [resetToken] = await db
+      .select()
+      .from(passwordResetTokens)
+      .where(eq(passwordResetTokens.token, token));
+    return resetToken;
+  }
+
+  async markPasswordResetTokenUsed(tokenId: number): Promise<void> {
+    await db
+      .update(passwordResetTokens)
+      .set({ usedAt: new Date() })
+      .where(eq(passwordResetTokens.id, tokenId));
+  }
+
+  async cleanupExpiredTokens(): Promise<void> {
+    const now = new Date();
+    await db
+      .delete(passwordResetTokens)
+      .where(and(
+        eq(passwordResetTokens.usedAt, null), // Not used yet
+        // Expired tokens
+        sql`${passwordResetTokens.expiresAt} < ${now}`
+      ));
   }
 }

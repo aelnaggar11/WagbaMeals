@@ -7,6 +7,7 @@ import MenuSelection from "@/pages/MenuSelection";
 import CheckoutPage from "@/pages/CheckoutPage";
 import AccountPage from "@/pages/AccountPage";
 import AuthPage from "@/pages/AuthPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import AdminAuthPage from "@/pages/AdminAuthPage";
 import NotFound from "@/pages/not-found";
 import AdminDashboard from "@/pages/admin/Dashboard";
@@ -183,6 +184,9 @@ function App() {
         <Layout>
           <AuthPage />
         </Layout>
+      </Route>
+      <Route path="/reset-password">
+        <ResetPasswordPage />
       </Route>
       
       {/* User routes */}
