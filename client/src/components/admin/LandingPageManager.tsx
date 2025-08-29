@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { ImageUploader } from "./ImageUploader";
 
 // Schemas for form validation
 const heroSchema = z.object({
@@ -49,16 +50,16 @@ export function LandingPageManager() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch data
-  const { data: hero } = useQuery({
+  // Fetch data with proper typing
+  const { data: hero } = useQuery<any>({
     queryKey: ['/api/admin/landing/hero'],
   });
 
-  const { data: carouselMeals = [] } = useQuery({
+  const { data: carouselMeals = [] } = useQuery<any[]>({
     queryKey: ['/api/admin/landing/carousel-meals'],
   });
 
-  const { data: faqs = [] } = useQuery({
+  const { data: faqs = [] } = useQuery<any[]>({
     queryKey: ['/api/admin/landing/faqs'],
   });
 
@@ -81,17 +82,25 @@ export function LandingPageManager() {
     const heroMutation = useMutation({
       mutationFn: async (data: HeroFormData) => {
         if (hero?.id) {
-          return await apiRequest(`/api/admin/landing/hero/${hero.id}`, {
+          return await fetch(`/api/admin/landing/hero/${hero.id}`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'credentials': 'include'
+            },
+            credentials: 'include',
             body: JSON.stringify(data),
-          });
+          }).then(res => res.json());
         } else {
-          return await apiRequest('/api/admin/landing/hero', {
+          return await fetch('/api/admin/landing/hero', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'credentials': 'include'
+            },
+            credentials: 'include',
             body: JSON.stringify(data),
-          });
+          }).then(res => res.json());
         }
       },
       onSuccess: () => {
@@ -163,19 +172,13 @@ export function LandingPageManager() {
                   )}
                 />
                 
-                <FormField
-                  control={heroForm.control}
-                  name="backgroundImageUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Background Image URL</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="https://..." />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div>
+                  <ImageUploader
+                    label="Background Image"
+                    currentImageUrl={heroForm.watch("backgroundImageUrl")}
+                    onImageUploaded={(url) => heroForm.setValue("backgroundImageUrl", url)}
+                  />
+                </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
@@ -245,15 +248,23 @@ export function LandingPageManager() {
     const carouselMutation = useMutation({
       mutationFn: async ({ data, id }: { data: CarouselMealFormData; id?: number }) => {
         if (id) {
-          return apiRequest(`/api/admin/landing/carousel-meals/${id}`, {
+          return await fetch(`/api/admin/landing/carousel-meals/${id}`, {
             method: 'PATCH',
+            headers: { 
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
             body: JSON.stringify(data),
-          });
+          }).then(res => res.json());
         } else {
-          return apiRequest('/api/admin/landing/carousel-meals', {
+          return await fetch('/api/admin/landing/carousel-meals', {
             method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
             body: JSON.stringify(data),
-          });
+          }).then(res => res.json());
         }
       },
       onSuccess: () => {
@@ -277,9 +288,10 @@ export function LandingPageManager() {
 
     const deleteMealMutation = useMutation({
       mutationFn: (id: number) => 
-        apiRequest(`/api/admin/landing/carousel-meals/${id}`, {
+        fetch(`/api/admin/landing/carousel-meals/${id}`, {
           method: 'DELETE',
-        }),
+          credentials: 'include',
+        }).then(res => res.json()),
       onSuccess: () => {
         toast({
           title: "Success",
@@ -405,19 +417,13 @@ export function LandingPageManager() {
                     )}
                   />
                   
-                  <FormField
-                    control={carouselForm.control}
-                    name="imageUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Image URL</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="https://..." />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div>
+                    <ImageUploader
+                      label="Meal Image"
+                      currentImageUrl={carouselForm.watch("imageUrl")}
+                      onImageUploaded={(url) => carouselForm.setValue("imageUrl", url)}
+                    />
+                  </div>
                   
                   <FormField
                     control={carouselForm.control}
@@ -480,15 +486,23 @@ export function LandingPageManager() {
     const faqMutation = useMutation({
       mutationFn: async ({ data, id }: { data: FaqFormData; id?: number }) => {
         if (id) {
-          return apiRequest(`/api/admin/landing/faqs/${id}`, {
+          return await fetch(`/api/admin/landing/faqs/${id}`, {
             method: 'PATCH',
+            headers: { 
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
             body: JSON.stringify(data),
-          });
+          }).then(res => res.json());
         } else {
-          return apiRequest('/api/admin/landing/faqs', {
+          return await fetch('/api/admin/landing/faqs', {
             method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
             body: JSON.stringify(data),
-          });
+          }).then(res => res.json());
         }
       },
       onSuccess: () => {
@@ -512,9 +526,10 @@ export function LandingPageManager() {
 
     const deleteFaqMutation = useMutation({
       mutationFn: (id: number) => 
-        apiRequest(`/api/admin/landing/faqs/${id}`, {
+        fetch(`/api/admin/landing/faqs/${id}`, {
           method: 'DELETE',
-        }),
+          credentials: 'include',
+        }).then(res => res.json()),
       onSuccess: () => {
         toast({
           title: "Success",
