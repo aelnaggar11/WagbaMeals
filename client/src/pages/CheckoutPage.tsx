@@ -93,13 +93,23 @@ const CheckoutPage = () => {
   // Handle browser back button properly
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
-      // Always navigate back to account page for checkout
-      navigate('/account');
+      // Check if user has completed onboarding
+      const hasCompletedOnboarding = userProfile?.hasUsedTrialBox || userProfile?.userType === 'subscriber';
+      
+      if (hasCompletedOnboarding) {
+        // Returning user - go to account page
+        navigate('/account');
+      } else {
+        // First-time user in onboarding - go back to menu selection
+        // Try to get the week from pending order, fallback to current
+        const weekId = pendingOrder?.weekId || 'current';
+        navigate(`/menu/${weekId}`);
+      }
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [navigate]);
+  }, [navigate, userProfile, pendingOrder]);
 
   // Update delivery fee when pricing data changes
   useEffect(() => {
@@ -378,12 +388,24 @@ const CheckoutPage = () => {
         <Button 
           variant="ghost" 
           className="flex items-center text-gray-600"
-          onClick={() => window.history.back()}
+          onClick={() => {
+            // Check if user has completed onboarding
+            const hasCompletedOnboarding = userProfile?.hasUsedTrialBox || userProfile?.userType === 'subscriber';
+            
+            if (hasCompletedOnboarding) {
+              // Returning user - go to account page
+              navigate('/account');
+            } else {
+              // First-time user in onboarding - go back to menu selection
+              const weekId = pendingOrder?.weekId || 'current';
+              navigate(`/menu/${weekId}`);
+            }
+          }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Back to Account
+          {(userProfile?.hasUsedTrialBox || userProfile?.userType === 'subscriber') ? 'Back to Account' : 'Back to Menu'}
         </Button>
       </div>
       
