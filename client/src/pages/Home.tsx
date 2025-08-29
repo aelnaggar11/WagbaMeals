@@ -110,10 +110,13 @@ const Home = () => {
               />
               <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center px-6">
                 <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-2">
-                  {heroData?.title || "Refined recipes."}
+                  Refined recipes.
+                </h1>
+                <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-2">
+                  Real ingredients.
                 </h1>
                 <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
-                  {heroData?.subtitle || "Real ingredients. Ready in minutes."}
+                  Ready in minutes.
                 </h1>
               </div>
             </div>

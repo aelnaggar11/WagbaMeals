@@ -19,8 +19,6 @@ import { ImageUploader } from "./ImageUploader";
 
 // Schemas for form validation
 const heroSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  subtitle: z.string().optional(),
   backgroundImageUrl: z.string().url().optional().or(z.literal("")),
   ctaText: z.string().default("Get Started"),
   ctaUrl: z.string().default("/"),
@@ -70,8 +68,6 @@ export function LandingPageManager() {
     const heroForm = useForm<HeroFormData>({
       resolver: zodResolver(heroSchema),
       defaultValues: hero || {
-        title: "",
-        subtitle: "",
         backgroundImageUrl: "",
         ctaText: "Get Started",
         ctaUrl: "/",
@@ -144,33 +140,14 @@ export function LandingPageManager() {
           {isEditing ? (
             <Form {...heroForm}>
               <form onSubmit={heroForm.handleSubmit(handleHeroSubmit)} className="space-y-4">
-                <FormField
-                  control={heroForm.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Title</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Enter hero title" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={heroForm.control}
-                  name="subtitle"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Subtitle</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} placeholder="Enter hero subtitle" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-700 mb-2">Hero Text (Fixed)</h4>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>• Refined recipes.</p>
+                    <p>• Real ingredients.</p>
+                    <p>• Ready in minutes.</p>
+                  </div>
+                </div>
                 
                 <div>
                   <ImageUploader
@@ -217,8 +194,7 @@ export function LandingPageManager() {
             </Form>
           ) : (
             <div className="space-y-2">
-              <p><strong>Title:</strong> {hero?.title || "Not set"}</p>
-              <p><strong>Subtitle:</strong> {hero?.subtitle || "Not set"}</p>
+              <p><strong>Text:</strong> "Refined recipes. Real ingredients. Ready in minutes." (Fixed)</p>
               <p><strong>Background Image:</strong> {hero?.backgroundImageUrl ? "Set" : "Not set"}</p>
               <p><strong>CTA Text:</strong> {hero?.ctaText || "Get Started"}</p>
               <p><strong>CTA URL:</strong> {hero?.ctaUrl || "/"}</p>
