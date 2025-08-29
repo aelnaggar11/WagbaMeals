@@ -20,6 +20,8 @@ interface MealFormData {
   category: string;
   calories: number;
   protein: number;
+  caloriesLarge: number;
+  proteinLarge: number;
   ingredients: string;
   imageUrl: string;
 }
@@ -36,6 +38,8 @@ const MealsManager = () => {
     category: "main",
     calories: 0,
     protein: 0,
+    caloriesLarge: 0,
+    proteinLarge: 0,
     ingredients: "",
     imageUrl: ""
   });
@@ -141,6 +145,8 @@ const MealsManager = () => {
       category: "main",
       calories: 0,
       protein: 0,
+      caloriesLarge: 0,
+      proteinLarge: 0,
       ingredients: "",
       imageUrl: ""
     });
@@ -155,6 +161,8 @@ const MealsManager = () => {
         category: meal.category || "main",
         calories: meal.calories,
         protein: meal.protein,
+        caloriesLarge: meal.caloriesLarge,
+        proteinLarge: meal.proteinLarge,
         ingredients: meal.ingredients || "",
         imageUrl: meal.imageUrl
       });
@@ -300,30 +308,77 @@ const MealsManager = () => {
                   placeholder="Enter image URL or upload your own image"
                 />
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="calories">Calories</Label>
-                    <Input
-                      id="calories"
-                      type="number"
-                      min="0"
-                      value={formData.calories || ''}
-                      onChange={(e) => setFormData({ ...formData, calories: parseInt(e.target.value) || 0 })}
-                      placeholder="0"
-                    />
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-gray-700">Regular Portion Nutrition</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="calories">Calories</Label>
+                      <Input
+                        id="calories"
+                        type="number"
+                        min="0"
+                        value={formData.calories || ''}
+                        onChange={(e) => {
+                          const calories = parseInt(e.target.value) || 0;
+                          setFormData({ 
+                            ...formData, 
+                            calories,
+                            caloriesLarge: Math.round(calories * 1.5)
+                          });
+                        }}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="protein">Protein (g)</Label>
+                      <Input
+                        id="protein"
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={formData.protein || ''}
+                        onChange={(e) => {
+                          const protein = parseFloat(e.target.value) || 0;
+                          setFormData({ 
+                            ...formData, 
+                            protein,
+                            proteinLarge: Math.round(protein * 1.5)
+                          });
+                        }}
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="protein">Protein (g)</Label>
-                    <Input
-                      id="protein"
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      value={formData.protein || ''}
-                      onChange={(e) => setFormData({ ...formData, protein: parseFloat(e.target.value) || 0 })}
-                      placeholder="0"
-                    />
+                  
+                  <h4 className="text-sm font-medium text-gray-700">Large Portion Nutrition</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="caloriesLarge">Calories (Large)</Label>
+                      <Input
+                        id="caloriesLarge"
+                        type="number"
+                        min="0"
+                        value={formData.caloriesLarge || ''}
+                        onChange={(e) => setFormData({ ...formData, caloriesLarge: parseInt(e.target.value) || 0 })}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="proteinLarge">Protein (g) (Large)</Label>
+                      <Input
+                        id="proteinLarge"
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={formData.proteinLarge || ''}
+                        onChange={(e) => setFormData({ ...formData, proteinLarge: parseFloat(e.target.value) || 0 })}
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
+                  <p className="text-xs text-gray-500">
+                    Large portion values are automatically calculated as 1.5x regular values when you change regular nutrition. You can manually adjust them if needed.
+                  </p>
                 </div>
                 
                 <div className="flex justify-end space-x-2 pt-4">

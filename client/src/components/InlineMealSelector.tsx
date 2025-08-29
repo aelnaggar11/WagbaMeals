@@ -154,6 +154,9 @@ export default function InlineMealSelector({
                   <span>{meal.calories || 0} cal</span>
                   <span className="mx-2">•</span>
                   <span>{meal.protein || 0}g protein</span>
+                  <span className="mx-2 text-xs text-gray-500">
+                    (Large: {meal.caloriesLarge || Math.round(meal.calories * 1.5)} cal, {meal.proteinLarge || Math.round(meal.protein * 1.5)}g protein)
+                  </span>
                 </div>
               </div>
               

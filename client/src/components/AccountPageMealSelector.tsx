@@ -11,6 +11,8 @@ interface Meal {
   imageUrl: string;
   calories: number;
   protein: number;
+  caloriesLarge?: number;
+  proteinLarge?: number;
 }
 
 interface WeekItem {
@@ -192,6 +194,11 @@ export default function AccountPageMealSelector({
                           <span>{meal.calories || 0} cal</span>
                           <span className="mx-2">•</span>
                           <span>{meal.protein || 0}g protein</span>
+                          {items.some(item => item.mealId === meal.id && item.portionSize === 'large') && (
+                            <span className="mx-2 text-xs text-blue-600 font-medium">
+                              (Large: {meal.caloriesLarge || Math.round(meal.calories * 1.5)} cal, {meal.proteinLarge || Math.round(meal.protein * 1.5)}g protein)
+                            </span>
+                          )}
                         </div>
                       </div>
 
