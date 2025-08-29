@@ -21,7 +21,9 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
 
   // Parse URL search params
   const params = new URLSearchParams(window.location.search);
-  const initialMealCount = parseInt(params.get("mealCount") || "6", 10);
+  // Default to 10 meals (recommended option) during onboarding, 6 for existing users
+  const defaultMealCount = params.get("fromPlan") ? "10" : "6";
+  const initialMealCount = parseInt(params.get("mealCount") || defaultMealCount, 10);
   const initialPortionSize = params.get("portionSize") || "standard";
 
   const [mealCount, setMealCount] = useState(initialMealCount);
@@ -85,11 +87,30 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
         console.error("Error parsing stored selections:", error);
       }
     } 
-    // Only load existing order data when NOT in onboarding flow (fromPlan or fresh start)
+    // Only load existing order data when NOT in onboarding flow and coming from account page
     else if (existingOrder && !params.get("fromPlan") && params.get("fromAccount")) {
       setMealCount(existingOrder.mealCount);
       setPortionSize(existingOrder.defaultPortionSize);
       setSelectedMeals(existingOrder.items);
+    }
+    // If in onboarding flow but no stored selections, ensure we maintain URL parameters
+    else if (params.get("fromPlan") && params.get("mealCount")) {
+      const urlMealCount = parseInt(params.get("mealCount") || "10", 10);
+      const urlPortionSize = params.get("portionSize") || "standard";
+      
+      // Only update if different from current state to avoid unnecessary re-renders
+      if (mealCount !== urlMealCount) {
+        setMealCount(urlMealCount);
+      }
+      if (portionSize !== urlPortionSize) {
+        setPortionSize(urlPortionSize);
+      }
+      
+      console.log('Onboarding flow: maintaining URL parameters -', {
+        mealCount: urlMealCount,
+        portionSize: urlPortionSize,
+        fromPlan: params.get("fromPlan")
+      });
     }
   }, [existingOrder, weekId, toast, params]);
 

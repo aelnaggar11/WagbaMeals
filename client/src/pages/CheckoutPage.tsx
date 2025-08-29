@@ -100,10 +100,11 @@ const CheckoutPage = () => {
         // Returning user - go to account page
         navigate('/account');
       } else {
-        // First-time user in onboarding - go back to menu selection
-        // Try to get the week from pending order, fallback to current
+        // First-time user in onboarding - go back to menu selection with preserved parameters
         const weekId = pendingOrder?.weekId || 'current';
-        navigate(`/menu/${weekId}`);
+        const mealCount = pendingOrder?.mealCount || 10;
+        const portionSize = pendingOrder?.defaultPortionSize || 'standard';
+        navigate(`/menu/${weekId}?mealCount=${mealCount}&portionSize=${portionSize}&fromPlan=true`);
       }
     };
 
@@ -396,9 +397,11 @@ const CheckoutPage = () => {
               // Returning user - go to account page
               navigate('/account');
             } else {
-              // First-time user in onboarding - go back to menu selection
+              // First-time user in onboarding - go back to menu selection with preserved parameters
               const weekId = pendingOrder?.weekId || 'current';
-              navigate(`/menu/${weekId}`);
+              const mealCount = pendingOrder?.mealCount || 10;
+              const portionSize = pendingOrder?.defaultPortionSize || 'standard';
+              navigate(`/menu/${weekId}?mealCount=${mealCount}&portionSize=${portionSize}&fromPlan=true`);
             }
           }}
         >
