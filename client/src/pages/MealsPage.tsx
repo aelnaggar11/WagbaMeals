@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, ChefHat, Clock, Users, Leaf } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, ChefHat, Clock, Users, Leaf, X } from "lucide-react";
 import logoImage from "@assets/Logo tm.png";
 import headerPatternImage from "@assets/Header BG Pattern_1753742643683.png";
 
@@ -26,6 +27,8 @@ interface Meal {
 const MealsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Fetch all meals
   const { data: mealsData, isLoading } = useQuery<{ meals: Meal[] }>({
@@ -48,6 +51,16 @@ const MealsPage = () => {
     
     return matchesSearch && matchesCategory;
   });
+
+  const handleMealClick = (meal: Meal) => {
+    setSelectedMeal(meal);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedMeal(null);
+  };
 
   if (isLoading) {
     return (
@@ -155,7 +168,11 @@ const MealsPage = () => {
         {/* Meals Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredMeals.map((meal) => (
-            <Card key={meal.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+            <Card 
+              key={meal.id} 
+              className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => handleMealClick(meal)}
+            >
               <div className="aspect-video relative overflow-hidden">
                 <img 
                   src={meal.imageUrl} 
@@ -271,6 +288,116 @@ const MealsPage = () => {
           </p>
         </div>
       </div>
+
+      {/* Meal Detail Modal */}
+      <Dialog open={isModalOpen} onOpenChange={closeModal}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {selectedMeal && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold mb-2">
+                  {selectedMeal.title}
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-6">
+                {/* Meal Image */}
+                <div className="relative w-full h-64 rounded-lg overflow-hidden">
+                  <img 
+                    src={selectedMeal.imageUrl} 
+                    alt={selectedMeal.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-4 right-4">
+                    <Badge variant="secondary" className="bg-white/90">
+                      {selectedMeal.category}
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">About This Meal</h3>
+                  <p className="text-gray-700 leading-relaxed">
+                    {selectedMeal.description}
+                  </p>
+                </div>
+
+                {/* Nutrition Information */}
+                <div>
+                  <h3 className="font-semibold text-lg mb-4">Nutrition Facts</h3>
+                  <Tabs defaultValue="standard" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="standard">Standard Portion</TabsTrigger>
+                      <TabsTrigger value="large">Large Portion</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="standard" className="mt-4">
+                      <div className="grid grid-cols-2 gap-6">
+                        <div className="text-center p-4 bg-orange-50 rounded-lg">
+                          <div className="text-2xl font-bold text-orange-600">{selectedMeal.calories}</div>
+                          <div className="text-gray-600 font-medium">Calories</div>
+                        </div>
+                        <div className="text-center p-4 bg-green-50 rounded-lg">
+                          <div className="text-2xl font-bold text-green-600">{selectedMeal.protein}g</div>
+                          <div className="text-gray-600 font-medium">Protein</div>
+                        </div>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="large" className="mt-4">
+                      <div className="grid grid-cols-2 gap-6">
+                        <div className="text-center p-4 bg-orange-50 rounded-lg">
+                          <div className="text-2xl font-bold text-orange-600">{selectedMeal.caloriesLarge}</div>
+                          <div className="text-gray-600 font-medium">Calories</div>
+                        </div>
+                        <div className="text-center p-4 bg-green-50 rounded-lg">
+                          <div className="text-2xl font-bold text-green-600">{selectedMeal.proteinLarge}g</div>
+                          <div className="text-gray-600 font-medium">Protein</div>
+                        </div>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+
+                {/* Ingredients */}
+                {selectedMeal.ingredients && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                      <ChefHat className="h-5 w-5 text-red-600" />
+                      Ingredients
+                    </h3>
+                    <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg">
+                      {selectedMeal.ingredients}
+                    </p>
+                  </div>
+                )}
+
+                {/* Tags */}
+                {selectedMeal.tags && selectedMeal.tags.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-3">Tags</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedMeal.tags.map((tag, index) => (
+                        <Badge key={index} variant="outline" className="text-sm">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Close Button */}
+                <div className="flex justify-end pt-4 border-t">
+                  <Button onClick={closeModal} variant="outline">
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
