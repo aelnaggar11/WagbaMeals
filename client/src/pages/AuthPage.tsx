@@ -99,16 +99,13 @@ const AuthPage = () => {
       setIsDirectLoginAccess(true);
     }
 
-    // Pre-populate email from pre-onboarding modal
+    // Pre-populate email from pre-onboarding modal (don't clear it yet - only clear after successful registration)
     const preOnboardingEmail = sessionStorage.getItem('preOnboardingEmail');
     if (preOnboardingEmail) {
       setFormData(prev => ({
         ...prev,
         email: preOnboardingEmail
       }));
-      // Clear the stored data after using it
-      sessionStorage.removeItem('preOnboardingEmail');
-      sessionStorage.removeItem('preOnboardingNeighborhood');
     }
   }, []);
   
@@ -163,6 +160,10 @@ const AuthPage = () => {
         title: "Login successful",
         description: "Welcome back to Wagba!"
       });
+
+      // Clear pre-onboarding email after successful login
+      sessionStorage.removeItem('preOnboardingEmail');
+      sessionStorage.removeItem('preOnboardingNeighborhood');
       
       // Wait for auth state to update
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -271,6 +272,10 @@ const AuthPage = () => {
         title: "Registration successful",
         description: "Welcome to Wagba! Your account has been created."
       });
+
+      // Clear pre-onboarding email after successful registration
+      sessionStorage.removeItem('preOnboardingEmail');
+      sessionStorage.removeItem('preOnboardingNeighborhood');
       
       // Check for saved meal selections (sessionStorage first, then backend as fallback)
       let savedSelections = null;
