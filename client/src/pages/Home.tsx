@@ -164,7 +164,7 @@ const Home = () => {
           {/* Menu Section */}
           <div className="mb-8">
             <div className="text-center mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold text-red-600 flex items-center justify-center gap-2">
+              <h2 className="text-2xl md:text-3xl font-bold flex items-center justify-center gap-2" style={{ color: '#A80906' }}>
                 <span className="text-yellow-300">✦</span>
                 THE MENU
                 <span className="text-yellow-300">✦</span>
@@ -307,10 +307,10 @@ const Home = () => {
           {/* FAQ Section */}
           <div className="mb-8">
             <div className="text-center mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold text-red-600 flex items-center justify-center gap-2">
-                <span className="text-red-500">♦</span>
+              <h2 className="text-2xl md:text-3xl font-bold flex items-center justify-center gap-2" style={{ color: '#A80906' }}>
+                <span className="text-yellow-300">✦</span>
                 FAQ
-                <span className="text-red-500">♦</span>
+                <span className="text-yellow-300">✦</span>
               </h2>
             </div>
             
