@@ -361,17 +361,35 @@ const MealsPage = () => {
                 </div>
 
                 {/* Ingredients */}
-                {selectedMeal.ingredients && (
-                  <div>
-                    <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                      <ChefHat className="h-5 w-5 text-red-600" />
-                      Ingredients
-                    </h3>
-                    <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg">
-                      {selectedMeal.ingredients}
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <ChefHat className="h-5 w-5 text-red-600" />
+                    Ingredients
+                  </h3>
+                  {selectedMeal.ingredients && selectedMeal.ingredients.trim() ? (
+                    <div className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg">
+                      {selectedMeal.ingredients.split(',').length > 1 ? (
+                        <ul className="list-disc list-inside space-y-1">
+                          {selectedMeal.ingredients.split(',').map((ingredient, index) => (
+                            <li key={index} className="text-sm">
+                              {ingredient.trim()}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p>{selectedMeal.ingredients}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+                      <p className="text-amber-700 text-sm">
+                        <strong>Ingredients information coming soon!</strong><br/>
+                        Our chef team is working on providing detailed ingredient lists for all meals. 
+                        For specific dietary requirements or allergen information, please contact our support team.
+                      </p>
+                    </div>
+                  )}
+                </div>
 
                 {/* Tags */}
                 {selectedMeal.tags && selectedMeal.tags.length > 0 && (
