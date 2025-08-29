@@ -49,7 +49,7 @@ export default function FixedMealSelector({
   const [isSaved, setIsSaved] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [largeMealAddOn, setLargeMealAddOn] = useState(99);
-  
+
   // Load dynamic pricing
   useEffect(() => {
     const loadPricing = async () => {
@@ -60,7 +60,7 @@ export default function FixedMealSelector({
         console.error('Failed to load large meal pricing:', error);
       }
     };
-    
+
     loadPricing();
   }, []);
 
@@ -82,11 +82,11 @@ export default function FixedMealSelector({
     } else {
       // Initialize with provided items
       setSelectedItems(items);
-      
+
       // Group the items by meal ID for display
       const grouped = groupMealsByCount(items);
       setSavedItems(grouped);
-      
+
       // If we have items, consider the selection as saved
       setIsSaved(true);
       setIsInitialized(true);
@@ -96,7 +96,7 @@ export default function FixedMealSelector({
   // Group meals by ID with their portion sizes
   const groupMealsByCount = (items: WeekItem[]) => {
     const groups: Record<number, { meal: Meal, items: WeekItem[] }> = {};
-    
+
     items.forEach(item => {
       if (!groups[item.mealId]) {
         groups[item.mealId] = {
@@ -107,7 +107,7 @@ export default function FixedMealSelector({
         groups[item.mealId].items.push(item);
       }
     });
-    
+
     return Object.values(groups);
   };
 
@@ -121,7 +121,7 @@ export default function FixedMealSelector({
     try {
       const updatedItems = [...selectedItems];
       const item = updatedItems[itemIndex];
-      
+
       // Update local state
       updatedItems[itemIndex] = { ...item, portionSize: newPortionSize };
       setSelectedItems(updatedItems);
@@ -137,7 +137,7 @@ export default function FixedMealSelector({
             portionSize: newPortionSize
           }),
         });
-        
+
         if (!response.ok) {
           throw new Error('Failed to update portion size');
         }
@@ -188,7 +188,7 @@ export default function FixedMealSelector({
           },
           body: JSON.stringify({ mealId, portionSize })
         });
-        
+
         if (response.ok) {
           const newItem = await response.json();
           setSelectedItems(prev => [...prev, {
@@ -226,7 +226,7 @@ export default function FixedMealSelector({
     const itemToRemove = selectedItems.find(item => 
       item.mealId === mealId && item.portionSize === portionSize
     );
-    
+
     if (!itemToRemove) {
       console.warn('No item found to remove for meal:', mealId, 'portion:', portionSize);
       return;
@@ -238,7 +238,7 @@ export default function FixedMealSelector({
         const response = await fetch(`/api/orders/${orderId}/items/${itemToRemove.id}`, {
           method: 'DELETE'
         });
-        
+
         if (response.ok) {
           setSelectedItems(prev => prev.filter(item => item.id !== itemToRemove.id));
           // Invalidate queries to refresh data
@@ -286,7 +286,7 @@ export default function FixedMealSelector({
         portionSize: initialPortionSize,
         meal: meal
       };
-      
+
       // Update local state
       setSelectedItems(prev => [...prev, newItem]);
 
@@ -302,14 +302,14 @@ export default function FixedMealSelector({
             portionSize: initialPortionSize
           }),
         });
-        
+
         if (!response.ok) {
           throw new Error('Failed to add meal');
         }
-        
+
         // Get the created item from response and update local state with real ID
         const createdItem = await response.json();
-        
+
         // Update the local state with the real server ID
         setSelectedItems(prev => {
           const updated = [...prev];
@@ -338,7 +338,7 @@ export default function FixedMealSelector({
     // Find the first occurrence of this meal in our selection
     const itemIndex = selectedItems.findIndex(item => item.mealId === meal.id);
     if (itemIndex === -1) return;
-    
+
     const itemToRemove = selectedItems[itemIndex];
 
     try {
@@ -352,7 +352,7 @@ export default function FixedMealSelector({
         const response = await fetch(`/api/orders/${orderId}/items/${itemToRemove.id}`, {
           method: 'DELETE',
         });
-        
+
         if (!response.ok) {
           console.warn('Failed to delete item from server, but continuing with local removal');
         }
@@ -362,7 +362,7 @@ export default function FixedMealSelector({
       // Don't show error toast for server issues since local state is updated
     }
   };
-  
+
   // Save the current meal selection
   const handleSave = async () => {
     const requiredMealCount = parseInt(mealCount.toString());
@@ -400,15 +400,15 @@ export default function FixedMealSelector({
     try {
       // Call the backend API to mark order as selected
       await apiRequest('POST', `/api/orders/${orderId}/save-selection`, {});
-      
+
       // Group the meals for display
       const grouped = groupMealsByCount(selectedItems);
       setSavedItems(grouped);
       setIsSaved(true);
-      
+
       // Update the upcoming meals data
       queryClient.invalidateQueries({ queryKey: ['/api/user/upcoming-meals'] });
-      
+
       toast({
         title: "Selection saved",
         description: "Your meal selection has been saved.",
@@ -422,7 +422,7 @@ export default function FixedMealSelector({
       });
     }
   };
-  
+
   // Switch back to edit mode
   const handleEdit = () => {
     setIsSaved(false);
@@ -452,7 +452,7 @@ export default function FixedMealSelector({
           </div>
         </div>
       )}
-      
+
       {isSaved ? (
         // Saved view with grouped meals
         <>
@@ -470,7 +470,7 @@ export default function FixedMealSelector({
               Edit Selection
             </Button>
           </div>
-          
+
           {savedItems.length > 0 ? (
             <div className="space-y-4">
               {savedItems.map((group: any, index: number) => {
@@ -493,20 +493,19 @@ export default function FixedMealSelector({
                           />
                         )}
                       </div>
-                      
+
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
                           <div>
                             <h4 className="font-medium text-lg">{group.meal.title}</h4>
-                            <div className="flex items-center mt-1 text-sm text-gray-600">
+                            <div className="mt-1 text-sm text-gray-600">
                               {(defaultPortionSize === 'mixed' || defaultPortionSize === 'mix') ? (
-                                <>
-                                  <span>Standard: {group.meal.calories || 0} cal, {group.meal.protein || 0}g protein</span>
-                                  <span className="mx-2">•</span>
-                                  <span>Large: {group.meal.caloriesLarge || Math.round(group.meal.calories * 1.5)} cal, {group.meal.proteinLarge || Math.round(group.meal.protein * 1.5)}g protein</span>
-                                </>
+                                <div className="space-y-1">
+                                  <div>Standard: {group.meal.calories || 0} cal, {group.meal.protein || 0}g protein</div>
+                                  <div>Large: {group.meal.caloriesLarge || Math.round(group.meal.calories * 1.5)} cal, {group.meal.proteinLarge || Math.round(group.meal.protein * 1.5)}g protein</div>
+                                </div>
                               ) : (
-                                <>
+                                <div className="flex items-center">
                                   <span>
                                     {defaultPortionSize === 'large' 
                                       ? group.meal.caloriesLarge || Math.round(group.meal.calories * 1.5) 
@@ -520,17 +519,17 @@ export default function FixedMealSelector({
                                       : group.meal.protein || 0
                                     }g protein
                                   </span>
-                                </>
+                                </div>
                               )}
                             </div>
                           </div>
-                          
+
                           {/* Total quantity badge */}
                           <Badge variant="secondary" className="mr-4">
                             x{group.items.length}
                           </Badge>
                         </div>
-                        
+
                         {/* Portion size summary - only show for Mix & Match subscriptions */}
                         {(defaultPortionSize === 'mixed' || defaultPortionSize === 'mix') && (
                           <div className="mt-3">
@@ -548,7 +547,7 @@ export default function FixedMealSelector({
                             </div>
                           </div>
                         )}
-                        
+
                         {/* Show default portion size for Standard/Large subscriptions */}
                         {defaultPortionSize !== 'mixed' && defaultPortionSize !== 'mix' && (
                           <div className="mt-2 text-sm text-gray-600">
@@ -598,7 +597,7 @@ export default function FixedMealSelector({
                 const count = getMealCount(meal.id);
                 const isSelected = count > 0;
                 const isMaxReached = selectedItems.length >= mealCount;
-                
+
                 return (
                   <div key={meal.id} className="border rounded-lg overflow-hidden">
                     <div className="flex items-center p-4">
@@ -611,18 +610,17 @@ export default function FixedMealSelector({
                           />
                         )}
                       </div>
-                      
+
                       <div className="flex-1">
                         <h4 className="font-medium text-lg">{meal.title}</h4>
-                        <div className="flex items-center mt-1 text-sm text-gray-600">
+                        <div className="mt-1 text-sm text-gray-600">
                           {(defaultPortionSize === 'mixed' || defaultPortionSize === 'mix') ? (
-                            <>
-                              <span>Standard: {meal.calories || 0} cal, {meal.protein || 0}g protein</span>
-                              <span className="mx-2">•</span>
-                              <span>Large: {meal.caloriesLarge || Math.round(meal.calories * 1.5)} cal, {meal.proteinLarge || Math.round(meal.protein * 1.5)}g protein</span>
-                            </>
+                            <div className="space-y-1">
+                              <div>Standard: {meal.calories || 0} cal, {meal.protein || 0}g protein</div>
+                              <div>Large: {meal.caloriesLarge || Math.round(meal.calories * 1.5)} cal, {meal.proteinLarge || Math.round(meal.protein * 1.5)}g protein</div>
+                            </div>
                           ) : (
-                            <>
+                            <div className="flex items-center">
                               <span>
                                 {defaultPortionSize === 'large' 
                                   ? meal.caloriesLarge || Math.round(meal.calories * 1.5) 
@@ -636,11 +634,11 @@ export default function FixedMealSelector({
                                   : meal.protein || 0
                                 }g protein
                               </span>
-                            </>
+                            </div>
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center">
                         <Button
                           variant="ghost"
@@ -651,11 +649,11 @@ export default function FixedMealSelector({
                         >
                           <MinusCircle size={24} />
                         </Button>
-                        
+
                         <span className="w-8 text-center font-medium">
                           {count}
                         </span>
-                        
+
                         <Button
                           variant="ghost"
                           size="icon"
@@ -667,7 +665,7 @@ export default function FixedMealSelector({
                         </Button>
                       </div>
                     </div>
-                    
+
                     {/* Mix & Match portion size counters - simplified UX */}
                     {(defaultPortionSize === 'mixed' || defaultPortionSize === 'mix') && (
                       <div className="border-t bg-gray-50 p-4">
@@ -737,7 +735,7 @@ export default function FixedMealSelector({
                         </div>
                       </div>
                     )}
-                    
+
                     {/* Show default portion size for Standard/Large subscriptions */}
                     {isSelected && defaultPortionSize !== 'mixed' && defaultPortionSize !== 'mix' && (
                       <div className="border-t bg-gray-50 p-4">
