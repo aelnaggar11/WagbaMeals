@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,29 @@ const AuthPage = () => {
     confirmPassword: "",
     email: ""
   });
+
+  // Check if user is already authenticated
+  const { data: user } = useQuery<{ id: number } | null>({
+    queryKey: ['/api/auth/me'],
+  });
+
+  // Redirect authenticated users back to menu selection if they're in onboarding flow
+  useEffect(() => {
+    if (user) {
+      const params = new URLSearchParams(window.location.search);
+      const fromSelection = params.get("fromSelection");
+      const weekId = params.get("weekId");
+      const mealCount = params.get("mealCount");
+      const portionSize = params.get("portionSize");
+      
+      // If user is authenticated and this is from meal selection (onboarding flow)
+      if (fromSelection === "true" && weekId && mealCount && portionSize) {
+        console.log('Authenticated user detected in onboarding flow, redirecting to menu selection...');
+        navigate(`/menu/${weekId}?fromPlan=true&mealCount=${mealCount}&portionSize=${portionSize}`);
+        return;
+      }
+    }
+  }, [user, navigate]);
   
   // Handle browser back button properly
   useEffect(() => {
