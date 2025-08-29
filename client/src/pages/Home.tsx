@@ -98,7 +98,7 @@ const Home = () => {
           </div>
 
           {/* How It Works Section */}
-          <div className="bg-red-600 rounded-2xl p-6 mb-8 text-white">
+          <div className="rounded-2xl p-6 mb-8 text-white" style={{ backgroundColor: '#A80906' }}>
             <div className="text-center mb-6">
               <h2 className="text-2xl md:text-3xl font-bold flex items-center justify-center gap-2">
                 <span className="text-yellow-300">✦</span>
@@ -248,7 +248,7 @@ const Home = () => {
           </div>
 
           {/* Why It Works Section */}
-          <div className="bg-red-600 rounded-2xl p-6 mb-8 text-white">
+          <div className="rounded-2xl p-6 mb-8 text-white" style={{ backgroundColor: '#A80906' }}>
             <div className="text-center mb-6">
               <h2 className="text-2xl md:text-3xl font-bold flex items-center justify-center gap-2">
                 <span className="text-yellow-300">✦</span>
