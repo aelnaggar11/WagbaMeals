@@ -15,6 +15,8 @@ interface Meal {
   imageUrl: string;
   calories: number;
   protein: number;
+  caloriesLarge?: number;
+  proteinLarge?: number;
 }
 
 interface WeekItem {
@@ -497,9 +499,19 @@ export default function FixedMealSelector({
                           <div>
                             <h4 className="font-medium text-lg">{group.meal.title}</h4>
                             <div className="flex items-center mt-1 text-sm text-gray-600">
-                              <span>{group.meal.calories || 0} cal</span>
+                              <span>
+                                {defaultPortionSize === 'large' 
+                                  ? group.meal.caloriesLarge || Math.round(group.meal.calories * 1.5) 
+                                  : group.meal.calories || 0
+                                } cal
+                              </span>
                               <span className="mx-2">•</span>
-                              <span>{group.meal.protein || 0}g protein</span>
+                              <span>
+                                {defaultPortionSize === 'large' 
+                                  ? group.meal.proteinLarge || Math.round(group.meal.protein * 1.5) 
+                                  : group.meal.protein || 0
+                                }g protein
+                              </span>
                             </div>
                           </div>
                           
@@ -593,9 +605,19 @@ export default function FixedMealSelector({
                       <div className="flex-1">
                         <h4 className="font-medium text-lg">{meal.title}</h4>
                         <div className="flex items-center mt-1 text-sm text-gray-600">
-                          <span>{meal.calories || 0} cal</span>
+                          <span>
+                            {defaultPortionSize === 'large' 
+                              ? meal.caloriesLarge || Math.round(meal.calories * 1.5) 
+                              : meal.calories || 0
+                            } cal
+                          </span>
                           <span className="mx-2">•</span>
-                          <span>{meal.protein || 0}g protein</span>
+                          <span>
+                            {defaultPortionSize === 'large' 
+                              ? meal.proteinLarge || Math.round(meal.protein * 1.5) 
+                              : meal.protein || 0
+                            }g protein
+                          </span>
                         </div>
                       </div>
                       

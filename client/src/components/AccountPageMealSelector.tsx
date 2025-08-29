@@ -39,9 +39,6 @@ export default function AccountPageMealSelector({
 }: AccountPageMealSelectorProps) {
   const { toast } = useToast();
   
-  // Debug: Log the defaultPortionSize to see what's being passed
-  console.log('🔍 AccountPageMealSelector DEBUG - defaultPortionSize:', defaultPortionSize, 'weekId:', weekId);
-  console.log('🔍 AccountPageMealSelector DEBUG - props:', { weekId, orderId, mealCount, itemsLength: items.length, defaultPortionSize });
 
   // Use React Query to fetch meals for this specific week
   const { data: menuData, isLoading } = useQuery({
@@ -209,10 +206,6 @@ export default function AccountPageMealSelector({
                               ? meal.proteinLarge || Math.round(meal.protein * 1.5) 
                               : meal.protein || 0
                             }g protein
-                          </span>
-                          {/* Debug: Show portion size being used */}
-                          <span className="mx-2 text-xs bg-yellow-200 px-1 rounded">
-                            DEBUG: {defaultPortionSize} | {defaultPortionSize === 'large' ? 'LARGE CALC' : 'STANDARD CALC'}
                           </span>
                         </div>
                       </div>
