@@ -13,6 +13,7 @@ import NotFound from "@/pages/not-found";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import MenuManagement from "@/pages/admin/MenuManagement";
 import OrdersManagement from "@/pages/admin/OrdersManagement";
+import MealsPage from "@/pages/MealsPage";
 import { useQuery } from "@tanstack/react-query";
 import { User, Admin } from "@shared/schema";
 import { Loader2 } from "lucide-react";
@@ -187,6 +188,9 @@ function App() {
       </Route>
       <Route path="/reset-password">
         <ResetPasswordPage />
+      </Route>
+      <Route path="/meals">
+        <MealsPage />
       </Route>
       
       {/* User routes */}
