@@ -78,9 +78,12 @@ const OrderSummary = ({
       return;
     }
 
-    // Check if user is logged in
-    if (!user) {
-      // For onboarding flow, save selections and redirect to auth instead of showing error
+    // Check if this is during onboarding flow
+    const isOnboardingFlow = window.location.search.includes('fromPlan') || 
+                           window.location.pathname.includes('/menu/') && !window.location.search.includes('fromAccount');
+
+    // During onboarding, always save selections and go to auth page (Step 3)
+    if (isOnboardingFlow) {
       try {
         // Save selections to backend session storage (more reliable than sessionStorage)
         await apiRequest('POST', '/api/temp/meal-selections', {
@@ -100,12 +103,23 @@ const OrderSummary = ({
           deliverySlot
         };
         sessionStorage.setItem('mealSelections', JSON.stringify(selections));
+        
+        // Add onboarding context to URL parameters
+        const authUrl = `/auth?fromSelection=true&weekId=${weekId}&mealCount=${mealCount}&portionSize=${portionSize}`;
+        window.location.href = authUrl;
+        return;
       } catch (error) {
         console.error('Error saving meal selections:', error);
         // Continue with just sessionStorage if backend fails
+        const authUrl = `/auth?fromSelection=true&weekId=${weekId}&mealCount=${mealCount}&portionSize=${portionSize}`;
+        window.location.href = authUrl;
+        return;
       }
-      
-      // Redirect to auth page with return URL - no error toast for onboarding
+    }
+
+    // For non-onboarding flow (account page access), check authentication
+    if (!user) {
+      // Redirect to auth page with return URL
       window.location.href = `/auth?returnTo=${encodeURIComponent(window.location.pathname)}`;
       return;
     }

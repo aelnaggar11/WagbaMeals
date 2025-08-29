@@ -85,13 +85,13 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
         console.error("Error parsing stored selections:", error);
       }
     } 
-    // Then check for existing order (this takes precedence if both exist)
-    else if (existingOrder) {
+    // Only load existing order data when NOT in onboarding flow (fromPlan or fresh start)
+    else if (existingOrder && !params.get("fromPlan") && params.get("fromAccount")) {
       setMealCount(existingOrder.mealCount);
       setPortionSize(existingOrder.defaultPortionSize);
       setSelectedMeals(existingOrder.items);
     }
-  }, [existingOrder, weekId, toast]);
+  }, [existingOrder, weekId, toast, params]);
 
   // Meal selection handlers
   const handleSelectMeal = (mealId: number, selectedPortionSize: PortionSize) => {
@@ -233,8 +233,8 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
         {/* Week Selection - Hidden during Get Started flow or when coming from account page */}
         {!params.get("fromPlan") && !params.get("fromAccount") && <WeekSelector currentWeekId={weekId} />}
 
-        {/* Delivery Slot Selector - Show during onboarding flow and when no existing order */}
-        {(params.get("fromPlan") || !existingOrder) && (
+        {/* Delivery Slot Selector - Show during onboarding flow or when no existing order */}
+        {(params.get("fromPlan") || !existingOrder || !params.get("fromAccount")) && (
           <div className="max-w-md mx-auto mb-8 bg-white p-6 rounded-lg shadow-sm border">
             <DeliverySlotSelector
               value={deliverySlot}
