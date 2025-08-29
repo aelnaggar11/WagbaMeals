@@ -17,10 +17,24 @@ import wiwIcon3 from "@assets/WIW Icon 3_1756464677092.png";
 const Home = () => {
   const [, navigate] = useLocation();
   const [showPreOnboardingModal, setShowPreOnboardingModal] = useState(false);
+  const [expandedFaqs, setExpandedFaqs] = useState<number[]>([]);
   
   // Get current available week for the menu link
   const { data: weeksData } = useQuery<{ weeks: Week[] }>({
     queryKey: ['/api/weeks'],
+  });
+  
+  // Fetch landing page content
+  const { data: heroData } = useQuery<any>({
+    queryKey: ['/api/landing/hero'],
+  });
+  
+  const { data: carouselMeals = [] } = useQuery<any[]>({
+    queryKey: ['/api/landing/carousel-meals'],
+  });
+  
+  const { data: faqs = [] } = useQuery<any[]>({
+    queryKey: ['/api/landing/faqs'],
   });
   
   const currentWeekId = weeksData?.weeks.find(week => week.isSelectable)?.id || "current";
@@ -32,6 +46,14 @@ const Home = () => {
   const handlePreOnboardingSuccess = (email: string) => {
     // Navigate to meal plans page
     navigate('/meal-plans');
+  };
+  
+  const toggleFaq = (faqId: number) => {
+    setExpandedFaqs(prev => 
+      prev.includes(faqId) 
+        ? prev.filter(id => id !== faqId)
+        : [...prev, faqId]
+    );
   };
 
   return (
@@ -82,19 +104,16 @@ const Home = () => {
           <div className="mb-8">
             <div className="relative bg-gray-100 rounded-2xl overflow-hidden mb-6" style={{ aspectRatio: '16/9' }}>
               <img 
-                src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c" 
+                src={heroData?.backgroundImageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"}
                 alt="Healthy prepared meal" 
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center px-6">
                 <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-2">
-                  Refined recipes.
-                </h1>
-                <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-2">
-                  Real ingredients.
+                  {heroData?.title || "Refined recipes."}
                 </h1>
                 <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
-                  Ready in minutes.
+                  {heroData?.subtitle || "Real ingredients. Ready in minutes."}
                 </h1>
               </div>
             </div>
@@ -177,36 +196,11 @@ const Home = () => {
             {/* Carousel Container */}
             <div className="relative overflow-hidden">
               <div className="flex gap-4 animate-scroll">
-                {[
-                  {
-                    name: "Tarsh bel Tarsh",
-                    description: "Drizzled with tarsh bel matroosh saleh",
-                    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"
-                  },
-                  {
-                    name: "Tarsh a la Tarsh", 
-                    description: "Steamed with torshi metmatrash saleh",
-                    image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b"
-                  },
-                  {
-                    name: "Torsheeni Scalop bel Boloneezi",
-                    description: "Tale3 tarsheen ommo",
-                    image: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445"
-                  },
-                  {
-                    name: "Mediterranean Delight",
-                    description: "Fresh herbs with olive oil drizzle",
-                    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd"
-                  },
-                  {
-                    name: "Spiced Garden Bowl",
-                    description: "Seasonal vegetables with aromatic spices",
-                    image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061"
-                  }
-                ].map((meal, index) => (
-                  <div key={index} className="bg-white rounded-lg overflow-hidden shadow-sm flex-shrink-0 w-64">
+                {/* Display meals from database */}
+                {carouselMeals.filter(meal => meal.isActive).map((meal, index) => (
+                  <div key={meal.id} className="bg-white rounded-lg overflow-hidden shadow-sm flex-shrink-0 w-64">
                     <img 
-                      src={meal.image}
+                      src={meal.imageUrl}
                       alt={meal.name}
                       className="w-full h-32 object-cover"
                     />
@@ -217,26 +211,10 @@ const Home = () => {
                   </div>
                 ))}
                 {/* Duplicate items for seamless loop */}
-                {[
-                  {
-                    name: "Tarsh bel Tarsh",
-                    description: "Drizzled with tarsh bel matroosh saleh",
-                    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"
-                  },
-                  {
-                    name: "Tarsh a la Tarsh", 
-                    description: "Steamed with torshi metmatrash saleh",
-                    image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b"
-                  },
-                  {
-                    name: "Torsheeni Scalop bel Boloneezi",
-                    description: "Tale3 tarsheen ommo",
-                    image: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445"
-                  }
-                ].map((meal, index) => (
-                  <div key={`duplicate-${index}`} className="bg-white rounded-lg overflow-hidden shadow-sm flex-shrink-0 w-64">
+                {carouselMeals.filter(meal => meal.isActive).slice(0, 3).map((meal, index) => (
+                  <div key={`duplicate-${meal.id}`} className="bg-white rounded-lg overflow-hidden shadow-sm flex-shrink-0 w-64">
                     <img 
-                      src={meal.image}
+                      src={meal.imageUrl}
                       alt={meal.name}
                       className="w-full h-32 object-cover"
                     />
@@ -318,19 +296,34 @@ const Home = () => {
               </div>
               
               <div className="space-y-3">
-                {[
-                  "How does weekly delivery work?",
-                  "Can I skip or change a week?", 
-                  "What meals are on the menu?",
-                  "Do you use eco-friendly packaging?"
-                ].map((question, index) => (
-                  <div key={index} className="bg-white rounded-lg p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50">
-                    <span className="text-sm text-gray-700">{question}</span>
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                ))}
+                {faqs.filter(faq => faq.isActive).sort((a, b) => a.displayOrder - b.displayOrder).map((faq) => {
+                  const isExpanded = expandedFaqs.includes(faq.id);
+                  return (
+                    <div key={faq.id} className="bg-white rounded-lg overflow-hidden">
+                      <div 
+                        className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50"
+                        onClick={() => toggleFaq(faq.id)}
+                      >
+                        <span className="text-sm text-gray-700">{faq.question}</span>
+                        <svg 
+                          className={`w-4 h-4 text-gray-400 transform transition-transform ${
+                            isExpanded ? 'rotate-180' : ''
+                          }`} 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                      {isExpanded && (
+                        <div className="px-4 pb-4 border-t border-gray-100">
+                          <p className="text-sm text-gray-600 pt-3">{faq.answer}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -348,7 +341,7 @@ const Home = () => {
           containerClassName="h-16 w-48 p-[3px]"
           borderClassName="bg-[radial-gradient(#0ea5e9_40%,#3b82f6_60%,transparent_80%)] h-32 w-32"
         >
-          Get Started
+          {heroData?.ctaText || "Get Started"}
         </MovingBorderButton>
       </div>
 

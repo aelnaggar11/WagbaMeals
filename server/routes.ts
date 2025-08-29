@@ -2864,6 +2864,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public Landing Page API Endpoints
+  app.get('/api/landing/hero', async (req, res) => {
+    try {
+      const hero = await storage.getLandingHero();
+      res.json(hero || null);
+    } catch (error) {
+      console.error('Error fetching landing hero:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  app.get('/api/landing/carousel-meals', async (req, res) => {
+    try {
+      const meals = await storage.getLandingCarouselMeals();
+      res.json(meals);
+    } catch (error) {
+      console.error('Error fetching carousel meals:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  app.get('/api/landing/faqs', async (req, res) => {
+    try {
+      const faqs = await storage.getLandingFaqs();
+      res.json(faqs);
+    } catch (error) {
+      console.error('Error fetching FAQs:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // Landing Page Content Management Routes
   // Hero Section
   app.get('/api/admin/landing/hero', adminMiddleware, async (req, res) => {
