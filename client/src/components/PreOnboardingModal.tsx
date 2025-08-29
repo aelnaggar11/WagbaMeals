@@ -43,6 +43,11 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
         // Ignore logout errors - might not be logged in
         console.log('Logout attempt (expected if no existing session):', error);
       }
+      
+      // Also clear authentication cookies from browser
+      document.cookie = 'wagba_auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax';
+      document.cookie = 'connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax';
+      console.log('Browser authentication cookies cleared');
     },
     onSuccess: () => {
       // Clear all cached queries to ensure fresh state
