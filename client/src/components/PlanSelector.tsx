@@ -1,5 +1,6 @@
 
 import { Card, CardContent } from "@/components/ui/card";
+import { Heart } from "lucide-react";
 
 interface PlanSelectorProps {
   selectedMealCount: number;
@@ -31,14 +32,22 @@ const PlanSelector = ({ selectedMealCount, onMealCountChange, pricing, selectedP
             {mealCounts.map((count) => (
               <button
                 key={count}
-                className={`px-4 py-2 rounded-lg font-medium text-center transition-colors duration-200 focus:outline-none ${
+                className={`px-4 py-2 rounded-lg font-medium text-center transition-colors duration-200 focus:outline-none relative ${
                   selectedMealCount === count
                     ? "bg-primary text-white"
                     : "hover:bg-gray-100"
                 }`}
                 onClick={() => onMealCountChange(count)}
               >
-                <div>{count} Meals</div>
+                <div className="flex items-center justify-center gap-1">
+                  {count} Meals
+                  {count === 10 && (
+                    <Heart 
+                      className="w-4 h-4 text-red-500 fill-current" 
+                      aria-label="Recommended" 
+                    />
+                  )}
+                </div>
                 <div className="text-sm mt-1">EGP {getPrice(count)}</div>
               </button>
             ))}
