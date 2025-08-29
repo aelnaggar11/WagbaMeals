@@ -82,8 +82,8 @@ const OrderSummary = ({
     const isOnboardingFlow = window.location.search.includes('fromPlan') || 
                            window.location.pathname.includes('/menu/') && !window.location.search.includes('fromAccount');
 
-    // During onboarding, always save selections and go to auth page (Step 3)
-    if (isOnboardingFlow) {
+    // During onboarding, only go to auth page if user is not authenticated
+    if (isOnboardingFlow && !user) {
       try {
         // Save selections to backend session storage (more reliable than sessionStorage)
         await apiRequest('POST', '/api/temp/meal-selections', {
@@ -117,8 +117,8 @@ const OrderSummary = ({
       }
     }
 
-    // For non-onboarding flow (account page access), check authentication
-    if (!user) {
+    // For non-onboarding flow, check authentication
+    if (!isOnboardingFlow && !user) {
       // Redirect to auth page with return URL
       window.location.href = `/auth?returnTo=${encodeURIComponent(window.location.pathname)}`;
       return;
