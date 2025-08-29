@@ -87,30 +87,43 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
         console.error("Error parsing stored selections:", error);
       }
     } 
-    // Only load existing order data when NOT in onboarding flow and coming from account page
+    // Load existing order data when coming from account page (not onboarding)
     else if (existingOrder && !params.get("fromPlan") && params.get("fromAccount")) {
       setMealCount(existingOrder.mealCount);
       setPortionSize(existingOrder.defaultPortionSize);
       setSelectedMeals(existingOrder.items);
     }
-    // If in onboarding flow but no stored selections, ensure we maintain URL parameters
-    else if (params.get("fromPlan") && params.get("mealCount")) {
+    // If in onboarding flow, handle both URL parameters and existing order restoration
+    else if (params.get("fromPlan")) {
       const urlMealCount = parseInt(params.get("mealCount") || "10", 10);
       const urlPortionSize = params.get("portionSize") || "standard";
       
-      // Only update if different from current state to avoid unnecessary re-renders
-      if (mealCount !== urlMealCount) {
-        setMealCount(urlMealCount);
+      // If there's an existing order (returning from checkout), use its data
+      if (existingOrder && existingOrder.items.length > 0) {
+        console.log('Onboarding flow: restoring from existing order -', {
+          mealCount: existingOrder.mealCount,
+          portionSize: existingOrder.defaultPortionSize,
+          itemsCount: existingOrder.items.length
+        });
+        setMealCount(existingOrder.mealCount);
+        setPortionSize(existingOrder.defaultPortionSize);
+        setSelectedMeals(existingOrder.items);
+      } else {
+        // No existing order, use URL parameters
+        console.log('Onboarding flow: using URL parameters -', {
+          mealCount: urlMealCount,
+          portionSize: urlPortionSize,
+          fromPlan: params.get("fromPlan")
+        });
+        
+        // Only update if different from current state to avoid unnecessary re-renders
+        if (mealCount !== urlMealCount) {
+          setMealCount(urlMealCount);
+        }
+        if (portionSize !== urlPortionSize) {
+          setPortionSize(urlPortionSize);
+        }
       }
-      if (portionSize !== urlPortionSize) {
-        setPortionSize(urlPortionSize);
-      }
-      
-      console.log('Onboarding flow: maintaining URL parameters -', {
-        mealCount: urlMealCount,
-        portionSize: urlPortionSize,
-        fromPlan: params.get("fromPlan")
-      });
     }
   }, [existingOrder, weekId, toast, params]);
 
@@ -255,7 +268,7 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
         {!params.get("fromPlan") && !params.get("fromAccount") && <WeekSelector currentWeekId={weekId} />}
 
         {/* Delivery Slot Selector - Show during onboarding flow or when no existing order */}
-        {(params.get("fromPlan") || !existingOrder || !params.get("fromAccount")) && (
+        {(params.get("fromPlan") || (!existingOrder && !params.get("fromAccount"))) && (
           <div className="max-w-md mx-auto mb-8 bg-white p-6 rounded-lg shadow-sm border">
             <DeliverySlotSelector
               value={deliverySlot}
