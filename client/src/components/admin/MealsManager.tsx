@@ -152,7 +152,7 @@ const MealsManager = () => {
       setFormData({
         title: meal.title,
         description: meal.description,
-        category: meal.category,
+        category: meal.category || "main",
         calories: meal.calories,
         protein: meal.protein,
         ingredients: meal.ingredients || "",

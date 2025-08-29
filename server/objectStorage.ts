@@ -1,13 +1,62 @@
 import { Storage, File } from "@google-cloud/storage";
 import { Response } from "express";
 import { randomUUID } from "crypto";
-import {
-  ObjectAclPolicy,
-  ObjectPermission,
-  canAccessObject,
-  getObjectAclPolicy,
-  setObjectAclPolicy,
-} from "./objectAcl";
+// Simple ACL interface for object storage
+interface ObjectAclPolicy {
+  owner: string;
+  visibility: "public" | "private";
+}
+
+enum ObjectPermission {
+  READ = "read",
+  WRITE = "write",
+}
+
+// Simple ACL functions for basic object access
+async function setObjectAclPolicy(objectFile: any, aclPolicy: ObjectAclPolicy): Promise<void> {
+  // For now, just set basic metadata
+  await objectFile.setMetadata({
+    metadata: {
+      "custom:aclPolicy": JSON.stringify(aclPolicy),
+    },
+  });
+}
+
+async function getObjectAclPolicy(objectFile: any): Promise<ObjectAclPolicy | null> {
+  try {
+    const [metadata] = await objectFile.getMetadata();
+    const aclPolicy = metadata?.metadata?.["custom:aclPolicy"];
+    if (!aclPolicy) {
+      return null;
+    }
+    return JSON.parse(aclPolicy as string);
+  } catch {
+    return null;
+  }
+}
+
+async function canAccessObject({
+  userId,
+  objectFile,
+  requestedPermission,
+}: {
+  userId?: string;
+  objectFile: any;
+  requestedPermission: ObjectPermission;
+}): Promise<boolean> {
+  const aclPolicy = await getObjectAclPolicy(objectFile);
+  if (!aclPolicy) {
+    return false;
+  }
+
+  // Public objects are always accessible for read
+  if (aclPolicy.visibility === "public" && requestedPermission === ObjectPermission.READ) {
+    return true;
+  }
+
+  // For now, allow access if user is specified
+  return !!userId;
+}
 
 const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
 

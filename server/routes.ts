@@ -2969,27 +2969,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Object Storage Routes for Public File Serving
-  app.get("/public-objects/:filePath(*)", async (req, res) => {
-    const filePath = req.params.filePath;
-    const objectStorageService = new ObjectStorageService();
-    try {
-      const file = await objectStorageService.searchPublicObject(filePath);
-      if (!file) {
-        return res.status(404).json({ error: "File not found" });
-      }
-      objectStorageService.downloadObject(file, res);
-    } catch (error) {
-      console.error("Error searching for public object:", error);
-      return res.status(500).json({ error: "Internal server error" });
-    }
-  });
-
   // Object Storage Routes for Image Upload
   app.post("/api/admin/upload-image", adminMiddleware, async (req, res) => {
-    const objectStorageService = new ObjectStorageService();
     try {
+      console.log("Upload image request received");
+      const objectStorageService = new ObjectStorageService();
       const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      console.log("Generated upload URL successfully");
       res.json({ uploadURL });
     } catch (error) {
       console.error("Error generating upload URL:", error);
@@ -2998,20 +2984,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/admin/confirm-upload", adminMiddleware, async (req, res) => {
-    const { uploadURL } = req.body;
-    if (!uploadURL) {
-      return res.status(400).json({ error: "Upload URL is required" });
-    }
-
     try {
+      console.log("Confirm upload request received:", req.body);
+      const { uploadURL } = req.body;
+      if (!uploadURL) {
+        return res.status(400).json({ error: "Upload URL is required" });
+      }
+
       const objectStorageService = new ObjectStorageService();
       const publicPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
       
       // For admin uploaded images, make them publicly accessible
-      // by returning a public URL format
-      const publicURL = `/public-objects${publicPath.replace('/objects', '')}`;
+      // by returning a public URL format that serves directly from object storage
+      const imageUrl = uploadURL; // Use the actual upload URL as the image URL
       
-      res.json({ imageUrl: publicURL });
+      console.log("Returning image URL:", imageUrl);
+      res.json({ imageUrl });
     } catch (error) {
       console.error("Error confirming upload:", error);
       res.status(500).json({ error: "Failed to confirm upload" });
