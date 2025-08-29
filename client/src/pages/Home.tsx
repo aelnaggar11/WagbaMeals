@@ -68,7 +68,7 @@ const Home = () => {
                 backgroundRepeat: 'no-repeat',
                 backgroundPosition: 'center'
               }}
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/auth?tab=login&skip_progress=true')}
             >
               <span className="text-red-700 font-bold text-sm">
                 Login
