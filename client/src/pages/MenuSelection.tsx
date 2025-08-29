@@ -267,18 +267,16 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
         {/* Week Selection - Hidden during Get Started flow or when coming from account page */}
         {!params.get("fromPlan") && !params.get("fromAccount") && <WeekSelector currentWeekId={weekId} />}
 
-        {/* Delivery Slot Selector - Always show unless coming from account page */}
-        {!params.get("fromAccount") && (
-          <div className="max-w-md mx-auto mb-8 bg-white p-6 rounded-lg shadow-sm border">
-            <DeliverySlotSelector
-              value={deliverySlot}
-              onChange={(slot) => {
-                console.log('Delivery slot changed to:', slot);
-                setDeliverySlot(slot);
-              }}
-            />
-          </div>
-        )}
+        {/* Delivery Slot Selector - Always show */}
+        <div className="max-w-md mx-auto mb-8 bg-white p-6 rounded-lg shadow-sm border">
+          <DeliverySlotSelector
+            value={deliverySlot}
+            onChange={(slot) => {
+              console.log('Delivery slot changed to:', slot);
+              setDeliverySlot(slot);
+            }}
+          />
+        </div>
 
         {/* Meal Selection Count */}
         <div className="max-w-6xl mx-auto mb-6 flex items-center justify-between px-4">
