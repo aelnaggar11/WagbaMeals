@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { and, eq, inArray, or, sql } from "drizzle-orm";
 import * as schema from "@shared/schema";
-import { users, admins, meals, weeks, weekMeals, orders, orderItems, userWeekStatuses, neighborhoods, invitationCodes, waitlist, pricingConfigs, passwordResetTokens } from "@shared/schema";
+import { users, admins, meals, weeks, weekMeals, orders, orderItems, userWeekStatuses, neighborhoods, invitationCodes, waitlist, pricingConfigs, passwordResetTokens, landingHero, landingCarouselMeals, landingFaqs } from "@shared/schema";
 import type { 
   User, InsertUser, 
   Admin, InsertAdmin,
@@ -16,6 +16,9 @@ import type {
   WaitlistEntry, InsertWaitlistEntry,
   PricingConfig, InsertPricingConfig,
   PasswordResetToken, InsertPasswordResetToken,
+  LandingHero, InsertLandingHero,
+  LandingCarouselMeal, InsertLandingCarouselMeal,
+  LandingFaq, InsertLandingFaq,
   IStorage 
 } from "@shared/schema";
 
@@ -937,5 +940,107 @@ export class DatabaseStorage implements IStorage {
         // Expired tokens
         sql`${passwordResetTokens.expiresAt} < ${now}`
       ));
+  }
+
+  // Landing page content methods
+  async getLandingHero(): Promise<LandingHero | undefined> {
+    const [hero] = await db
+      .select()
+      .from(landingHero)
+      .where(eq(landingHero.isActive, true))
+      .orderBy(landingHero.id)
+      .limit(1);
+    return hero;
+  }
+
+  async createLandingHero(hero: InsertLandingHero): Promise<LandingHero> {
+    const [newHero] = await db
+      .insert(landingHero)
+      .values(hero)
+      .returning();
+    return newHero;
+  }
+
+  async updateLandingHero(id: number, hero: Partial<LandingHero>): Promise<LandingHero> {
+    const [updatedHero] = await db
+      .update(landingHero)
+      .set({ ...hero, updatedAt: new Date() })
+      .where(eq(landingHero.id, id))
+      .returning();
+    
+    if (!updatedHero) {
+      throw new Error(`Landing hero not found: ${id}`);
+    }
+    return updatedHero;
+  }
+
+  async getLandingCarouselMeals(): Promise<LandingCarouselMeal[]> {
+    return await db
+      .select()
+      .from(landingCarouselMeals)
+      .where(eq(landingCarouselMeals.isActive, true))
+      .orderBy(landingCarouselMeals.displayOrder);
+  }
+
+  async createLandingCarouselMeal(meal: InsertLandingCarouselMeal): Promise<LandingCarouselMeal> {
+    const [newMeal] = await db
+      .insert(landingCarouselMeals)
+      .values(meal)
+      .returning();
+    return newMeal;
+  }
+
+  async updateLandingCarouselMeal(id: number, meal: Partial<LandingCarouselMeal>): Promise<LandingCarouselMeal> {
+    const [updatedMeal] = await db
+      .update(landingCarouselMeals)
+      .set({ ...meal, updatedAt: new Date() })
+      .where(eq(landingCarouselMeals.id, id))
+      .returning();
+    
+    if (!updatedMeal) {
+      throw new Error(`Landing carousel meal not found: ${id}`);
+    }
+    return updatedMeal;
+  }
+
+  async deleteLandingCarouselMeal(id: number): Promise<void> {
+    await db
+      .delete(landingCarouselMeals)
+      .where(eq(landingCarouselMeals.id, id));
+  }
+
+  async getLandingFaqs(): Promise<LandingFaq[]> {
+    return await db
+      .select()
+      .from(landingFaqs)
+      .where(eq(landingFaqs.isActive, true))
+      .orderBy(landingFaqs.displayOrder);
+  }
+
+  async createLandingFaq(faq: InsertLandingFaq): Promise<LandingFaq> {
+    const [newFaq] = await db
+      .insert(landingFaqs)
+      .values(faq)
+      .returning();
+    return newFaq;
+  }
+
+  async updateLandingFaq(id: number, faq: Partial<LandingFaq>): Promise<LandingFaq> {
+    const [updatedFaq] = await db
+      .update(landingFaqs)
+      .set({ ...faq, updatedAt: new Date() })
+      .where(eq(landingFaqs.id, id))
+      .returning();
+    
+    if (!updatedFaq) {
+      throw new Error(`Landing FAQ not found: ${id}`);
+    }
+    return updatedFaq;
+  }
+
+  async deleteLandingFaq(id: number): Promise<void> {
+    await db
+      .delete(landingFaqs)
+      .where(eq(landingFaqs.id, id));
   }
 }

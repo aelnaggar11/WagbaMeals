@@ -14,6 +14,7 @@ import WaitlistManager from "@/components/admin/WaitlistManager";
 import UsersManagement from "@/components/admin/UsersManagement";
 import PricingManager from "@/components/admin/PricingManager";
 import AdminsManager from "@/components/admin/AdminsManager";
+import { LandingPageManager } from "@/components/admin/LandingPageManager";
 
 const Dashboard = () => {
   const [, navigate] = useLocation();
@@ -77,7 +78,7 @@ const Dashboard = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-7 mb-8 bg-gray-200 rounded-lg p-1">
+          <TabsList className="grid w-full grid-cols-8 mb-8 bg-gray-200 rounded-lg p-1">
             <TabsTrigger 
               value="weekly-menus" 
               className="data-[state=active]:bg-white data-[state=active]:text-primary text-gray-600"
@@ -119,6 +120,12 @@ const Dashboard = () => {
               className="data-[state=active]:bg-white data-[state=active]:text-primary text-gray-600"
             >
               Neighborhoods
+            </TabsTrigger>
+            <TabsTrigger 
+              value="landing-page" 
+              className="data-[state=active]:bg-white data-[state=active]:text-primary text-gray-600"
+            >
+              Landing Page
             </TabsTrigger>
           </TabsList>
 
@@ -175,6 +182,10 @@ const Dashboard = () => {
 
           <TabsContent value="neighborhoods" className="mt-0">
             <NeighborhoodsManager />
+          </TabsContent>
+
+          <TabsContent value="landing-page" className="mt-0">
+            <LandingPageManager />
           </TabsContent>
 
           <TabsContent value="invitation-codes" className="mt-0">

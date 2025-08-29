@@ -2864,6 +2864,162 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Landing Page Content Management Routes
+  // Hero Section
+  app.get('/api/admin/landing/hero', adminMiddleware, async (req, res) => {
+    try {
+      const hero = await storage.getLandingHero();
+      res.json(hero || null);
+    } catch (error) {
+      console.error('Error fetching landing hero:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.post('/api/admin/landing/hero', adminMiddleware, async (req, res) => {
+    try {
+      const heroData = req.body;
+      const hero = await storage.createLandingHero(heroData);
+      res.status(201).json(hero);
+    } catch (error) {
+      console.error('Error creating landing hero:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.patch('/api/admin/landing/hero/:id', adminMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const heroData = req.body;
+      const hero = await storage.updateLandingHero(id, heroData);
+      res.json(hero);
+    } catch (error) {
+      console.error('Error updating landing hero:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Carousel Meals
+  app.get('/api/admin/landing/carousel-meals', adminMiddleware, async (req, res) => {
+    try {
+      const meals = await storage.getLandingCarouselMeals();
+      res.json(meals);
+    } catch (error) {
+      console.error('Error fetching carousel meals:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.post('/api/admin/landing/carousel-meals', adminMiddleware, async (req, res) => {
+    try {
+      const mealData = req.body;
+      const meal = await storage.createLandingCarouselMeal(mealData);
+      res.status(201).json(meal);
+    } catch (error) {
+      console.error('Error creating carousel meal:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.patch('/api/admin/landing/carousel-meals/:id', adminMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const mealData = req.body;
+      const meal = await storage.updateLandingCarouselMeal(id, mealData);
+      res.json(meal);
+    } catch (error) {
+      console.error('Error updating carousel meal:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.delete('/api/admin/landing/carousel-meals/:id', adminMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteLandingCarouselMeal(id);
+      res.json({ message: 'Carousel meal deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting carousel meal:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // FAQs
+  app.get('/api/admin/landing/faqs', adminMiddleware, async (req, res) => {
+    try {
+      const faqs = await storage.getLandingFaqs();
+      res.json(faqs);
+    } catch (error) {
+      console.error('Error fetching FAQs:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.post('/api/admin/landing/faqs', adminMiddleware, async (req, res) => {
+    try {
+      const faqData = req.body;
+      const faq = await storage.createLandingFaq(faqData);
+      res.status(201).json(faq);
+    } catch (error) {
+      console.error('Error creating FAQ:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.patch('/api/admin/landing/faqs/:id', adminMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const faqData = req.body;
+      const faq = await storage.updateLandingFaq(id, faqData);
+      res.json(faq);
+    } catch (error) {
+      console.error('Error updating FAQ:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.delete('/api/admin/landing/faqs/:id', adminMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteLandingFaq(id);
+      res.json({ message: 'FAQ deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting FAQ:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Public endpoints for landing page content
+  app.get('/api/landing/hero', async (req, res) => {
+    try {
+      const hero = await storage.getLandingHero();
+      res.json(hero || null);
+    } catch (error) {
+      console.error('Error fetching landing hero:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.get('/api/landing/carousel-meals', async (req, res) => {
+    try {
+      const meals = await storage.getLandingCarouselMeals();
+      res.json(meals);
+    } catch (error) {
+      console.error('Error fetching carousel meals:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.get('/api/landing/faqs', async (req, res) => {
+    try {
+      const faqs = await storage.getLandingFaqs();
+      res.json(faqs);
+    } catch (error) {
+      console.error('Error fetching FAQs:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   // Super Admin Routes - Admin Management
   // Get all admins (super admin only)
   app.get('/api/admin/admins', superAdminMiddleware, async (req, res) => {

@@ -430,7 +430,90 @@ export interface IStorage {
   getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
   markPasswordResetTokenUsed(tokenId: number): Promise<void>;
   cleanupExpiredTokens(): Promise<void>;
+  
+  // Landing page content methods
+  getLandingHero(): Promise<LandingHero | undefined>;
+  createLandingHero(hero: InsertLandingHero): Promise<LandingHero>;
+  updateLandingHero(id: number, hero: Partial<LandingHero>): Promise<LandingHero>;
+  
+  getLandingCarouselMeals(): Promise<LandingCarouselMeal[]>;
+  createLandingCarouselMeal(meal: InsertLandingCarouselMeal): Promise<LandingCarouselMeal>;
+  updateLandingCarouselMeal(id: number, meal: Partial<LandingCarouselMeal>): Promise<LandingCarouselMeal>;
+  deleteLandingCarouselMeal(id: number): Promise<void>;
+  
+  getLandingFaqs(): Promise<LandingFaq[]>;
+  createLandingFaq(faq: InsertLandingFaq): Promise<LandingFaq>;
+  updateLandingFaq(id: number, faq: Partial<LandingFaq>): Promise<LandingFaq>;
+  deleteLandingFaq(id: number): Promise<void>;
 }
+
+// Landing Page Content Models
+export const landingHero = pgTable("landing_hero", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  subtitle: text("subtitle"),
+  backgroundImageUrl: text("background_image_url"),
+  ctaText: text("cta_text").default("Get Started"),
+  ctaUrl: text("cta_url").default("/"),
+  isActive: boolean("is_active").default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const landingCarouselMeals = pgTable("landing_carousel_meals", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  imageUrl: text("image_url"),
+  displayOrder: integer("display_order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const landingFaqs = pgTable("landing_faqs", {
+  id: serial("id").primaryKey(),
+  question: text("question").notNull(),
+  answer: text("answer").notNull(),
+  displayOrder: integer("display_order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Landing page insert schemas
+export const insertLandingHeroSchema = createInsertSchema(landingHero).pick({
+  title: true,
+  subtitle: true,
+  backgroundImageUrl: true,
+  ctaText: true,
+  ctaUrl: true,
+  isActive: true,
+});
+
+export const insertLandingCarouselMealSchema = createInsertSchema(landingCarouselMeals).pick({
+  name: true,
+  description: true,
+  imageUrl: true,
+  displayOrder: true,
+  isActive: true,
+});
+
+export const insertLandingFaqSchema = createInsertSchema(landingFaqs).pick({
+  question: true,
+  answer: true,
+  displayOrder: true,
+  isActive: true,
+});
+
+// Landing page types
+export type LandingHero = typeof landingHero.$inferSelect;
+export type InsertLandingHero = z.infer<typeof insertLandingHeroSchema>;
+
+export type LandingCarouselMeal = typeof landingCarouselMeals.$inferSelect;
+export type InsertLandingCarouselMeal = z.infer<typeof insertLandingCarouselMealSchema>;
+
+export type LandingFaq = typeof landingFaqs.$inferSelect;
+export type InsertLandingFaq = z.infer<typeof insertLandingFaqSchema>;
 
 // Helper functions for pricing
 export { getPriceForMealCount };

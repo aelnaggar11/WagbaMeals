@@ -1,0 +1,700 @@
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Trash2, Edit, Plus, Move, Upload } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+
+// Schemas for form validation
+const heroSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  subtitle: z.string().optional(),
+  backgroundImageUrl: z.string().url().optional().or(z.literal("")),
+  ctaText: z.string().default("Get Started"),
+  ctaUrl: z.string().default("/"),
+  isActive: z.boolean().default(true),
+});
+
+const carouselMealSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  imageUrl: z.string().url().optional().or(z.literal("")),
+  displayOrder: z.number().default(0),
+  isActive: z.boolean().default(true),
+});
+
+const faqSchema = z.object({
+  question: z.string().min(1, "Question is required"),
+  answer: z.string().min(1, "Answer is required"),
+  displayOrder: z.number().default(0),
+  isActive: z.boolean().default(true),
+});
+
+type HeroFormData = z.infer<typeof heroSchema>;
+type CarouselMealFormData = z.infer<typeof carouselMealSchema>;
+type FaqFormData = z.infer<typeof faqSchema>;
+
+export function LandingPageManager() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch data
+  const { data: hero } = useQuery({
+    queryKey: ['/api/admin/landing/hero'],
+  });
+
+  const { data: carouselMeals = [] } = useQuery({
+    queryKey: ['/api/admin/landing/carousel-meals'],
+  });
+
+  const { data: faqs = [] } = useQuery({
+    queryKey: ['/api/admin/landing/faqs'],
+  });
+
+  // Hero Section Component
+  const HeroSection = () => {
+    const [isEditing, setIsEditing] = useState(false);
+    
+    const heroForm = useForm<HeroFormData>({
+      resolver: zodResolver(heroSchema),
+      defaultValues: hero || {
+        title: "",
+        subtitle: "",
+        backgroundImageUrl: "",
+        ctaText: "Get Started",
+        ctaUrl: "/",
+        isActive: true,
+      },
+    });
+
+    const heroMutation = useMutation({
+      mutationFn: async (data: HeroFormData) => {
+        if (hero?.id) {
+          return await apiRequest(`/api/admin/landing/hero/${hero.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+          });
+        } else {
+          return await apiRequest('/api/admin/landing/hero', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+          });
+        }
+      },
+      onSuccess: () => {
+        toast({
+          title: "Success",
+          description: "Hero section updated successfully",
+        });
+        queryClient.refetchQueries({ queryKey: ['/api/admin/landing/hero'] });
+        setIsEditing(false);
+      },
+      onError: (error) => {
+        toast({
+          title: "Error",
+          description: "Failed to update hero section",
+          variant: "destructive",
+        });
+      },
+    });
+
+    const handleHeroSubmit = (data: HeroFormData) => {
+      heroMutation.mutate(data);
+    };
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            Hero Section
+            <Button
+              onClick={() => setIsEditing(!isEditing)}
+              variant={isEditing ? "outline" : "default"}
+            >
+              {isEditing ? "Cancel" : <Edit className="h-4 w-4" />}
+            </Button>
+          </CardTitle>
+          <CardDescription>
+            Manage the main hero section of the landing page
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isEditing ? (
+            <Form {...heroForm}>
+              <form onSubmit={heroForm.handleSubmit(handleHeroSubmit)} className="space-y-4">
+                <FormField
+                  control={heroForm.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Enter hero title" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={heroForm.control}
+                  name="subtitle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Subtitle</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} placeholder="Enter hero subtitle" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={heroForm.control}
+                  name="backgroundImageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Background Image URL</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="https://..." />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={heroForm.control}
+                    name="ctaText"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CTA Button Text</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={heroForm.control}
+                    name="ctaUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CTA Button URL</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <Button type="submit" disabled={heroMutation.isPending}>
+                  {heroMutation.isPending ? "Saving..." : "Save Hero Section"}
+                </Button>
+              </form>
+            </Form>
+          ) : (
+            <div className="space-y-2">
+              <p><strong>Title:</strong> {hero?.title || "Not set"}</p>
+              <p><strong>Subtitle:</strong> {hero?.subtitle || "Not set"}</p>
+              <p><strong>Background Image:</strong> {hero?.backgroundImageUrl ? "Set" : "Not set"}</p>
+              <p><strong>CTA Text:</strong> {hero?.ctaText || "Get Started"}</p>
+              <p><strong>CTA URL:</strong> {hero?.ctaUrl || "/"}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // Carousel Meals Component
+  const CarouselMealsSection = () => {
+    const [editingMeal, setEditingMeal] = useState<any>(null);
+    const [showAddForm, setShowAddForm] = useState(false);
+    
+    const carouselForm = useForm<CarouselMealFormData>({
+      resolver: zodResolver(carouselMealSchema),
+      defaultValues: {
+        name: "",
+        description: "",
+        imageUrl: "",
+        displayOrder: 0,
+        isActive: true,
+      },
+    });
+
+    const carouselMutation = useMutation({
+      mutationFn: async ({ data, id }: { data: CarouselMealFormData; id?: number }) => {
+        if (id) {
+          return apiRequest(`/api/admin/landing/carousel-meals/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+          });
+        } else {
+          return apiRequest('/api/admin/landing/carousel-meals', {
+            method: 'POST',
+            body: JSON.stringify(data),
+          });
+        }
+      },
+      onSuccess: () => {
+        toast({
+          title: "Success",
+          description: "Carousel meal updated successfully",
+        });
+        queryClient.refetchQueries({ queryKey: ['/api/admin/landing/carousel-meals'] });
+        setEditingMeal(null);
+        setShowAddForm(false);
+        carouselForm.reset();
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to update carousel meal",
+          variant: "destructive",
+        });
+      },
+    });
+
+    const deleteMealMutation = useMutation({
+      mutationFn: (id: number) => 
+        apiRequest(`/api/admin/landing/carousel-meals/${id}`, {
+          method: 'DELETE',
+        }),
+      onSuccess: () => {
+        toast({
+          title: "Success",
+          description: "Meal deleted successfully",
+        });
+        queryClient.refetchQueries({ queryKey: ['/api/admin/landing/carousel-meals'] });
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to delete meal",
+          variant: "destructive",
+        });
+      },
+    });
+
+    const handleCarouselSubmit = (data: CarouselMealFormData) => {
+      carouselMutation.mutate({
+        data,
+        id: editingMeal?.id,
+      });
+    };
+
+    const startEdit = (meal: any) => {
+      setEditingMeal(meal);
+      carouselForm.reset(meal);
+    };
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            Menu Carousel
+            <Button
+              onClick={() => setShowAddForm(true)}
+              size="sm"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Meal
+            </Button>
+          </CardTitle>
+          <CardDescription>
+            Manage the meals shown in the menu carousel
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {carouselMeals.map((meal: any) => (
+              <div key={meal.id} className="flex items-center justify-between p-4 border rounded">
+                <div>
+                  <h4 className="font-medium">{meal.name}</h4>
+                  <p className="text-sm text-gray-600">{meal.description}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => startEdit(meal)}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Meal</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{meal.name}"? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => deleteMealMutation.mutate(meal.id)}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Add/Edit Form */}
+          {(showAddForm || editingMeal) && (
+            <div className="mt-6 p-4 border rounded">
+              <h4 className="font-medium mb-4">
+                {editingMeal ? "Edit Meal" : "Add New Meal"}
+              </h4>
+              <Form {...carouselForm}>
+                <form onSubmit={carouselForm.handleSubmit(handleCarouselSubmit)} className="space-y-4">
+                  <FormField
+                    control={carouselForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Meal name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={carouselForm.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} placeholder="Meal description" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={carouselForm.control}
+                    name="imageUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Image URL</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="https://..." />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={carouselForm.control}
+                    name="displayOrder"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Display Order</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            type="number"
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex gap-2">
+                    <Button type="submit" disabled={carouselMutation.isPending}>
+                      {carouselMutation.isPending ? "Saving..." : editingMeal ? "Update Meal" : "Add Meal"}
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={() => {
+                        setEditingMeal(null);
+                        setShowAddForm(false);
+                        carouselForm.reset();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // FAQs Component
+  const FaqsSection = () => {
+    const [editingFaq, setEditingFaq] = useState<any>(null);
+    const [showAddForm, setShowAddForm] = useState(false);
+    
+    const faqForm = useForm<FaqFormData>({
+      resolver: zodResolver(faqSchema),
+      defaultValues: {
+        question: "",
+        answer: "",
+        displayOrder: 0,
+        isActive: true,
+      },
+    });
+
+    const faqMutation = useMutation({
+      mutationFn: async ({ data, id }: { data: FaqFormData; id?: number }) => {
+        if (id) {
+          return apiRequest(`/api/admin/landing/faqs/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+          });
+        } else {
+          return apiRequest('/api/admin/landing/faqs', {
+            method: 'POST',
+            body: JSON.stringify(data),
+          });
+        }
+      },
+      onSuccess: () => {
+        toast({
+          title: "Success",
+          description: "FAQ updated successfully",
+        });
+        queryClient.refetchQueries({ queryKey: ['/api/admin/landing/faqs'] });
+        setEditingFaq(null);
+        setShowAddForm(false);
+        faqForm.reset();
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to update FAQ",
+          variant: "destructive",
+        });
+      },
+    });
+
+    const deleteFaqMutation = useMutation({
+      mutationFn: (id: number) => 
+        apiRequest(`/api/admin/landing/faqs/${id}`, {
+          method: 'DELETE',
+        }),
+      onSuccess: () => {
+        toast({
+          title: "Success",
+          description: "FAQ deleted successfully",
+        });
+        queryClient.refetchQueries({ queryKey: ['/api/admin/landing/faqs'] });
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to delete FAQ",
+          variant: "destructive",
+        });
+      },
+    });
+
+    const handleFaqSubmit = (data: FaqFormData) => {
+      faqMutation.mutate({
+        data,
+        id: editingFaq?.id,
+      });
+    };
+
+    const startEdit = (faq: any) => {
+      setEditingFaq(faq);
+      faqForm.reset(faq);
+    };
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            FAQs
+            <Button
+              onClick={() => setShowAddForm(true)}
+              size="sm"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add FAQ
+            </Button>
+          </CardTitle>
+          <CardDescription>
+            Manage frequently asked questions
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {faqs.map((faq: any) => (
+              <div key={faq.id} className="p-4 border rounded">
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="font-medium">{faq.question}</h4>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={() => startEdit(faq)}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete FAQ</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this FAQ? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteFaqMutation.mutate(faq.id)}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600">{faq.answer}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Add/Edit Form */}
+          {(showAddForm || editingFaq) && (
+            <div className="mt-6 p-4 border rounded">
+              <h4 className="font-medium mb-4">
+                {editingFaq ? "Edit FAQ" : "Add New FAQ"}
+              </h4>
+              <Form {...faqForm}>
+                <form onSubmit={faqForm.handleSubmit(handleFaqSubmit)} className="space-y-4">
+                  <FormField
+                    control={faqForm.control}
+                    name="question"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Question</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Enter question" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={faqForm.control}
+                    name="answer"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Answer</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} placeholder="Enter answer" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={faqForm.control}
+                    name="displayOrder"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Display Order</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            type="number"
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex gap-2">
+                    <Button type="submit" disabled={faqMutation.isPending}>
+                      {faqMutation.isPending ? "Saving..." : editingFaq ? "Update FAQ" : "Add FAQ"}
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={() => {
+                        setEditingFaq(null);
+                        setShowAddForm(false);
+                        faqForm.reset();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  return (
+    <div className="container mx-auto p-6">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold">Landing Page Management</h1>
+        <p className="text-gray-600">Edit and manage the content of your landing page</p>
+      </div>
+
+      <div className="space-y-6">
+        <HeroSection />
+        <CarouselMealsSection />
+        <FaqsSection />
+      </div>
+    </div>
+  );
+}
