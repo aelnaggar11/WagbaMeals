@@ -27,13 +27,15 @@ interface AccountPageMealSelectorProps {
   orderId: number | null;
   mealCount: number;
   items: WeekItem[];
+  defaultPortionSize?: string;
 }
 
 export default function AccountPageMealSelector({
   weekId,
   orderId,
   mealCount,
-  items = []
+  items = [],
+  defaultPortionSize = 'standard'
 }: AccountPageMealSelectorProps) {
   const { toast } = useToast();
 
@@ -191,14 +193,19 @@ export default function AccountPageMealSelector({
                       <div className="flex-1">
                         <h4 className="font-medium text-lg">{meal.title}</h4>
                         <div className="flex items-center mt-1 text-sm text-gray-600">
-                          <span>{meal.calories || 0} cal</span>
+                          <span>
+                            {defaultPortionSize === 'large' 
+                              ? meal.caloriesLarge || Math.round(meal.calories * 1.5) 
+                              : meal.calories || 0
+                            } cal
+                          </span>
                           <span className="mx-2">•</span>
-                          <span>{meal.protein || 0}g protein</span>
-                          {items.some(item => item.mealId === meal.id && item.portionSize === 'large') && (
-                            <span className="mx-2 text-xs text-blue-600 font-medium">
-                              (Large: {meal.caloriesLarge || Math.round(meal.calories * 1.5)} cal, {meal.proteinLarge || Math.round(meal.protein * 1.5)}g protein)
-                            </span>
-                          )}
+                          <span>
+                            {defaultPortionSize === 'large' 
+                              ? meal.proteinLarge || Math.round(meal.protein * 1.5) 
+                              : meal.protein || 0
+                            }g protein
+                          </span>
                         </div>
                       </div>
 
