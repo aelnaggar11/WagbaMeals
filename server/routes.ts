@@ -2991,12 +2991,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Upload URL is required" });
       }
 
-      const objectStorageService = new ObjectStorageService();
-      const publicPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+      // Extract the object path directly from the Google Cloud Storage URL
+      const url = new URL(uploadURL);
+      const pathname = url.pathname; // e.g., "/replit-objstore-bucket/.private/uploads/uuid"
       
-      // Return a serving URL that points to our server route
-      const imageUrl = `/api/images${publicPath}`;
+      // Find the uploads part and extract the UUID
+      const uploadsMatch = pathname.match(/\/\.private\/uploads\/([^?]+)/);
+      if (!uploadsMatch) {
+        console.error("Could not extract upload ID from URL:", uploadURL);
+        return res.status(400).json({ error: "Invalid upload URL format" });
+      }
       
+      const uploadId = uploadsMatch[1];
+      const imageUrl = `/api/images/objects/uploads/${uploadId}`;
+      
+      console.log("Extracted upload ID:", uploadId);
       console.log("Returning serving URL:", imageUrl);
       res.json({ imageUrl });
     } catch (error) {
