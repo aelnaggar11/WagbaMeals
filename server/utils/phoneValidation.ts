@@ -46,7 +46,7 @@ export function validateEgyptianPhoneNumber(phone: string): {
   // Additional validation for Egyptian mobile network prefixes
   const prefix = normalizedDigits.substring(0, 3);
   const validPrefixes = [
-    '100', '101', '106', '109', '111', '112', '114', '115', '120', '121', '122', '127', '128',
+    '100', '101', '106', '109', '111', '112', '114', '115', '120', '121', '122', '123', '127', '128',
     '155', '156', '157', '158', '159', '150', '151', '152', '154'
   ];
   
