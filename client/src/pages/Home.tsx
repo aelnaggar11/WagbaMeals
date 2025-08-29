@@ -111,7 +111,7 @@ const Home = () => {
               <div className="flex gap-4">
                 <div className="text-5xl font-bold opacity-90">01</div>
                 <div>
-                  <h3 className="text-xl font-bold mb-2">Select your favorites.</h3>
+                  <h3 className="text-xl font-bold mb-2">Select your favorites</h3>
                   <p className="text-red-100">
                     Choose meals that match your <em>mood</em> or <em>diet</em>.
                   </p>
@@ -121,7 +121,7 @@ const Home = () => {
               <div className="flex gap-4">
                 <div className="text-5xl font-bold opacity-90">02</div>
                 <div>
-                  <h3 className="text-xl font-bold mb-2">We get cookin'.</h3>
+                  <h3 className="text-xl font-bold mb-2">We get cookin'</h3>
                   <p className="text-red-100">
                     Our kitchen prepares everything fresh, <em>just for you</em>.
                   </p>
@@ -131,7 +131,7 @@ const Home = () => {
               <div className="flex gap-4">
                 <div className="text-5xl font-bold opacity-90">03</div>
                 <div>
-                  <h3 className="text-xl font-bold mb-2">Delivered fresh.</h3>
+                  <h3 className="text-xl font-bold mb-2">Delivered fresh</h3>
                   <p className="text-red-100">
                     Your meals arrive fresh and chilled — ready to heat and eat.
                   </p>
