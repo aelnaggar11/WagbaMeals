@@ -22,7 +22,7 @@ export const emailService = {
 
       const msg = {
         to,
-        from: 'noreply@wagba.food', // This should be a verified sender in SendGrid
+        from: 'aelnaggar35@gmail.com', // Using verified sender email
         subject: 'Password Reset - Wagba',
         html: `
           <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #333;">
