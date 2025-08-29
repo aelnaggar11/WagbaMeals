@@ -15,13 +15,15 @@ interface InlineMealSelectorProps {
     mealId: number;
     portionSize: string;
   }>;
+  subscriptionType?: string;
 }
 
 export default function InlineMealSelector({
   weekId,
   orderId,
   mealCount,
-  selectedItems
+  selectedItems,
+  subscriptionType = 'standard'
 }: InlineMealSelectorProps) {
   const { toast } = useToast();
 
@@ -151,12 +153,29 @@ export default function InlineMealSelector({
               <div className="flex-1">
                 <h4 className="font-medium text-lg">{meal.title}</h4>
                 <div className="flex items-center mt-1 text-sm text-gray-600">
-                  <span>{meal.calories || 0} cal</span>
-                  <span className="mx-2">•</span>
-                  <span>{meal.protein || 0}g protein</span>
-                  <span className="mx-2 text-xs text-gray-500">
-                    (Large: {meal.caloriesLarge || Math.round(meal.calories * 1.5)} cal, {meal.proteinLarge || Math.round(meal.protein * 1.5)}g protein)
-                  </span>
+                  {(subscriptionType === 'mixed' || subscriptionType === 'mix') ? (
+                    <>
+                      <span>Standard: {meal.calories || 0} cal, {meal.protein || 0}g protein</span>
+                      <span className="mx-2">•</span>
+                      <span>Large: {meal.caloriesLarge || Math.round(meal.calories * 1.5)} cal, {meal.proteinLarge || Math.round(meal.protein * 1.5)}g protein</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>
+                        {subscriptionType === 'large' ? 
+                          (meal.caloriesLarge || Math.round(meal.calories * 1.5)) : 
+                          (meal.calories || 0)
+                        } cal
+                      </span>
+                      <span className="mx-2">•</span>
+                      <span>
+                        {subscriptionType === 'large' ? 
+                          (meal.proteinLarge || Math.round(meal.protein * 1.5)) : 
+                          (meal.protein || 0)
+                        }g protein
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
               
