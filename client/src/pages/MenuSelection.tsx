@@ -313,9 +313,29 @@ const MenuSelection = ({ weekId }: MenuSelectionProps) => {
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg">{meal.title}</h3>
                         <div className="flex items-center mt-1 text-sm text-gray-600">
-                          <span>{meal.calories || 0} cal</span>
-                          <span className="mx-2">•</span>
-                          <span>{meal.protein || 0}g protein</span>
+                          {(portionSize === 'mixed' || portionSize === 'mix') ? (
+                            <>
+                              <span>Standard: {meal.calories || 0} cal, {meal.protein || 0}g protein</span>
+                              <span className="mx-2">•</span>
+                              <span>Large: {meal.caloriesLarge || Math.round((meal.calories || 0) * 1.5)} cal, {meal.proteinLarge || Math.round((meal.protein || 0) * 1.5)}g protein</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>
+                                {portionSize === 'large' ? 
+                                  (meal.caloriesLarge || Math.round((meal.calories || 0) * 1.5)) : 
+                                  (meal.calories || 0)
+                                } cal
+                              </span>
+                              <span className="mx-2">•</span>
+                              <span>
+                                {portionSize === 'large' ? 
+                                  (meal.proteinLarge || Math.round((meal.protein || 0) * 1.5)) : 
+                                  (meal.protein || 0)
+                                }g protein
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
