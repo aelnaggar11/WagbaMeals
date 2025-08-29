@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,25 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
   const [neighborhoodError, setNeighborhoodError] = useState("");
   const [emailError, setEmailError] = useState("");
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Clear existing authentication state before validation
+  const clearAuthMutation = useMutation({
+    mutationFn: async () => {
+      try {
+        await apiRequest('POST', '/api/auth/logout');
+        console.log('Previous authentication state cleared successfully');
+      } catch (error) {
+        // Ignore logout errors - might not be logged in
+        console.log('Logout attempt (expected if no existing session):', error);
+      }
+    },
+    onSuccess: () => {
+      // Clear all cached queries to ensure fresh state
+      queryClient.clear();
+      console.log('Query cache cleared for fresh onboarding experience');
+    }
+  });
 
   // Fetch all neighborhoods (not just serviced ones)
   const { data: neighborhoodsData } = useQuery<{ neighborhoods: Neighborhood[] }>({
@@ -114,7 +133,15 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
       // Still proceed with validation to add to waitlist
     }
 
-    validateMutation.mutate({ email, neighborhood, invitationCode });
+    // First clear any existing authentication state, then validate
+    console.log('Clearing existing authentication state before onboarding...');
+    clearAuthMutation.mutate(undefined, {
+      onSettled: () => {
+        // Proceed with validation regardless of logout success/failure
+        console.log('Proceeding with new user validation...');
+        validateMutation.mutate({ email, neighborhood, invitationCode });
+      }
+    });
   };
 
   const handleSuccess = () => {
