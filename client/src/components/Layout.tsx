@@ -12,16 +12,12 @@ const Layout = ({ children }: LayoutProps) => {
   const [location] = useLocation();
   
   // Hide navbar on flow pages and home page (has custom header)
-  const hideNavbar = [
-    '/',
-    '/meal-plans',
-    '/menu',
-    '/auth',
-    '/checkout'
-  ].some(path => location === path || location.startsWith(path));
-
-  // Debug logging
-  console.log('Layout debug:', { location, hideNavbar, showNavbar: !hideNavbar });
+  const hideNavbar = 
+    location === '/' ||
+    location.startsWith('/meal-plans') ||
+    location.startsWith('/menu') ||
+    location.startsWith('/auth') ||
+    location.startsWith('/checkout');
 
   return (
     <div className="flex flex-col min-h-screen">
