@@ -2994,15 +2994,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const objectStorageService = new ObjectStorageService();
       const publicPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
       
-      // For admin uploaded images, make them publicly accessible
-      // by returning a public URL format that serves directly from object storage
-      const imageUrl = uploadURL; // Use the actual upload URL as the image URL
+      // Return a serving URL that points to our server route
+      const imageUrl = `/api/images${publicPath}`;
       
-      console.log("Returning image URL:", imageUrl);
+      console.log("Returning serving URL:", imageUrl);
       res.json({ imageUrl });
     } catch (error) {
       console.error("Error confirming upload:", error);
       res.status(500).json({ error: "Failed to confirm upload" });
+    }
+  });
+
+  // Route to serve uploaded images
+  app.get("/api/images/objects/:objectPath(*)", async (req, res) => {
+    try {
+      const objectPath = `/objects/${req.params.objectPath}`;
+      console.log("Serving image:", objectPath);
+      
+      const objectStorageService = new ObjectStorageService();
+      const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
+      
+      // Set cache headers for better performance
+      res.set({
+        'Cache-Control': 'public, max-age=86400', // 24 hours
+      });
+      
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Error serving image:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.status(404).json({ error: "Image not found" });
+      }
+      return res.status(500).json({ error: "Internal server error" });
     }
   });
 
