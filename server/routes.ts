@@ -14,6 +14,7 @@ import { sendEmail } from "./sendgrid";
 import path from "path";
 import fs from "fs";
 import { validateEgyptianPhoneNumber } from "./utils/phoneValidation";
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 
 declare module 'express-session' {
   interface SessionData {
@@ -2965,6 +2966,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating payment status:', error);
       res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Object Storage Routes for Public File Serving
+  app.get("/public-objects/:filePath(*)", async (req, res) => {
+    const filePath = req.params.filePath;
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const file = await objectStorageService.searchPublicObject(filePath);
+      if (!file) {
+        return res.status(404).json({ error: "File not found" });
+      }
+      objectStorageService.downloadObject(file, res);
+    } catch (error) {
+      console.error("Error searching for public object:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Object Storage Routes for Image Upload
+  app.post("/api/admin/upload-image", adminMiddleware, async (req, res) => {
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error generating upload URL:", error);
+      res.status(500).json({ error: "Failed to generate upload URL" });
+    }
+  });
+
+  app.post("/api/admin/confirm-upload", adminMiddleware, async (req, res) => {
+    const { uploadURL } = req.body;
+    if (!uploadURL) {
+      return res.status(400).json({ error: "Upload URL is required" });
+    }
+
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const publicPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+      
+      // For admin uploaded images, make them publicly accessible
+      // by returning a public URL format
+      const publicURL = `/public-objects${publicPath.replace('/objects', '')}`;
+      
+      res.json({ imageUrl: publicURL });
+    } catch (error) {
+      console.error("Error confirming upload:", error);
+      res.status(500).json({ error: "Failed to confirm upload" });
     }
   });
 

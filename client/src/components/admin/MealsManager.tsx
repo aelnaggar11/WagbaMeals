@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useToast } from "@/hooks/use-toast";
 import { Meal } from "@shared/schema";
 import { Plus, Edit, Trash2, Save, X } from "lucide-react";
+import { ImageUpload } from "./ImageUpload";
 
 interface MealFormData {
   title: string;
@@ -292,17 +293,12 @@ const MealsManager = () => {
                   />
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="imageUrl">Image URL *</Label>
-                  <Input
-                    id="imageUrl"
-                    type="url"
-                    value={formData.imageUrl}
-                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                    placeholder="https://example.com/meal-image.jpg"
-                    required
-                  />
-                </div>
+                <ImageUpload
+                  label="Meal Image *"
+                  value={formData.imageUrl}
+                  onChange={(imageUrl) => setFormData({ ...formData, imageUrl })}
+                  placeholder="Enter image URL or upload your own image"
+                />
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
