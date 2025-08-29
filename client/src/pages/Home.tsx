@@ -10,6 +10,9 @@ import logoImage from "@assets/Logo tm.png";
 import headerPatternImage from "@assets/Header BG Pattern_1753742643683.png";
 import loginCircleImage from "@assets/Login Circle_1753742724844.png";
 import quoteBgPatternImage from "@assets/Quote BG Pattern_1753819991596.png";
+import wiwIcon1 from "@assets/wiw-icon-1.svg";
+import wiwIcon2 from "@assets/wiw-icon-2.svg";
+import wiwIcon3 from "@assets/wiw-icon-3.svg";
 
 const Home = () => {
   const [, navigate] = useLocation();
@@ -259,10 +262,8 @@ const Home = () => {
             
             <div className="space-y-6">
               <div className="flex gap-4 items-start">
-                <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 6.5V7.5C15 8.3 14.3 9 13.5 9S12 8.3 12 7.5V6.5L9 7V9C9 10.1 8.1 11 7 11S5 10.1 5 9V7L3 7.5V9C3 11.8 4.7 14.2 7.2 15.2C7.7 17.2 9.2 18.8 11.2 19.5L12 21.5L12.8 19.5C14.8 18.8 16.3 17.2 16.8 15.2C19.3 14.2 21 11.8 21 9Z"/>
-                  </svg>
+                <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
+                  <img src={wiwIcon1} alt="Premium culinary experience" className="w-8 h-8" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold mb-2">Premium culinary experience:</h3>
@@ -273,10 +274,8 @@ const Home = () => {
               </div>
               
               <div className="flex gap-4 items-start">
-                <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z"/>
-                  </svg>
+                <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
+                  <img src={wiwIcon2} alt="Health conscious" className="w-8 h-8" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold mb-2">Health conscious:</h3>
@@ -287,10 +286,8 @@ const Home = () => {
               </div>
               
               <div className="flex gap-4 items-start">
-                <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M7,2V4H8V18A4,4 0 0,0 12,22A4,4 0 0,0 16,18V4H17V2H7M11,16C10.4,16 10,15.6 10,15C10,14.4 10.4,14 11,14C11.6,14 12,14.4 12,15C12,15.6 11.6,16 11,16M13,12C12.4,12 12,11.6 12,11C12,10.4 12.4,10 13,10C13.6,10 14,10.4 14,11C14,11.6 13.6,12 13,12M14,7H10V5H14V7Z"/>
-                  </svg>
+                <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
+                  <img src={wiwIcon3} alt="Flexible no-stress plans" className="w-8 h-8" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold mb-2">Flexible 'no-stress' plans:</h3>
