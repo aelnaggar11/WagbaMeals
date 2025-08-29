@@ -20,6 +20,9 @@ const Layout = ({ children }: LayoutProps) => {
     '/checkout'
   ].some(path => location === path || location.startsWith(path));
 
+  // Debug logging
+  console.log('Layout debug:', { location, hideNavbar, showNavbar: !hideNavbar });
+
   return (
     <div className="flex flex-col min-h-screen">
       {!hideNavbar && <Navigation />}
