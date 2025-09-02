@@ -422,7 +422,8 @@ export class DatabaseStorage implements IStorage {
   async seedInitialData(): Promise<void> {
     // Check if we already have data
     const existingUsers = await db.select().from(users).limit(1);
-    if (existingUsers.length > 0) {
+    const existingAdmins = await db.select().from(admins).limit(1);
+    if (existingUsers.length > 0 || existingAdmins.length > 0) {
       console.log("Database already has data, skipping seed");
       return;
     }
