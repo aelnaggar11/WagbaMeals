@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Week } from "@shared/schema";
 import logoImage from "@assets/Logo tm.png";
 import headerPatternImage from "@assets/Header BG Pattern_1753742643683.png";
-import loginCircleImage from "@assets/Login Circle_1753742724844.png";
+import loginCircleImage from "@assets/image_1756808223086.png";
 import quoteBgPatternImage from "@assets/Quote BG Pattern_1753819991596.png";
 import wiwIcon1 from "@assets/WIW Icon 1_1756464641444.png";
 import wiwIcon2 from "@assets/WIW Icon 2_1756464653354.png";
@@ -89,8 +89,16 @@ const Home = () => {
               <img 
                 src={loginCircleImage}
                 alt="Login Circle"
-                className="absolute inset-0 w-full h-full object-contain"
-                style={{ imageRendering: 'crisp-edges' }}
+                className="absolute inset-0 w-full h-full"
+                style={{ 
+                  imageRendering: 'crisp-edges',
+                  filter: 'none',
+                  objectFit: 'contain',
+                  width: '100%',
+                  height: '100%',
+                  maxWidth: '80px',
+                  maxHeight: '80px'
+                }}
               />
               <span className="relative z-10 text-red-700 font-bold text-sm">
                 Login
