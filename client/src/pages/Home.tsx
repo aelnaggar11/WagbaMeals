@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Week } from "@shared/schema";
 import logoImage from "@assets/Logo tm.png";
 import headerPatternImage from "@assets/Header BG Pattern_1753742643683.png";
-import loginCircleImage from "@assets/image_1756808223086.png";
+import loginCircleImage from "@assets/Login Circle_1756808325537.png";
 import quoteBgPatternImage from "@assets/Quote BG Pattern_1753819991596.png";
 import wiwIcon1 from "@assets/WIW Icon 1_1756464641444.png";
 import wiwIcon2 from "@assets/WIW Icon 2_1756464653354.png";
