@@ -84,15 +84,15 @@ const Home = () => {
           <div className="relative z-10" style={{ marginRight: '10px' }}>
             <div 
               className="w-20 h-20 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity relative"
-              style={{
-                backgroundImage: `url(${loginCircleImage})`,
-                backgroundSize: 'cover',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'center'
-              }}
               onClick={() => navigate('/auth?tab=login&skip_progress=true')}
             >
-              <span className="text-red-700 font-bold text-sm">
+              <img 
+                src={loginCircleImage}
+                alt="Login Circle"
+                className="absolute inset-0 w-full h-full object-contain"
+                style={{ imageRendering: 'crisp-edges' }}
+              />
+              <span className="relative z-10 text-red-700 font-bold text-sm">
                 Login
               </span>
             </div>
