@@ -17,7 +17,7 @@ const ProgressIndicator = ({ steps, currentStep }: ProgressIndicatorProps) => {
       <div className="flex items-center justify-center mb-8">
         <Logo className="h-16" />
       </div>
-      
+
       <div className="flex items-center justify-center">
         {steps.map((step, index) => (
           <div key={step.id} className="flex items-center">
@@ -31,7 +31,7 @@ const ProgressIndicator = ({ steps, currentStep }: ProgressIndicatorProps) => {
             >
               {step.id}
             </div>
-            
+
             {/* Connector Line */}
             {index < steps.length - 1 && (
               <div 
@@ -43,7 +43,7 @@ const ProgressIndicator = ({ steps, currentStep }: ProgressIndicatorProps) => {
           </div>
         ))}
       </div>
-      
+
       <div className="mt-6 text-center">
         <h1 className="text-3xl font-bold text-primary">{steps.find(step => step.id === currentStep)?.label}</h1>
         {currentStep === 1 && (
@@ -53,7 +53,7 @@ const ProgressIndicator = ({ steps, currentStep }: ProgressIndicatorProps) => {
           <p className="text-gray-600 mt-2">Select your meals for the week</p>
         )}
         {currentStep === 3 && (
-          <p className="text-gray-600 mt-2">Create your account to start your meal subscription</p>
+          <p className="text-gray-600 mt-2">Finalise your account to start your meal subscription</p>
         )}
         {currentStep === 4 && (
           <p className="text-gray-600 mt-2">Review your order and complete payment</p>
