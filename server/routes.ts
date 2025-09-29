@@ -881,9 +881,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subscriptionStatus: user.subscriptionStatus || 'active',
         subscriptionCancelledAt: user.subscriptionCancelledAt,
         subscriptionPausedAt: user.subscriptionPausedAt,
-        defaultMealCount: user.defaultMealCount || 6,
-        defaultPortionSize: user.defaultPortionSize || 'standard',
-        defaultDeliverySlot: user.defaultDeliverySlot || 'morning'
       });
     } catch (error) {
       console.error('Error fetching subscription status:', error);
@@ -913,12 +910,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid delivery slot. Must be morning or evening.' });
       }
 
-      // Update user defaults
-      const updatedUser = await storage.updateUser(userId, {
-        defaultMealCount: mealCount,
-        defaultPortionSize: portionSize,
-        defaultDeliverySlot: deliverySlot
-      });
+      // Note: User defaults removed - subscription details now come from actual orders
 
       // Apply these defaults to all existing upcoming orders
       const now = new Date();
@@ -981,9 +973,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         message: 'Subscription defaults updated successfully',
-        defaultMealCount: updatedUser.defaultMealCount,
-        defaultPortionSize: updatedUser.defaultPortionSize,
-        defaultDeliverySlot: updatedUser.defaultDeliverySlot,
         updatedOrdersCount
       });
     } catch (error) {
@@ -1758,11 +1747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If applyToFuture is true, update all future weeks and user defaults
       if (applyToFuture) {
         // First, update the user's subscription defaults
-        await storage.updateUser(userId, {
-          defaultMealCount: mealCountNum,
-          defaultPortionSize: defaultPortionSize === 'mixed' ? 'standard' : defaultPortionSize,
-          defaultDeliverySlot: deliverySlot || 'morning'
-        });
+        // Note: User defaults removed - subscription details now come from actual orders
 
         const allWeeks = await storage.getWeeks();
         const futureWeeks = allWeeks.filter(w => {

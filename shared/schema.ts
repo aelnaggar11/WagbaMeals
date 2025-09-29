@@ -18,9 +18,6 @@ export const users = pgTable("users", {
   hasUsedTrialBox: boolean("has_used_trial_box").default(false), // Track if user has used trial box
   userType: text("user_type").default("trial"), // "trial", "subscription"
   isSubscriber: boolean("is_subscriber").default(false), // Whether user is a subscriber
-  defaultMealCount: integer("default_meal_count").default(6), // Default meal count for new orders
-  defaultPortionSize: text("default_portion_size").default("standard"), // "standard" or "large"
-  defaultDeliverySlot: text("default_delivery_slot").default("morning"), // "morning" or "evening"
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -38,9 +35,6 @@ export const insertUserSchema = createInsertSchema(users).pick({
   hasUsedTrialBox: true,
   userType: true,
   isSubscriber: true,
-  defaultMealCount: true,
-  defaultPortionSize: true,
-  defaultDeliverySlot: true,
 });
 
 // Admin Model (completely separate from users)

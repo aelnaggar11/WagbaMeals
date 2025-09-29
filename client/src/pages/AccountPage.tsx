@@ -88,7 +88,7 @@ const AccountPage = () => {
   const [isProcessingSubscription, setIsProcessingSubscription] = useState(false);
   const [showSubscriptionEditModal, setShowSubscriptionEditModal] = useState(false);
   const [subscriptionEditForm, setSubscriptionEditForm] = useState({
-    mealCount: 6,
+    mealCount: 4,
     portionSize: 'standard' as 'standard' | 'large',
     deliverySlot: 'morning' as 'morning' | 'evening'
   });
@@ -833,16 +833,21 @@ const AccountPage = () => {
     }
   };
 
-  // Initialize subscription edit form with current values
+  // Initialize subscription edit form with actual subscription values
   useEffect(() => {
-    if (subscriptionStatus && showSubscriptionEditModal) {
-      setSubscriptionEditForm({
-        mealCount: subscriptionStatus.defaultMealCount || 6,
-        portionSize: subscriptionStatus.defaultPortionSize || 'standard',
-        deliverySlot: subscriptionStatus.defaultDeliverySlot || 'morning'
-      });
+    if (upcomingMealsData && showSubscriptionEditModal) {
+      const upcomingMeals = (upcomingMealsData as any)?.upcomingMeals;
+      const activeOrder = upcomingMeals?.find((week: any) => week.mealCount > 0);
+      
+      if (activeOrder) {
+        setSubscriptionEditForm({
+          mealCount: activeOrder.mealCount,
+          portionSize: activeOrder.defaultPortionSize || 'standard',
+          deliverySlot: activeOrder.deliverySlot || 'morning'
+        });
+      }
     }
-  }, [subscriptionStatus, showSubscriptionEditModal]);
+  }, [upcomingMealsData, showSubscriptionEditModal]);
 
   // Show loading while authentication is in progress
   if (isUserLoading) {
@@ -1511,28 +1516,46 @@ const AccountPage = () => {
                           
                           {/* Current subscription details */}
                           <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                            <h5 className="font-medium text-blue-900 mb-2">Current Settings</h5>
+                            <h5 className="font-medium text-blue-900 mb-2">Current Subscription</h5>
                             <div className="grid grid-cols-2 gap-4 text-sm">
-                              <div>
-                                <p className="text-blue-700">Default Meal Count:</p>
-                                <p className="font-medium text-blue-900">
-                                  {subscriptionStatus?.defaultMealCount || 6} meals per week
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-blue-700">Default Portion Size:</p>
-                                <p className="font-medium text-blue-900 capitalize">
-                                  {subscriptionStatus?.defaultPortionSize || 'standard'} size
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-blue-700">Default Delivery Slot:</p>
-                                <p className="font-medium text-blue-900">
-                                  {subscriptionStatus?.defaultDeliverySlot === 'evening' 
-                                    ? '🌆 Evening (18:00 - 21:00)' 
-                                    : '🌅 Morning (09:00 - 12:00)'}
-                                </p>
-                              </div>
+                              {(() => {
+                                // Get actual subscription details from current orders
+                                const upcomingMeals = (upcomingMealsData as any)?.upcomingMeals;
+                                const activeOrder = upcomingMeals?.find((week: any) => week.mealCount > 0);
+                                
+                                if (activeOrder) {
+                                  return (
+                                    <>
+                                      <div>
+                                        <p className="text-blue-700">Meal Count:</p>
+                                        <p className="font-medium text-blue-900">
+                                          {activeOrder.mealCount} meals per week
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="text-blue-700">Portion Size:</p>
+                                        <p className="font-medium text-blue-900 capitalize">
+                                          {activeOrder.defaultPortionSize || 'standard'} size
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="text-blue-700">Delivery Slot:</p>
+                                        <p className="font-medium text-blue-900">
+                                          {activeOrder.deliverySlot === 'evening' 
+                                            ? '🌆 Evening (18:00 - 21:00)' 
+                                            : '🌅 Morning (09:00 - 12:00)'}
+                                        </p>
+                                      </div>
+                                    </>
+                                  );
+                                } else {
+                                  return (
+                                    <div className="col-span-2">
+                                      <p className="text-blue-700 text-center">No active subscription found</p>
+                                    </div>
+                                  );
+                                }
+                              })()}
                               <div>
                                 <p className="text-blue-700">Delivery Address:</p>
                                 <p className="font-medium text-blue-900">
