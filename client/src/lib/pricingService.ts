@@ -1,4 +1,4 @@
-import { PricingConfig } from "@shared/schema";
+import type { PricingConfig } from "@shared/schema";
 
 // Cache for pricing configurations to avoid repeated API calls
 let pricingCache: Map<string, number> | null = null;

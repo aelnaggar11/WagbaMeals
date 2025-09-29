@@ -1,7 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { Meal, OrderItem, getPriceForMealCount, DeliverySlot } from "@shared/schema";
+import { Meal, OrderItem, DeliverySlot } from "@shared/schema";
+import { getPriceForMealCount } from "@/lib/utils";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -39,7 +40,7 @@ const OrderSummary = ({
   };
 
   // Calculate prices based on meal count and portion size
-  const pricePerMeal = getPriceForMealCount(mealCount);
+  const pricePerMeal = getPriceForMealCount(mealCount) || 249;
   const largePortionAdditional = 99;
 
   const calculateMealPrice = (orderItem: OrderItem) => {

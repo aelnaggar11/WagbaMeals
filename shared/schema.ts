@@ -1,7 +1,6 @@
 import { pgTable, text, serial, integer, boolean, timestamp, jsonb, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { getPriceForMealCount } from "../client/src/lib/utils";
 
 // User Model (for customers only)
 export const users = pgTable("users", {
@@ -516,4 +515,3 @@ export type LandingFaq = typeof landingFaqs.$inferSelect;
 export type InsertLandingFaq = z.infer<typeof insertLandingFaqSchema>;
 
 // Helper functions for pricing
-export { getPriceForMealCount };

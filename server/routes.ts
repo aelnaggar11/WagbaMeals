@@ -8,7 +8,7 @@ import session from "express-session";
 import MemoryStore from 'memorystore';
 import ConnectPgSimple from 'connect-pg-simple';
 import { pool } from "./db";
-import { getPriceForMealCount, Admin } from "@shared/schema";
+import { Admin } from "@shared/schema";
 import multer from "multer";
 import { sendEmail } from "./sendgrid";
 import path from "path";
@@ -37,9 +37,30 @@ declare module 'express-serve-static-core' {
   }
 }
 
+// Server-side pricing helper (matches client-side PricingService defaults)
+function getServerPriceForMealCount(mealCount: number): number {
+  const defaultPricing = new Map([
+    ['meal_bundle_4_meals', 249],
+    ['meal_bundle_5_meals', 239],
+    ['meal_bundle_6_meals', 239],
+    ['meal_bundle_7_meals', 219],
+    ['meal_bundle_8_meals', 219],
+    ['meal_bundle_9_meals', 219],
+    ['meal_bundle_10_meals', 199],
+    ['meal_bundle_11_meals', 199],
+    ['meal_bundle_12_meals', 199],
+    ['meal_bundle_13_meals', 199],
+    ['meal_bundle_14_meals', 199],
+    ['meal_bundle_15_meals', 199],
+  ]);
+  
+  const key = `meal_bundle_${mealCount}_meals`;
+  return defaultPricing.get(key) || 249; // fallback to base price
+}
+
 // Helper function to calculate pricing for orders
 function calculateOrderPricing(mealCount: number, defaultPortionSize: string): { subtotal: number; discount: number; total: number } {
-  const pricePerMeal = getPriceForMealCount(mealCount);
+  const pricePerMeal = getServerPriceForMealCount(mealCount);
   const largePortionAdditional = 99;
   
   let subtotal = 0;
