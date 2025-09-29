@@ -12,6 +12,11 @@ interface ProgressIndicatorProps {
 }
 
 const ProgressIndicator = ({ steps, currentStep }: ProgressIndicatorProps) => {
+  // Update step labels to use "Finalise Account" instead of "Create Account"
+  const updatedSteps = steps.map(step => 
+    step.label === "Create Account" ? { ...step, label: "Finalise Account" } : step
+  );
+
   return (
     <div className="w-full max-w-3xl mx-auto mb-10">
       <div className="flex items-center justify-center mb-8">
@@ -19,7 +24,7 @@ const ProgressIndicator = ({ steps, currentStep }: ProgressIndicatorProps) => {
       </div>
 
       <div className="flex items-center justify-center">
-        {steps.map((step, index) => (
+        {updatedSteps.map((step, index) => (
           <div key={step.id} className="flex items-center">
             {/* Step Circle */}
             <div 
@@ -45,7 +50,7 @@ const ProgressIndicator = ({ steps, currentStep }: ProgressIndicatorProps) => {
       </div>
 
       <div className="mt-6 text-center">
-        <h1 className="text-3xl font-bold text-primary">{steps.find(step => step.id === currentStep)?.label}</h1>
+        <h1 className="text-3xl font-bold text-primary">{updatedSteps.find(step => step.id === currentStep)?.label}</h1>
         {currentStep === 1 && (
           <p className="text-gray-600 mt-2">Choose your meal plan and customize your weekly deliveries</p>
         )}
