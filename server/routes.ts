@@ -386,7 +386,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const selections = req.session.tempMealSelections;
           
           // Calculate pricing for the order
-          const pricePerMeal = getPriceForMealCount(selections.mealCount);
+          const pricePerMeal = getServerPriceForMealCount(selections.mealCount);
           const largePortionAdditional = 99;
           
           let subtotal = 0;
@@ -932,7 +932,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const week of futureWeeks) {
         let order = await storage.getOrderByUserAndWeek(userId, week.id);
         
-        const pricePerMeal = getPriceForMealCount(mealCount);
+        const pricePerMeal = getServerPriceForMealCount(mealCount);
         let itemPrice = pricePerMeal;
         
         if (portionSize === 'large') {
@@ -1693,7 +1693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!order) {
         // Create new order if it doesn't exist
-        const pricePerMeal = getPriceForMealCount(mealCountNum);
+        const pricePerMeal = getServerPriceForMealCount(mealCountNum);
         let itemPrice = pricePerMeal;
         
         // For mixed portion size, use base standard price
@@ -1720,7 +1720,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       } else {
         // Update existing order
-        const pricePerMeal = getPriceForMealCount(mealCountNum);
+        const pricePerMeal = getServerPriceForMealCount(mealCountNum);
         let itemPrice = pricePerMeal;
         
         // For mixed portion size, use base standard price
@@ -1775,7 +1775,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const futureWeek of futureWeeks) {
           let futureOrder = await storage.getOrderByUserAndWeek(userId, futureWeek.id);
           
-          const pricePerMeal = getPriceForMealCount(mealCountNum);
+          const pricePerMeal = getServerPriceForMealCount(mealCountNum);
           let itemPrice = pricePerMeal;
           
           // For mixed portion size, use base standard price
@@ -1993,7 +1993,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await autoSkipPrecedingWeeks(req.session.userId!, week.id);
 
       // Calculate prices
-      const pricePerMeal = getPriceForMealCount(mealCount);
+      const pricePerMeal = getServerPriceForMealCount(mealCount);
       const largePortionAdditional = 99;
 
       let subtotal = 0;
@@ -2091,7 +2091,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await autoSkipPrecedingWeeks(req.session.userId, order.weekId);
 
       // Calculate price
-      const pricePerMeal = getPriceForMealCount(order.mealCount);
+      const pricePerMeal = getServerPriceForMealCount(order.mealCount);
       const largePortionAdditional = 99;
       const itemPrice = portionSize === 'large' 
         ? pricePerMeal + largePortionAdditional 
@@ -2193,7 +2193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Calculate new price
-      const pricePerMeal = getPriceForMealCount(order.mealCount);
+      const pricePerMeal = getServerPriceForMealCount(order.mealCount);
       const largePortionAdditional = 99;
       const newPrice = portionSize === 'large' 
         ? pricePerMeal + largePortionAdditional 
