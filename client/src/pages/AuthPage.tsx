@@ -331,8 +331,8 @@ const AuthPage = () => {
           // Clear the saved selections
           sessionStorage.removeItem('mealSelections');
           
-          // Wait longer for authentication and order state to stabilize
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          // Brief wait for authentication state to stabilize
+          await new Promise(resolve => setTimeout(resolve, 500));
           
           // Pre-fetch the user data to ensure authentication is working
           try {
@@ -344,10 +344,8 @@ const AuthPage = () => {
             console.log('Auth prefetch failed, proceeding anyway:', error);
           }
           
-          // Force a page reload to ensure clean state before redirect
-          setTimeout(() => {
-            window.location.href = '/checkout';
-          }, 500);
+          // Redirect immediately using replace to prevent history issues
+          window.location.replace('/checkout');
         } catch (error) {
           console.error("Error handling order after registration:", error);
           
@@ -356,8 +354,8 @@ const AuthPage = () => {
           navigate('/checkout');
         }
       } else {
-        // No saved selections, wait for auth state to update then redirect to account
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // No saved selections, brief wait for auth state to update then redirect
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         // Pre-fetch the user data to ensure authentication is working
         try {
@@ -369,14 +367,12 @@ const AuthPage = () => {
           console.log('Auth prefetch failed, proceeding anyway:', error);
         }
         
-        // Force a page reload to ensure clean state before redirect
-        setTimeout(() => {
-          if (returnTo) {
-            window.location.href = returnTo;
-          } else {
-            window.location.href = '/account';
-          }
-        }, 500);
+        // Redirect immediately using replace to prevent history issues
+        if (returnTo) {
+          window.location.replace(returnTo);
+        } else {
+          window.location.replace('/account');
+        }
       }
     } catch (error) {
       toast({

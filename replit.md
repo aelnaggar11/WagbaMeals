@@ -127,6 +127,9 @@ Wagba is a full-stack meal delivery application focused on weekly meal plans. Th
 - Session persistence across application restarts
 
 ## Changelog
+- September 30, 2025: DEPLOYMENT FIXES - Fixed checkout showing EGP 0 subtotal by calculating pricing server-side when order is created during registration
+- September 30, 2025: Fixed onboarding redirect issue where users briefly saw meal selection page before checkout by using window.location.replace() for immediate clean redirects
+- September 30, 2025: Eliminated confusing "default subscription values" - removed defaultMealCount, defaultPortionSize, defaultDeliverySlot from user schema and UI
 - July 17, 2025: CRITICAL PRICING FIX - Fixed "not_selected" orders showing EGP 0 instead of proper pricing based on meal count and portion size
 - July 17, 2025: Updated all existing "not_selected" orders in database (140 orders) to display correct pricing for admin dashboard
 - July 17, 2025: Created calculateOrderPricing() helper function to ensure consistent pricing calculations across all order creation endpoints

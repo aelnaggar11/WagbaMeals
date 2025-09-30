@@ -1258,6 +1258,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { weekId, mealCount, defaultPortionSize, items, totalPrice, deliverySlot } = req.body;
 
+      // Calculate pricing based on meal count and portion size
+      const pricing = calculateOrderPricing(mealCount, defaultPortionSize || 'standard');
+      
+      // Use calculated pricing if totalPrice not provided
+      const orderSubtotal = totalPrice || pricing.subtotal;
+      const orderDiscount = totalPrice ? 0 : pricing.discount;
+      const orderTotal = totalPrice || pricing.total;
+
       // Create the order
       const order = await storage.createOrder({
         userId: req.session.userId!,
@@ -1265,9 +1273,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'selected',
         mealCount,
         defaultPortionSize: defaultPortionSize || 'standard',
-        subtotal: totalPrice || 0,
-        discount: 0,
-        total: totalPrice || 0,
+        subtotal: orderSubtotal,
+        discount: orderDiscount,
+        total: orderTotal,
         deliveryDate: new Date().toISOString(),
         deliveryAddress: null,
         deliveryNotes: null,
