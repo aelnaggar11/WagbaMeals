@@ -42,8 +42,9 @@ const AuthPage = () => {
   });
 
   // Redirect authenticated users back to menu selection if they're in onboarding flow
+  // BUT NOT during active registration/login to prevent redirect race conditions
   useEffect(() => {
-    if (user) {
+    if (user && !isSubmitting) {
       const params = new URLSearchParams(window.location.search);
       const fromSelection = params.get("fromSelection");
       const weekId = params.get("weekId");
@@ -57,7 +58,7 @@ const AuthPage = () => {
         return;
       }
     }
-  }, [user, navigate]);
+  }, [user, navigate, isSubmitting]);
   
   // Handle browser back button properly
   useEffect(() => {
