@@ -11,6 +11,7 @@ import { pool } from "./db";
 import { Admin } from "@shared/schema";
 import multer from "multer";
 import { sendEmail } from "./sendgrid";
+import { emailService } from "./emailService";
 import path from "path";
 import fs from "fs";
 import { validateEgyptianPhoneNumber } from "./utils/phoneValidation";
@@ -550,8 +551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Send email with reset instructions
-      const emailService = await import('./emailService');
-      const emailSent = await emailService.emailService.sendPasswordResetEmail(user.email, resetToken);
+      const emailSent = await emailService.sendPasswordResetEmail(user.email, resetToken);
 
       if (!emailSent) {
         console.log('Failed to send password reset email, but continuing for security');
