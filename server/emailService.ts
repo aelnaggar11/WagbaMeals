@@ -6,8 +6,9 @@ const API_KEY = process.env.BREVO_API_KEY;
 let apiInstance: brevo.TransactionalEmailsApi | null = null;
 
 if (!API_KEY) {
-  console.warn('BREVO_API_KEY not found. Email functionality will be disabled.');
+  console.warn('⚠️  BREVO_API_KEY not found. Email functionality will be disabled.');
 } else {
+  console.log('✅ Brevo API initialized successfully for password reset emails');
   apiInstance = new brevo.TransactionalEmailsApi();
   apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, API_KEY);
 }
