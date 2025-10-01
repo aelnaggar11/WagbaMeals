@@ -33,38 +33,38 @@
     /* Base colors */
     --background: 0 0% 100%; /* white */
     --foreground: 0 0% 0%; /* black text */
-    
+
     /* Wagba brand colors */
     --primary: 1 94% 35%; /* wagba-red #A80906 */
     --primary-foreground: 0 0% 100%; /* white */
-    
+
     --secondary: 43 63% 91%; /* wagba-cream #f2ecde */
     --secondary-foreground: 0 0% 0%; /* black text */
-    
+
     --accent: 120 44% 60%; /* wagba-lime #6ac66b */
     --accent-foreground: 127 45% 27%; /* wagba-green #25632d */
-    
+
     --accent-secondary: 26 100% 64%; /* wagba-orange #ff9045 */
     --accent-secondary-foreground: 0 0% 100%; /* white */
-    
+
     /* UI Component Colors */
     --card: 0 0% 100%;
     --card-foreground: 0 0% 0%;
-    
+
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 0%;
-    
+
     --muted: 0 0% 96.1%;
     --muted-foreground: 0 0% 45.1%;
-    
+
     --border: 0 0% 92.9%;
     --input: 0 0% 92.9%;
-    
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    
+
     --ring: 1 94% 35%; /* wagba-red for focus rings */
-    
+
     --radius: 0.5rem; /* 8px */
   }
 
@@ -95,11 +95,11 @@
   * {
     @apply border-border;
   }
-  
+
   body {
     @apply bg-background text-foreground font-inter antialiased;
   }
-  
+
   h1, h2, h3, h4, h5, h6 {
     @apply font-poppins font-bold;
   }
@@ -109,7 +109,7 @@
   .font-inter {
     font-family: 'Inter', sans-serif;
   }
-  
+
   .font-poppins {
     font-family: 'Poppins', sans-serif;
   }
