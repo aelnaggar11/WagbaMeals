@@ -2408,6 +2408,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           deliveryNotes: deliveryNotes || ""
         };
         
+        // Check if this is the user's first order (before updating hasUsedTrialBox)
+        const isFirstOrder = !user.hasUsedTrialBox;
+        
         // Update user with address and trial status
         const userUpdateData: any = {
           address: JSON.stringify(addressWithNotes),
@@ -2426,6 +2429,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         await storage.updateUser(req.session.userId!, userUpdateData);
         console.log('Updated user address with delivery notes:', JSON.stringify(addressWithNotes));
+        
+        // Send welcome email for first-time orders
+        if (isFirstOrder) {
+          try {
+            const week = await storage.getWeek(order.weekId);
+            if (week) {
+              // Format delivery date nicely
+              const deliveryDate = new Date(week.deliveryDate);
+              const formattedDate = deliveryDate.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              });
+              
+              // Capitalize portion size
+              const portionSize = order.defaultPortionSize === 'large' ? 'Large' : 
+                                 order.defaultPortionSize === 'standard' ? 'Standard' : 
+                                 order.defaultPortionSize === 'mixed' ? 'Mixed' : 
+                                 order.defaultPortionSize || 'Standard';
+              
+              console.log('=== SENDING WELCOME EMAIL ===');
+              console.log('First order detected for user:', user.email);
+              console.log('Delivery date:', formattedDate);
+              console.log('Meal count:', order.mealCount);
+              console.log('Portion size:', portionSize);
+              
+              const emailSent = await emailService.sendWelcomeEmail({
+                to: user.email,
+                customerName: user.name || user.username || 'Valued Customer',
+                mealCount: order.mealCount || 0,
+                portionSize: portionSize,
+                firstDeliveryDate: formattedDate,
+                orderTotal: order.total || 0
+              });
+              
+              if (emailSent) {
+                console.log('Welcome email sent successfully to:', user.email);
+              } else {
+                console.log('Failed to send welcome email to:', user.email);
+              }
+            }
+          } catch (emailError) {
+            console.error('Error sending welcome email:', emailError);
+            // Don't fail the checkout if email fails
+          }
+        }
       }
 
       res.json(updatedOrder);
