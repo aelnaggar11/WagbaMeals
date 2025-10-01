@@ -86,5 +86,41 @@ The Wagba Team
       console.error('Error sending password reset email:', error);
       return false;
     }
+  },
+
+  async sendWelcomeEmail(params: {
+    to: string;
+    customerName: string;
+    mealCount: number;
+    portionSize: string;
+    firstDeliveryDate: string;
+    orderTotal: number;
+  }): Promise<boolean> {
+    if (!API_KEY || !apiInstance) {
+      console.log('Brevo not configured, welcome email would be sent to:', params.to);
+      return false;
+    }
+
+    try {
+      const sendSmtpEmail = new brevo.SendSmtpEmail();
+      sendSmtpEmail.sender = { email: 'aelnaggar35@gmail.com', name: 'Wagba' };
+      sendSmtpEmail.to = [{ email: params.to, name: params.customerName }];
+      sendSmtpEmail.templateId = 1;
+      sendSmtpEmail.params = {
+        CUSTOMER_NAME: params.customerName,
+        MEAL_COUNT: params.mealCount.toString(),
+        PORTION_SIZE: params.portionSize,
+        FIRST_DELIVERY_DATE: params.firstDeliveryDate,
+        ORDER_TOTAL: params.orderTotal.toString()
+      };
+
+      await apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log('Welcome email sent successfully to:', params.to);
+      console.log('Template parameters:', sendSmtpEmail.params);
+      return true;
+    } catch (error) {
+      console.error('Error sending welcome email:', error);
+      return false;
+    }
   }
 };
