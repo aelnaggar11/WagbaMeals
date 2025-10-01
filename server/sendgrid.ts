@@ -1,11 +1,11 @@
-import { MailService } from '@sendgrid/mail';
+import * as brevo from '@getbrevo/brevo';
 
-if (!process.env.SENDGRID_API_KEY) {
-  throw new Error("SENDGRID_API_KEY environment variable must be set");
+if (!process.env.BREVO_API_KEY) {
+  throw new Error("BREVO_API_KEY environment variable must be set");
 }
 
-const mailService = new MailService();
-mailService.setApiKey(process.env.SENDGRID_API_KEY);
+const apiInstance = new brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
 
 interface EmailParams {
   to: string;
@@ -27,19 +27,27 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
     console.log('Email subject:', params.subject);
     console.log('Attachments count:', params.attachments?.length || 0);
     
-    await mailService.send({
-      to: params.to,
-      from: params.from,
-      subject: params.subject,
-      text: params.text,
-      html: params.html,
-      attachments: params.attachments,
-    });
+    const sendSmtpEmail = new brevo.SendSmtpEmail();
+    sendSmtpEmail.sender = { email: params.from };
+    sendSmtpEmail.to = [{ email: params.to }];
+    sendSmtpEmail.subject = params.subject;
+    sendSmtpEmail.htmlContent = params.html;
+    sendSmtpEmail.textContent = params.text;
     
-    console.log('Email sent successfully via SendGrid');
+    // Convert attachments to Brevo format
+    if (params.attachments && params.attachments.length > 0) {
+      sendSmtpEmail.attachment = params.attachments.map(att => ({
+        content: att.content,
+        name: att.filename
+      }));
+    }
+    
+    await apiInstance.sendTransacEmail(sendSmtpEmail);
+    
+    console.log('Email sent successfully via Brevo');
     return true;
   } catch (error) {
-    console.error('SendGrid email error:', error);
+    console.error('Brevo email error:', error);
     return false;
   }
 }
