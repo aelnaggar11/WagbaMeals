@@ -29,7 +29,7 @@ export const emailService = {
       const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
 
       const sendSmtpEmail = new brevo.SendSmtpEmail();
-      sendSmtpEmail.sender = { email: 'aelnaggar35@gmail.com' };
+      sendSmtpEmail.sender = { email: 'hello@wagba.com', name: 'Wagba' };
       sendSmtpEmail.to = [{ email: to }];
       sendSmtpEmail.subject = 'Password Reset - Wagba';
       sendSmtpEmail.htmlContent = `
@@ -107,7 +107,7 @@ The Wagba Team
 
     try {
       const sendSmtpEmail = new brevo.SendSmtpEmail();
-      sendSmtpEmail.sender = { email: 'aelnaggar35@gmail.com', name: 'Wagba' };
+      sendSmtpEmail.sender = { email: 'hello@wagba.com', name: 'Wagba' };
       sendSmtpEmail.to = [{ email: params.to, name: params.customerName }];
       sendSmtpEmail.templateId = 1;
       sendSmtpEmail.params = {
