@@ -141,6 +141,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   console.log('Session secret source:', sessionSecret ? 'provided' : 'default');
   console.log('Session store type:', sessionStore.constructor.name);
   console.log('Secure cookies enabled:', isProduction);
+  console.log('Cookie SameSite setting:', isProduction ? 'none' : 'lax');
+  console.log('Cookie Domain:', process.env.COOKIE_DOMAIN || 'not set');
   console.log('====================================');
 
   // Production-ready session configuration
@@ -166,7 +168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('Cookie domain set to:', cookieDomain);
   }
   
-  console.log('EMERGENCY SESSION CONFIG: Memory store with relaxed cookie settings');
+  console.log('✓ Session configuration complete');
 
   // Standard CORS configuration
   app.use((req, res, next) => {
