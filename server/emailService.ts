@@ -22,22 +22,9 @@ export const emailService = {
 
     try {
       // Determine the base URL for the reset link
-      let baseUrl = 'http://localhost:5000';
-      
-      if (process.env.NODE_ENV === 'production') {
-        // Try custom domain first, then Replit domain, then fallback
-        if (process.env.CUSTOM_DOMAIN) {
-          baseUrl = `https://${process.env.CUSTOM_DOMAIN}`;
-        } else if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
-          baseUrl = `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
-        } else if (process.env.REPLIT_DOMAINS) {
-          // REPLIT_DOMAINS is a comma-separated list, take the first one
-          const domains = process.env.REPLIT_DOMAINS.split(',');
-          baseUrl = `https://${domains[0]}`;
-        } else {
-          baseUrl = 'https://wagba.food'; // Fallback to custom domain
-        }
-      }
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://wagba.food' 
+        : 'http://localhost:5000';
       
       const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
 
