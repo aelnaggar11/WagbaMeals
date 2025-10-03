@@ -144,7 +144,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   console.log('====================================');
 
   // Production-ready session configuration
-  const sessionOptions = {
+  const cookieDomain = process.env.COOKIE_DOMAIN;
+  const sessionOptions: any = {
     secret: sessionSecret || 'wagba-secret-key-development-only',
     resave: false,
     saveUninitialized: false,
@@ -153,11 +154,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       secure: isProduction, // Use secure cookies in production
       maxAge: 24 * 60 * 60 * 1000,
       httpOnly: true,
-      sameSite: 'lax' as const
+      sameSite: isProduction ? 'none' : 'lax' // Use 'none' in production for cross-site cookies
     },
     store: sessionStore,
     name: 'wagba_session'
   };
+  
+  // Add domain for production if specified
+  if (isProduction && cookieDomain) {
+    sessionOptions.cookie.domain = cookieDomain;
+    console.log('Cookie domain set to:', cookieDomain);
+  }
   
   console.log('EMERGENCY SESSION CONFIG: Memory store with relaxed cookie settings');
 
@@ -374,12 +381,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Set user token cookie as backup
-      res.cookie('wagba_auth_token', userToken, {
+      const cookieOptions: any = {
         httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000
-      });
+      };
+      if (isProduction && cookieDomain) {
+        cookieOptions.domain = cookieDomain;
+      }
+      res.cookie('wagba_auth_token', userToken, cookieOptions);
 
       // Check if there are temporary meal selections to create an order
       if (req.session.tempMealSelections) {
@@ -489,12 +500,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Set token cookie as backup
-      res.cookie('wagba_auth_token', token, {
+      const cookieOptions: any = {
         httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000
-      });
+      };
+      if (isProduction && cookieDomain) {
+        cookieOptions.domain = cookieDomain;
+      }
+      res.cookie('wagba_auth_token', token, cookieOptions);
 
       res.json({
         id: user.id,
@@ -704,12 +719,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Set admin token cookie as backup
-      res.cookie('wagba_admin_token', adminToken, {
+      const cookieOptions: any = {
         httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000
-      });
+      };
+      if (isProduction && cookieDomain) {
+        cookieOptions.domain = cookieDomain;
+      }
+      res.cookie('wagba_admin_token', adminToken, cookieOptions);
 
       res.json({
         id: admin.id,
