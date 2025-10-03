@@ -281,7 +281,32 @@ const CheckoutPage = () => {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to place order');
+        // Try to get error details from response
+        let errorMessage = 'There was a problem processing your order. Please try again.';
+        let errorTitle = 'Error placing order';
+        
+        if (response.status === 401) {
+          errorTitle = 'Authentication required';
+          errorMessage = 'Your session has expired. Please refresh the page and try again.';
+          console.error('Checkout failed: 401 Unauthorized - Session expired or invalid');
+        } else {
+          try {
+            const errorData = await response.json();
+            if (errorData.message) {
+              errorMessage = errorData.message;
+            }
+            console.error('Checkout failed:', response.status, errorData);
+          } catch (e) {
+            console.error('Checkout failed with status:', response.status);
+          }
+        }
+        
+        toast({
+          title: errorTitle,
+          description: errorMessage,
+          variant: "destructive"
+        });
+        return;
       }
       
       // Invalidate queries to refresh data
@@ -304,9 +329,10 @@ const CheckoutPage = () => {
       // Redirect to account page
       navigate('/account');
     } catch (error) {
+      console.error('Checkout error:', error);
       toast({
         title: "Error placing order",
-        description: "There was a problem processing your order. Please try again.",
+        description: error instanceof Error ? error.message : "There was a problem processing your order. Please try again.",
         variant: "destructive"
       });
     } finally {
