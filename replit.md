@@ -127,6 +127,7 @@ Wagba is a full-stack meal delivery application focused on weekly meal plans. Th
 - Session persistence across application restarts
 
 ## Changelog
+- October 3, 2025: Updated all email senders to use hello@wagba.com for password reset, welcome emails, and InstaPay payment notifications
 - October 3, 2025: PASSWORD RESET FIX - Fixed broken password reset email links in production that were generating invalid URLs (https:///reset-password)
 - October 3, 2025: Updated password reset email service to use wagba.food domain directly in production instead of auto-detected workspace URLs
 - October 3, 2025: CROSS-DEVICE AUTHENTICATION FIX - Resolved intermittent checkout authentication failures on mobile devices by updating cookie SameSite settings
