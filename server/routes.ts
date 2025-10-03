@@ -184,19 +184,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Enhanced authentication middleware with token fallback
   const authMiddleware = async (req: Request, res: Response, next: Function) => {
-    console.log('Auth middleware check:', {
+    const authDebug = {
+      path: req.path,
+      method: req.method,
       sessionId: req.sessionID,
       userId: req.session.userId,
       sessionExists: !!req.session,
-      cookieExists: !!req.headers.cookie,
-      tokenCookie: !!req.cookies.wagba_auth_token
-    });
+      cookieHeader: !!req.headers.cookie,
+      hasCookie: req.headers.cookie?.includes('wagba_session'),
+      tokenCookie: !!req.cookies.wagba_auth_token,
+      authHeader: !!req.headers.authorization
+    };
+    
+    console.log('=== AUTH CHECK ===', authDebug);
     
     // First try session-based auth
     if (req.session.userId) {
-      console.log('Session auth successful for user:', req.session.userId);
+      console.log('✓ Session auth successful for user:', req.session.userId);
       return next();
     }
+    
+    console.log('✗ Session auth failed: No userId in session');
     
     // Fallback to token-based auth (cookie or header)
     const cookieToken = req.cookies.wagba_auth_token;
@@ -212,19 +220,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Verify user still exists
           const user = await storage.getUser(parseInt(userId));
           if (user && user.email === email) {
-            console.log('Token auth successful for user:', userId, 'via', headerToken ? 'header' : 'cookie');
+            console.log('✓ Token auth successful for user:', userId, 'via', headerToken ? 'header' : 'cookie');
             // Set session for future requests
             req.session.userId = parseInt(userId);
             return next();
           }
+          console.log('✗ Token auth failed: User not found or email mismatch');
+        } else {
+          console.log('✗ Token auth failed: Invalid token format');
         }
       } catch (error) {
-        console.log('Token auth failed:', String(error));
+        console.log('✗ Token auth failed: Decode error -', String(error));
       }
+    } else {
+      console.log('✗ Token auth failed: No token provided');
     }
     
-    console.log('Authentication failed: No valid session or token');
-    return res.status(401).json({ message: 'Unauthorized' });
+    console.log('=== AUTH FAILED ===', {
+      reason: !req.session.userId ? 'NO_SESSION' : 'NO_VALID_TOKEN',
+      hasSessionCookie: authDebug.hasCookie,
+      hasTokenCookie: authDebug.tokenCookie,
+      hasAuthHeader: authDebug.authHeader
+    });
+    
+    return res.status(401).json({ 
+      message: 'Unauthorized',
+      debug: process.env.NODE_ENV === 'development' ? authDebug : undefined
+    });
   };
 
   // Enhanced admin middleware with token fallback
