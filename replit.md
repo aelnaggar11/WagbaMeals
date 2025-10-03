@@ -127,6 +127,14 @@ Wagba is a full-stack meal delivery application focused on weekly meal plans. Th
 - Session persistence across application restarts
 
 ## Changelog
+- October 3, 2025: CROSS-DEVICE AUTHENTICATION FIX - Resolved intermittent checkout authentication failures on mobile devices by updating cookie SameSite settings
+- October 3, 2025: Updated production session cookies to use SameSite='none' with secure flag to support cross-site requests on mobile browsers
+- October 3, 2025: Added optional COOKIE_DOMAIN environment variable for shared cookie domains across subdomains in production
+- October 3, 2025: Enhanced authentication logging with detailed diagnostics (session vs token auth, failure reasons, cookie presence indicators)
+- October 3, 2025: Verified token-based authentication fallback works correctly via Authorization header when session cookies are blocked
+- October 1, 2025: WELCOME EMAIL SYSTEM - Implemented automatic welcome emails via Brevo template ID 1 for first-time customers after checkout
+- October 1, 2025: Welcome emails include dynamic customer data: name, meal count, portion size, first delivery date, and order total
+- October 1, 2025: Fixed Brevo email service initialization by changing from dynamic to static imports in routes.ts
 - September 30, 2025: DEPLOYMENT FIXES - Fixed checkout showing EGP 0 subtotal by calculating pricing server-side when order is created during registration
 - September 30, 2025: Fixed onboarding redirect issue where users briefly saw meal selection page before checkout by using window.location.replace() for immediate clean redirects
 - September 30, 2025: Eliminated confusing "default subscription values" - removed defaultMealCount, defaultPortionSize, defaultDeliverySlot from user schema and UI
