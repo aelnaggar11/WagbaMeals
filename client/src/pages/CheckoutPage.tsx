@@ -723,32 +723,32 @@ const CheckoutPage = () => {
                 <CardContent className="space-y-4">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span>EGP {pendingOrder.subtotal.toFixed(0)}</span>
+                    <span className="whitespace-nowrap">EGP {pendingOrder.subtotal.toFixed(0)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Delivery Fee</span>
-                    <span>EGP {deliveryFee.toFixed(2)}</span>
+                    <span className="whitespace-nowrap">EGP {deliveryFee.toFixed(0)}</span>
                   </div>
                   
                   {/* Show base volume discount (always present for both trial and subscription) */}
                   {pendingOrder.discount > 0 && (
                     <div className="flex justify-between text-accent">
                       <span>Volume Discount</span>
-                      <span>-EGP {pendingOrder.discount.toFixed(0)}</span>
+                      <span className="whitespace-nowrap">-EGP {pendingOrder.discount.toFixed(0)}</span>
                     </div>
                   )}
                   
                   {/* Show additional 10% first-order discount for new subscribers */}
                   {!userProfile?.hasUsedTrialBox && orderType === 'subscription' && (
-                    <div className="flex justify-between text-green-600 font-medium">
+                    <div className="flex justify-between text-green-600">
                       <span>1st Order Discount (10%)</span>
-                      <span>-EGP {Math.round(pendingOrder.subtotal * 0.1).toFixed(0)}</span>
+                      <span className="whitespace-nowrap">-EGP {Math.round(pendingOrder.subtotal * 0.1).toFixed(0)}</span>
                     </div>
                   )}
                   
                   <div className="flex justify-between font-bold text-lg pt-4 border-t">
                     <span>Total</span>
-                    <span className="text-primary">
+                    <span className="text-primary whitespace-nowrap">
                       EGP {(!userProfile?.hasUsedTrialBox && orderType === 'subscription'
                         ? (pendingOrder.subtotal - Math.round(pendingOrder.subtotal * 0.1) + deliveryFee).toFixed(0)
                         : (pendingOrder.total + deliveryFee).toFixed(0))}
