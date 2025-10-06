@@ -127,7 +127,7 @@ Wagba is a full-stack meal delivery application focused on weekly meal plans. Th
 - Session persistence across application restarts
 
 ## Changelog
-- October 6, 2025: Reverted email sender to aelnaggar35@gmail.com - hello@wagba.com needs to be verified in Brevo first
+- October 6, 2025: Updated all email senders to use hello@wagba.food for password reset, welcome emails, and InstaPay payment notifications
 - October 6, 2025: Added detailed error logging to Brevo email service to catch API rejections
 - October 3, 2025: PASSWORD RESET FIX - Fixed broken password reset email links in production that were generating invalid URLs (https:///reset-password)
 - October 3, 2025: Updated password reset email service to use wagba.food domain directly in production instead of auto-detected workspace URLs
