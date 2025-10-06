@@ -730,18 +730,18 @@ const CheckoutPage = () => {
                     <span>EGP {deliveryFee.toFixed(2)}</span>
                   </div>
                   
-                  {/* Show discount if it exists */}
+                  {/* Show base volume discount (always present for both trial and subscription) */}
                   {pendingOrder.discount > 0 && (
                     <div className="flex justify-between text-accent">
-                      <span>Discount</span>
+                      <span>Volume Discount</span>
                       <span>-EGP {pendingOrder.discount.toFixed(0)}</span>
                     </div>
                   )}
                   
-                  {/* Show first-order discount preview for new subscribers */}
-                  {!userProfile?.hasUsedTrialBox && orderType === 'subscription' && pendingOrder.discount === 0 && (
-                    <div className="flex justify-between text-green-600">
-                      <span>First-Order Discount (10%)</span>
+                  {/* Show additional 10% first-order discount for new subscribers */}
+                  {!userProfile?.hasUsedTrialBox && orderType === 'subscription' && (
+                    <div className="flex justify-between text-green-600 font-medium">
+                      <span>First Subscription Discount (10%)</span>
                       <span>-EGP {Math.round(pendingOrder.subtotal * 0.1).toFixed(0)}</span>
                     </div>
                   )}
@@ -749,7 +749,7 @@ const CheckoutPage = () => {
                   <div className="flex justify-between font-bold text-lg pt-4 border-t">
                     <span>Total</span>
                     <span className="text-primary">
-                      EGP {(!userProfile?.hasUsedTrialBox && orderType === 'subscription' && pendingOrder.discount === 0
+                      EGP {(!userProfile?.hasUsedTrialBox && orderType === 'subscription'
                         ? (pendingOrder.subtotal - Math.round(pendingOrder.subtotal * 0.1) + deliveryFee).toFixed(0)
                         : (pendingOrder.total + deliveryFee).toFixed(0))}
                     </span>
