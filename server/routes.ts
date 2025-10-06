@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage, type IStorage } from "./storage";
 import { z } from "zod";
 import { insertUserSchema, insertMealSchema, insertWeekSchema, insertOrderSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
@@ -39,7 +39,18 @@ declare module 'express-serve-static-core' {
 }
 
 // Server-side pricing helper (matches client-side PricingService defaults)
-function getServerPriceForMealCount(mealCount: number): number {
+async function getServerPriceForMealCount(mealCount: number, storage: IStorage): Promise<number> {
+  try {
+    // Try to get price from database
+    const pricingConfig = await storage.getPricingConfig('meal_bundle', `${mealCount}_meals`);
+    if (pricingConfig && pricingConfig.isActive) {
+      return pricingConfig.price;
+    }
+  } catch (error) {
+    console.error('Error fetching meal price from database:', error);
+  }
+  
+  // Fallback to default pricing
   const defaultPricing = new Map([
     ['meal_bundle_4_meals', 249],
     ['meal_bundle_5_meals', 239],
@@ -56,30 +67,74 @@ function getServerPriceForMealCount(mealCount: number): number {
   ]);
   
   const key = `meal_bundle_${mealCount}_meals`;
-  return defaultPricing.get(key) || 249; // fallback to base price
+  return defaultPricing.get(key) || 249;
+}
+
+// Get the base price (highest price per meal - from smallest package)
+async function getBasePricePerMeal(storage: IStorage): Promise<number> {
+  try {
+    // Get all meal bundle pricing configs
+    const mealBundles = await storage.getPricingConfigsByType('meal_bundle');
+    const activeBundles = mealBundles.filter(config => config.isActive);
+    
+    if (activeBundles.length > 0) {
+      // Find the highest price (base price from smallest package)
+      const maxPrice = Math.max(...activeBundles.map(bundle => bundle.price));
+      return maxPrice;
+    }
+  } catch (error) {
+    console.error('Error fetching base price from database:', error);
+  }
+  
+  // Fallback to default base price (4 meals package)
+  return 249;
+}
+
+// Get the large meal addon price
+async function getLargeMealAddonPrice(storage: IStorage): Promise<number> {
+  try {
+    const addonConfig = await storage.getPricingConfig('meal_addon', 'large_meal_addon');
+    if (addonConfig && addonConfig.isActive) {
+      return addonConfig.price;
+    }
+  } catch (error) {
+    console.error('Error fetching large meal addon price:', error);
+  }
+  
+  // Fallback to default
+  return 99;
 }
 
 // Helper function to calculate pricing for orders
-function calculateOrderPricing(mealCount: number, defaultPortionSize: string): { subtotal: number; discount: number; total: number } {
-  const pricePerMeal = getServerPriceForMealCount(mealCount);
-  const largePortionAdditional = 99;
+async function calculateOrderPricing(mealCount: number, defaultPortionSize: string, storage: IStorage): Promise<{ subtotal: number; discount: number; total: number }> {
+  const pricePerMeal = await getServerPriceForMealCount(mealCount, storage);
+  const basePricePerMeal = await getBasePricePerMeal(storage);
+  const largePortionAdditional = await getLargeMealAddonPrice(storage);
   
-  let subtotal = 0;
+  // Calculate the full price subtotal (what it would cost at base price)
+  let fullPriceSubtotal = basePricePerMeal * mealCount;
   
+  // Calculate the actual discounted price
+  let actualPrice = pricePerMeal * mealCount;
+  
+  // Add large portion cost if applicable
   if (defaultPortionSize === 'large') {
-    subtotal = (pricePerMeal + largePortionAdditional) * mealCount;
-  } else if (defaultPortionSize === 'standard') {
-    subtotal = pricePerMeal * mealCount;
+    fullPriceSubtotal += largePortionAdditional * mealCount;
+    actualPrice += largePortionAdditional * mealCount;
   } else if (defaultPortionSize === 'mixed') {
     // For mixed, use standard price as base (user will adjust portions later)
-    subtotal = pricePerMeal * mealCount;
+    // No additional charge in the calculation
   }
   
-  // Calculate discount based on full price
-  const fullPriceTotal = mealCount * 249;
-  const discount = Math.max(0, fullPriceTotal - subtotal);
+  // Calculate discount (savings from volume pricing)
+  const discount = Math.max(0, fullPriceSubtotal - actualPrice);
   
-  return { subtotal, discount, total: subtotal };
+  // Return full price as subtotal, with discount shown separately
+  return { 
+    subtotal: fullPriceSubtotal, 
+    discount: discount, 
+    total: actualPrice 
+  };
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -422,8 +477,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const selections = req.session.tempMealSelections;
           
           // Calculate pricing for the order
-          const pricePerMeal = getServerPriceForMealCount(selections.mealCount);
-          const largePortionAdditional = 99;
+          const pricePerMeal = await getServerPriceForMealCount(selections.mealCount, storage);
+          const largePortionAdditional = await getLargeMealAddonPrice(storage);
           
           let subtotal = 0;
           for (const mealItem of selections.selectedMeals) {
@@ -967,16 +1022,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const week of futureWeeks) {
         let order = await storage.getOrderByUserAndWeek(userId, week.id);
         
-        const pricePerMeal = getServerPriceForMealCount(mealCount);
-        let itemPrice = pricePerMeal;
-        
-        if (portionSize === 'large') {
-          itemPrice = pricePerMeal + 99;
-        }
-        
-        const subtotal = itemPrice * mealCount;
-        const fullPriceTotal = mealCount * 249;
-        const discount = Math.max(0, fullPriceTotal - subtotal);
+        // Use calculateOrderPricing for consistency
+        const pricing = await calculateOrderPricing(mealCount, portionSize, storage);
+        const subtotal = pricing.subtotal;
+        const discount = pricing.discount;
 
         if (!order) {
           // Create new order with defaults
@@ -1302,7 +1351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { weekId, mealCount, defaultPortionSize, items, totalPrice, deliverySlot } = req.body;
 
       // Calculate pricing based on meal count and portion size
-      const pricing = calculateOrderPricing(mealCount, defaultPortionSize || 'standard');
+      const pricing = await calculateOrderPricing(mealCount, defaultPortionSize || 'standard', storage);
       
       // Use calculated pricing if totalPrice not provided
       const orderSubtotal = totalPrice || pricing.subtotal;
@@ -1480,7 +1529,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 });
               } else {
                 // Create normal not_selected order with proper pricing
-                const pricing = calculateOrderPricing(defaultMealCount, defaultPortionSize);
+                const pricing = await calculateOrderPricing(defaultMealCount, defaultPortionSize, storage);
                 order = await storage.createOrder({
                   userId: req.session.userId!,
                   weekId: week.id,
@@ -1498,7 +1547,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             } else {
               // No non-skipped orders found, create normal order with proper pricing
-              const pricing = calculateOrderPricing(defaultMealCount, defaultPortionSize);
+              const pricing = await calculateOrderPricing(defaultMealCount, defaultPortionSize, storage);
               order = await storage.createOrder({
                 userId: req.session.userId!,
                 weekId: week.id,
@@ -1516,7 +1565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           } else {
             // Existing user, create normal not_selected order with proper pricing
-            const pricing = calculateOrderPricing(defaultMealCount, defaultPortionSize);
+            const pricing = await calculateOrderPricing(defaultMealCount, defaultPortionSize, storage);
             order = await storage.createOrder({
               userId: req.session.userId!,
               weekId: week.id,
@@ -1731,50 +1780,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get or create order for this week
       let order = await storage.getOrderByUserAndWeek(userId, weekId);
       
+      // Calculate pricing using the helper function
+      const pricing = await calculateOrderPricing(mealCountNum, defaultPortionSize, storage);
+      
       if (!order) {
         // Create new order if it doesn't exist
-        const pricePerMeal = getServerPriceForMealCount(mealCountNum);
-        let itemPrice = pricePerMeal;
-        
-        // For mixed portion size, use base standard price
-        if (defaultPortionSize === 'large') {
-          itemPrice = pricePerMeal + 99;
-        } else if (defaultPortionSize === 'mixed') {
-          // For mixed, use standard price as base (user will specify individual portions later)
-          itemPrice = pricePerMeal;
-        }
-        
-        const subtotal = itemPrice * mealCountNum;
-        const fullPriceTotal = parseInt(mealCount) * 249;
-        const discount = Math.max(0, fullPriceTotal - subtotal);
-
         order = await storage.createOrder({
           userId,
           weekId,
           mealCount: parseInt(mealCount),
           defaultPortionSize,
           deliverySlot: deliverySlot || 'morning',
-          subtotal,
-          discount,
-          total: subtotal
+          subtotal: pricing.subtotal,
+          discount: pricing.discount,
+          total: pricing.total
         });
       } else {
-        // Update existing order
-        const pricePerMeal = getServerPriceForMealCount(mealCountNum);
-        let itemPrice = pricePerMeal;
-        
-        // For mixed portion size, use base standard price
-        if (defaultPortionSize === 'large') {
-          itemPrice = pricePerMeal + 99;
-        } else if (defaultPortionSize === 'mixed') {
-          // For mixed, use standard price as base (user will specify individual portions later)
-          itemPrice = pricePerMeal;
-        }
-        
-        const subtotal = itemPrice * mealCountNum;
-        const fullPriceTotal = parseInt(mealCount) * 249;
-        const discount = Math.max(0, fullPriceTotal - subtotal);
-
         // Clear existing meal selections when meal count changes
         const currentOrderItems = await storage.getOrderItems(order.id);
         if (currentOrderItems.length > 0 && order.mealCount !== mealCountNum) {
@@ -1788,9 +1809,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           mealCount: parseInt(mealCount),
           defaultPortionSize,
           deliverySlot: deliverySlot || order.deliverySlot || 'morning',
-          subtotal,
-          discount,
-          total: subtotal,
+          subtotal: pricing.subtotal,
+          discount: pricing.discount,
+          total: pricing.total,
           status: 'not_selected' // Reset status when meal selections are cleared
         });
       }
@@ -1811,20 +1832,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const futureWeek of futureWeeks) {
           let futureOrder = await storage.getOrderByUserAndWeek(userId, futureWeek.id);
           
-          const pricePerMeal = getServerPriceForMealCount(mealCountNum);
-          let itemPrice = pricePerMeal;
-          
-          // For mixed portion size, use base standard price
-          if (defaultPortionSize === 'large') {
-            itemPrice = pricePerMeal + 99;
-          } else if (defaultPortionSize === 'mixed') {
-            // For mixed, use standard price as base (user will specify individual portions later)
-            itemPrice = pricePerMeal;
-          }
-          
-          const subtotal = itemPrice * mealCountNum;
-          const fullPriceTotal = parseInt(mealCount) * 249;
-          const discount = Math.max(0, fullPriceTotal - subtotal);
+          // Calculate pricing using the helper function
+          const futurePricing = await calculateOrderPricing(mealCountNum, defaultPortionSize, storage);
 
           if (!futureOrder) {
             // Create new order for future week
@@ -1834,9 +1843,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               mealCount: parseInt(mealCount),
               defaultPortionSize,
               deliverySlot: deliverySlot || 'morning',
-              subtotal,
-              discount,
-              total: subtotal
+              subtotal: futurePricing.subtotal,
+              discount: futurePricing.discount,
+              total: futurePricing.total
             });
           } else {
             // Clear existing meal selections when meal count changes
@@ -1852,9 +1861,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               mealCount: parseInt(mealCount),
               defaultPortionSize,
               deliverySlot: deliverySlot || futureOrder.deliverySlot || 'morning',
-              subtotal,
-              discount,
-              total: subtotal,
+              subtotal: futurePricing.subtotal,
+              discount: futurePricing.discount,
+              total: futurePricing.total,
               status: futureOrder.mealCount !== mealCountNum ? 'not_selected' : futureOrder.status
             });
           }
@@ -2029,35 +2038,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await autoSkipPrecedingWeeks(req.session.userId!, week.id);
 
       // Calculate prices
-      const pricePerMeal = getServerPriceForMealCount(mealCount);
-      const largePortionAdditional = 99;
+      const pricePerMeal = await getServerPriceForMealCount(mealCount, storage);
+      const largePortionAdditional = await getLargeMealAddonPrice(storage);
+      const basePricePerMeal = await getBasePricePerMeal(storage);
 
       let subtotal = 0;
+      let fullPriceSubtotal = 0;
 
       // Calculate subtotal based on portion sizes
       items.forEach((item: any) => {
         if (item.portionSize === 'large') {
           subtotal += pricePerMeal + largePortionAdditional;
+          fullPriceSubtotal += basePricePerMeal + largePortionAdditional;
         } else {
           subtotal += pricePerMeal;
+          fullPriceSubtotal += basePricePerMeal;
         }
       });
 
-      // Calculate full price total and discount
-      const fullPriceTotal = mealCount * 249;
-      const discount = fullPriceTotal - subtotal;
+      // Calculate discount
+      const discount = fullPriceSubtotal - subtotal;
 
       // Calculate total
       const total = subtotal;
 
-      // Create order
+      // Create order with full price as subtotal
       const order = await storage.createOrder({
         userId: req.session.userId!,
         weekId: week.id,
         status: 'not_selected',
         mealCount,
         defaultPortionSize,
-        subtotal,
+        subtotal: fullPriceSubtotal,
         discount,
         total,
         deliveryDate: week.deliveryDate.toISOString()
@@ -2127,8 +2139,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await autoSkipPrecedingWeeks(req.session.userId, order.weekId);
 
       // Calculate price
-      const pricePerMeal = getServerPriceForMealCount(order.mealCount);
-      const largePortionAdditional = 99;
+      const pricePerMeal = await getServerPriceForMealCount(order.mealCount, storage);
+      const largePortionAdditional = await getLargeMealAddonPrice(storage);
       const itemPrice = portionSize === 'large' 
         ? pricePerMeal + largePortionAdditional 
         : pricePerMeal;
@@ -2229,8 +2241,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Calculate new price
-      const pricePerMeal = getServerPriceForMealCount(order.mealCount);
-      const largePortionAdditional = 99;
+      const pricePerMeal = await getServerPriceForMealCount(order.mealCount, storage);
+      const largePortionAdditional = await getLargeMealAddonPrice(storage);
       const newPrice = portionSize === 'large' 
         ? pricePerMeal + largePortionAdditional 
         : pricePerMeal;
