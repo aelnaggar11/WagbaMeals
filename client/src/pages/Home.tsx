@@ -314,7 +314,7 @@ const Home = () => {
                         className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50"
                         onClick={() => toggleFaq(faq.id)}
                       >
-                        <span className="text-sm text-gray-700">{faq.question}</span>
+                        <span className="text-sm text-gray-700 font-bold">{faq.question}</span>
                         <svg 
                           className={`w-4 h-4 text-gray-400 transform transition-transform ${
                             isExpanded ? 'rotate-180' : ''
@@ -328,7 +328,7 @@ const Home = () => {
                       </div>
                       {isExpanded && (
                         <div className="px-4 pb-4 border-t border-gray-100">
-                          <p className="text-sm text-gray-600 pt-3">{faq.answer}</p>
+                          <p className="text-sm text-gray-600 pt-3 italic">{faq.answer}</p>
                         </div>
                       )}
                     </div>
