@@ -141,7 +141,7 @@ const Home = () => {
             </div>
             
             <div className="space-y-6">
-              <div className="flex gap-4">
+              <div className="flex gap-4 md:justify-center">
                 <div className="text-5xl font-bold opacity-90">01</div>
                 <div>
                   <h3 className="text-xl font-bold mb-2">Select your favorites</h3>
@@ -161,7 +161,7 @@ const Home = () => {
                 </div>
               </div>
               
-              <div className="flex gap-4 md:justify-end">
+              <div className="flex gap-4 md:justify-center">
                 <div className="text-5xl font-bold opacity-90">03</div>
                 <div>
                   <h3 className="text-xl font-bold mb-2">Delivered fresh</h3>
@@ -250,7 +250,7 @@ const Home = () => {
             </div>
             
             <div className="space-y-6">
-              <div className="flex gap-4 items-start">
+              <div className="flex gap-4 items-start md:justify-center">
                 <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
                   <img src={wiwIcon1} alt="Premium culinary experience" className="w-10 h-10 object-contain" />
                 </div>
@@ -274,7 +274,7 @@ const Home = () => {
                 </div>
               </div>
               
-              <div className="flex gap-4 items-start md:justify-end">
+              <div className="flex gap-4 items-start md:justify-center">
                 <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
                   <img src={wiwIcon3} alt="Flexible no-stress plans" className="w-10 h-10 object-contain" />
                 </div>
