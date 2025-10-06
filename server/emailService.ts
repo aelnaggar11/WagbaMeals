@@ -29,7 +29,7 @@ export const emailService = {
       const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
 
       const sendSmtpEmail = new brevo.SendSmtpEmail();
-      sendSmtpEmail.sender = { email: 'hello@wagba.com', name: 'Wagba' };
+      sendSmtpEmail.sender = { email: 'aelnaggar35@gmail.com', name: 'Wagba' };
       sendSmtpEmail.to = [{ email: to }];
       sendSmtpEmail.subject = 'Password Reset - Wagba';
       sendSmtpEmail.htmlContent = `
@@ -83,11 +83,16 @@ Best regards,
 The Wagba Team
       `.trim();
 
-      await apiInstance.sendTransacEmail(sendSmtpEmail);
+      const response = await apiInstance.sendTransacEmail(sendSmtpEmail);
       console.log('Password reset email sent successfully to:', to);
+      console.log('Brevo response:', response);
       return true;
     } catch (error) {
-      console.error('Error sending password reset email:', error);
+      console.error('❌ Error sending password reset email:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      }
       return false;
     }
   },
@@ -107,7 +112,7 @@ The Wagba Team
 
     try {
       const sendSmtpEmail = new brevo.SendSmtpEmail();
-      sendSmtpEmail.sender = { email: 'hello@wagba.com', name: 'Wagba' };
+      sendSmtpEmail.sender = { email: 'aelnaggar35@gmail.com', name: 'Wagba' };
       sendSmtpEmail.to = [{ email: params.to, name: params.customerName }];
       sendSmtpEmail.templateId = 1;
       sendSmtpEmail.params = {
@@ -118,12 +123,17 @@ The Wagba Team
         ORDER_TOTAL: params.orderTotal.toString()
       };
 
-      await apiInstance.sendTransacEmail(sendSmtpEmail);
+      const response = await apiInstance.sendTransacEmail(sendSmtpEmail);
       console.log('Welcome email sent successfully to:', params.to);
       console.log('Template parameters:', sendSmtpEmail.params);
+      console.log('Brevo response:', response);
       return true;
     } catch (error) {
-      console.error('Error sending welcome email:', error);
+      console.error('❌ Error sending welcome email:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      }
       return false;
     }
   }
