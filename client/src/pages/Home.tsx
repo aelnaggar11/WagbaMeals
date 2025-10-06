@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -18,25 +17,25 @@ const Home = () => {
   const [, navigate] = useLocation();
   const [showPreOnboardingModal, setShowPreOnboardingModal] = useState(false);
   const [expandedFaqs, setExpandedFaqs] = useState<number[]>([]);
-  
+
   // Get current available week for the menu link
   const { data: weeksData } = useQuery<{ weeks: Week[] }>({
     queryKey: ['/api/weeks'],
   });
-  
+
   // Fetch landing page content
   const { data: heroData } = useQuery<any>({
     queryKey: ['/api/landing/hero'],
   });
-  
+
   const { data: carouselMeals = [] } = useQuery<any[]>({
     queryKey: ['/api/landing/carousel-meals'],
   });
-  
+
   const { data: faqs = [] } = useQuery<any[]>({
     queryKey: ['/api/landing/faqs'],
   });
-  
+
   const currentWeekId = weeksData?.weeks.find(week => week.isSelectable)?.id || "current";
 
   const handleGetStarted = () => {
@@ -47,7 +46,7 @@ const Home = () => {
     // Navigate to meal plans page
     navigate('/meal-plans');
   };
-  
+
   const toggleFaq = (faqId: number) => {
     setExpandedFaqs(prev => 
       prev.includes(faqId) 
@@ -79,7 +78,7 @@ const Home = () => {
               className="h-full w-auto brightness-0 invert"
             />
           </div>
-          
+
           {/* Login Button with Circle Background - positioned to align with pattern circle */}
           <div className="relative z-10" style={{ marginRight: '10px' }}>
             <div 
@@ -139,9 +138,9 @@ const Home = () => {
                 <span className="text-yellow-300">✦</span>
               </h2>
             </div>
-            
-            <div className="space-y-6">
-              <div className="flex gap-4 md:justify-center">
+
+            <div className="space-y-6 md:max-w-lg md:mx-auto">
+              <div className="flex gap-4">
                 <div className="text-5xl font-bold opacity-90">01</div>
                 <div>
                   <h3 className="text-xl font-bold mb-2">Select your favorites</h3>
@@ -150,8 +149,8 @@ const Home = () => {
                   </p>
                 </div>
               </div>
-              
-              <div className="flex gap-4 md:justify-center">
+
+              <div className="flex gap-4">
                 <div className="text-5xl font-bold opacity-90">02</div>
                 <div>
                   <h3 className="text-xl font-bold mb-2">We get cookin'</h3>
@@ -160,8 +159,8 @@ const Home = () => {
                   </p>
                 </div>
               </div>
-              
-              <div className="flex gap-4 md:justify-center">
+
+              <div className="flex gap-4">
                 <div className="text-5xl font-bold opacity-90">03</div>
                 <div>
                   <h3 className="text-xl font-bold mb-2">Delivered fresh</h3>
@@ -203,7 +202,7 @@ const Home = () => {
                 <span className="text-yellow-300">✦</span>
               </h2>
             </div>
-            
+
             {/* Carousel Container */}
             <div className="relative overflow-hidden">
               <div className="flex gap-4 animate-scroll">
@@ -248,9 +247,9 @@ const Home = () => {
                 <span className="text-yellow-300">✦</span>
               </h2>
             </div>
-            
-            <div className="space-y-6">
-              <div className="flex gap-4 items-start md:justify-center">
+
+            <div className="space-y-6 md:max-w-lg md:mx-auto">
+              <div className="flex gap-4 items-start">
                 <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
                   <img src={wiwIcon1} alt="Premium culinary experience" className="w-10 h-10 object-contain" />
                 </div>
@@ -261,8 +260,8 @@ const Home = () => {
                   </p>
                 </div>
               </div>
-              
-              <div className="flex gap-4 items-start md:justify-center">
+
+              <div className="flex gap-4 items-start">
                 <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
                   <img src={wiwIcon2} alt="Health conscious" className="w-10 h-10 object-contain" />
                 </div>
@@ -273,8 +272,8 @@ const Home = () => {
                   </p>
                 </div>
               </div>
-              
-              <div className="flex gap-4 items-start md:justify-center">
+
+              <div className="flex gap-4 items-start">
                 <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
                   <img src={wiwIcon3} alt="Flexible no-stress plans" className="w-10 h-10 object-contain" />
                 </div>
@@ -288,7 +287,7 @@ const Home = () => {
             </div>
           </div>
 
-          
+
 
           {/* FAQ Section */}
           <div className="mb-8">
@@ -299,13 +298,13 @@ const Home = () => {
                 <span className="text-yellow-300">✦</span>
               </h2>
             </div>
-            
+
             <div className="bg-red-50 rounded-2xl p-6">
               <div className="text-center mb-4">
                 <h3 className="text-lg font-bold text-gray-800 mb-2">Meal delivery, made easy</h3>
                 <p className="text-sm text-gray-600">Quick answers about our weekly meals, plans, and delivery.</p>
               </div>
-              
+
               <div className="space-y-3">
                 {faqs.filter(faq => faq.isActive).sort((a, b) => a.displayOrder - b.displayOrder).map((faq) => {
                   const isExpanded = expandedFaqs.includes(faq.id);
@@ -339,7 +338,7 @@ const Home = () => {
             </div>
           </div>
 
-          
+
         </div>
       </section>
 
