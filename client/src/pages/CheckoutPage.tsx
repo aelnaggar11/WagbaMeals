@@ -729,15 +729,30 @@ const CheckoutPage = () => {
                     <span>Delivery Fee</span>
                     <span>EGP {deliveryFee.toFixed(2)}</span>
                   </div>
+                  
+                  {/* Show discount if it exists */}
                   {pendingOrder.discount > 0 && (
                     <div className="flex justify-between text-accent">
                       <span>Discount</span>
                       <span>-EGP {pendingOrder.discount.toFixed(0)}</span>
                     </div>
                   )}
+                  
+                  {/* Show first-order discount preview for new subscribers */}
+                  {!userProfile?.hasUsedTrialBox && orderType === 'subscription' && pendingOrder.discount === 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>First-Order Discount (10%)</span>
+                      <span>-EGP {Math.round(pendingOrder.subtotal * 0.1).toFixed(0)}</span>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between font-bold text-lg pt-4 border-t">
                     <span>Total</span>
-                    <span className="text-primary">EGP {(pendingOrder.total + deliveryFee).toFixed(0)}</span>
+                    <span className="text-primary">
+                      EGP {(!userProfile?.hasUsedTrialBox && orderType === 'subscription' && pendingOrder.discount === 0
+                        ? (pendingOrder.subtotal - Math.round(pendingOrder.subtotal * 0.1) + deliveryFee).toFixed(0)
+                        : (pendingOrder.total + deliveryFee).toFixed(0))}
+                    </span>
                 </div>
               </CardContent>
               <CardFooter>
