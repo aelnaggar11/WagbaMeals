@@ -2373,8 +2373,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log('Sending InstaPay email notification to admin for order:', orderId);
           // Send email notification to admin
           const emailSent = await sendEmail({
-            to: 'aelnaggar35@gmail.com',
-            from: 'aelnaggar35@gmail.com',
+            to: 'hello@wagba.food',
+            from: 'hello@wagba.food',
             subject: 'New InstaPay Payment Confirmation - Order #' + orderId,
             html: `
               <h2>New InstaPay Payment Confirmation</h2>
