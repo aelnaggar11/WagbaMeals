@@ -741,7 +741,7 @@ const CheckoutPage = () => {
                   {/* Show additional 10% first-order discount for new subscribers */}
                   {!userProfile?.hasUsedTrialBox && orderType === 'subscription' && (
                     <div className="flex justify-between text-green-600 font-medium">
-                      <span>First Subscription Discount (10%)</span>
+                      <span>1st Order Discount (10%)</span>
                       <span>-EGP {Math.round(pendingOrder.subtotal * 0.1).toFixed(0)}</span>
                     </div>
                   )}
