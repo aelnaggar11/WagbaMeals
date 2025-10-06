@@ -732,7 +732,7 @@ const CheckoutPage = () => {
                   
                   {/* Show base volume discount (always present for both trial and subscription) */}
                   {pendingOrder.discount > 0 && (
-                    <div className="flex justify-between text-accent">
+                    <div className="flex justify-between text-green-600">
                       <span>Volume Discount</span>
                       <span className="whitespace-nowrap">-EGP {pendingOrder.discount.toFixed(0)}</span>
                     </div>
