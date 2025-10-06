@@ -2429,6 +2429,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderUpdateData.paymentStatus = 'confirmed';
       }
 
+      // Get user once for discount and profile update
+      const currentUser = await storage.getUser(req.session.userId!);
+      const isFirstOrder = currentUser && !currentUser.hasUsedTrialBox;
+      
+      // Apply 10% first-order discount for subscription orders
+      if (isFirstOrder && orderType === 'subscription') {
+        console.log('=== FIRST-ORDER SUBSCRIPTION DISCOUNT ===');
+        console.log('Applying 10% discount to subscription order');
+        console.log('Original subtotal:', order.subtotal);
+        console.log('Original discount:', order.discount);
+        console.log('Original total:', order.total);
+        
+        // Calculate 10% discount on the current total
+        const firstOrderDiscount = Math.round(order.subtotal * 0.1);
+        const newSubtotal = order.subtotal;
+        const newDiscount = order.discount + firstOrderDiscount;
+        const newTotal = newSubtotal - firstOrderDiscount;
+        
+        // Update order data with new pricing
+        orderUpdateData.subtotal = newSubtotal;
+        orderUpdateData.discount = newDiscount;
+        orderUpdateData.total = newTotal;
+        
+        console.log('First-order discount amount:', firstOrderDiscount);
+        console.log('New total discount:', newDiscount);
+        console.log('New total:', newTotal);
+        console.log('==========================================');
+      }
+
       // Update order
       console.log('=== ORDER UPDATE DATA ===');
       console.log('Order ID to update:', parseInt(orderId));
@@ -2443,16 +2472,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('====================');
 
       // Always update user address and phone from checkout
-      const user = await storage.getUser(req.session.userId!);
-      if (user) {
+      if (currentUser) {
         // Include delivery notes in the address object for user profile
         const addressWithNotes = {
           ...parsedAddress,
           deliveryNotes: deliveryNotes || ""
         };
         
-        // Check if this is the user's first order (before updating hasUsedTrialBox)
-        const isFirstOrder = !user.hasUsedTrialBox;
+        // isFirstOrder already calculated above
         
         // Update user with address and trial status
         const userUpdateData: any = {
@@ -2494,24 +2521,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
                                  order.defaultPortionSize || 'Standard';
               
               console.log('=== SENDING WELCOME EMAIL ===');
-              console.log('First order detected for user:', user.email);
+              console.log('First order detected for user:', currentUser.email);
               console.log('Delivery date:', formattedDate);
               console.log('Meal count:', order.mealCount);
               console.log('Portion size:', portionSize);
               
               const emailSent = await emailService.sendWelcomeEmail({
-                to: user.email,
-                customerName: user.name || user.username || 'Valued Customer',
+                to: currentUser.email,
+                customerName: currentUser.name || currentUser.username || 'Valued Customer',
                 mealCount: order.mealCount || 0,
                 portionSize: portionSize,
                 firstDeliveryDate: formattedDate,
-                orderTotal: order.total || 0
+                orderTotal: updatedOrder.total || 0
               });
               
               if (emailSent) {
-                console.log('Welcome email sent successfully to:', user.email);
+                console.log('Welcome email sent successfully to:', currentUser.email);
               } else {
-                console.log('Failed to send welcome email to:', user.email);
+                console.log('Failed to send welcome email to:', currentUser.email);
               }
             }
           } catch (emailError) {
