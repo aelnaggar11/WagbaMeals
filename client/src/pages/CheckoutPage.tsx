@@ -628,7 +628,6 @@ const CheckoutPage = () => {
                             <p>1. Send payment to InstaPay account: <strong>wagba.food</strong></p>
                             <p>2. Upload your payment confirmation screenshot below</p>
                             <p>3. Your order will be processed once payment is verified</p>
-                            <p className="text-orange-600">Note: A 7% processing fee will be added to your total</p>
                           </div>
                         </div>
                         
