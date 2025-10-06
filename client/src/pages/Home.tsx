@@ -299,7 +299,7 @@ const Home = () => {
               </h2>
             </div>
 
-            <div className="bg-red-50 rounded-2xl p-6">
+            <div className="rounded-2xl p-6" style={{ backgroundColor: '#FCEEF3' }}>
               <div className="text-center mb-4">
                 <h3 className="text-lg font-bold text-gray-800 mb-2">Meal delivery, made easy</h3>
                 <p className="text-sm text-gray-600">Quick answers about our weekly meals, plans, and delivery.</p>
