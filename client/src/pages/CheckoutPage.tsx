@@ -409,7 +409,6 @@ const CheckoutPage = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <ProgressIndicator steps={steps} currentStep={4} />
-      
       {/* Back Button */}
       <div className="flex justify-start mb-4 mt-6">
         <Button 
@@ -437,7 +436,6 @@ const CheckoutPage = () => {
           {(userProfile?.hasUsedTrialBox || userProfile?.userType === 'subscriber') ? 'Back to Account' : 'Back to Menu'}
         </Button>
       </div>
-      
       <div className="max-w-4xl mx-auto mt-8">
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -578,7 +576,7 @@ const CheckoutPage = () => {
                       <div className="text-green-600 font-medium">✓ Credit card required</div>
                       <div className="text-green-600 font-medium">✓ Weekly recurring delivery</div>
                       <div className="text-green-600 font-medium">✓ Skip or pause anytime</div>
-                      <div className="text-blue-600 font-medium">💰 Save 10% on all orders</div>
+                      <div className="text-blue-600 font-medium">💰 Save 10% on your first order</div>
                     </div>
                   </div>
                 </div>
