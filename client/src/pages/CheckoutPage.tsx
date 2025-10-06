@@ -594,7 +594,7 @@ const CheckoutPage = () => {
                     >
                       <TabsList className="grid grid-cols-2 mb-4">
                         <TabsTrigger value="card">Credit Card</TabsTrigger>
-                        <TabsTrigger value="instapay">InstaPay (+7%)</TabsTrigger>
+                        <TabsTrigger value="instapay">InstaPay </TabsTrigger>
                       </TabsList>
                       
                       <TabsContent value="card" className="space-y-4">
