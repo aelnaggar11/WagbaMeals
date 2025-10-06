@@ -139,7 +139,9 @@ const MealPlans = () => {
               <span className="text-gray-600">{selectedMealCount} meals per week</span>
               <span className="font-medium">
                 {pricing[selectedMealCount] ? (
-                  `EGP ${pricing[selectedMealCount][selectedPortionSize === "mixed" ? "standard" : selectedPortionSize as keyof typeof pricing[4]]} per meal`
+                  selectedPortionSize === "mixed" 
+                    ? `From EGP ${pricing[selectedMealCount].standard} per meal`
+                    : `EGP ${pricing[selectedMealCount][selectedPortionSize as keyof typeof pricing[4]]} per meal`
                 ) : (
                   "Loading..."
                 )}
