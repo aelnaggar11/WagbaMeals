@@ -3618,16 +3618,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Paymob response callback (user redirect)
+  // Paymob transaction response callback (user redirect) - this is where users land after payment
   app.get('/api/payments/paymob/response', async (req, res) => {
     try {
-      const { success, order: paymobOrderId } = req.query;
+      console.log('=== PAYMOB TRANSACTION RESPONSE (User Redirect) ===');
+      console.log('Query params:', req.query);
       
-      // Redirect to appropriate page
+      const { success, order: paymobOrderId, id: transactionId, pending } = req.query;
+      
+      // Find our order by paymob order ID and update it
+      if (paymobOrderId) {
+        const orders = await storage.getAllOrders();
+        const order = orders.find((o: any) => 
+          o.paymobOrderId === paymobOrderId.toString() || 
+          o.paymobOrderId === paymobOrderId
+        );
+        
+        if (order && success === 'true') {
+          // Update order payment status
+          await storage.updateOrder(order.id, {
+            paymentStatus: 'paid',
+            paymobTransactionId: transactionId?.toString()
+          });
+
+          // Mark user as having used trial box if this was a trial order
+          const user = await storage.getUser(order.userId);
+          if (user && !user.hasUsedTrialBox) {
+            await storage.updateUser(order.userId, {
+              hasUsedTrialBox: true
+            });
+          }
+
+          console.log(`Payment successful for order ${order.id} via transaction response`);
+          return res.redirect(`/?payment=success&order=${order.id}`);
+        } else if (order && pending === 'true') {
+          console.log(`Payment pending for order ${order.id}`);
+          return res.redirect(`/?payment=pending&order=${order.id}`);
+        } else if (order) {
+          console.log(`Payment failed for order ${order.id}`);
+          return res.redirect(`/?payment=failed&order=${order.id}`);
+        }
+      }
+      
+      // Fallback redirects
       if (success === 'true') {
-        res.redirect(`/?payment=success&order=${paymobOrderId}`);
+        res.redirect(`/?payment=success`);
+      } else if (pending === 'true') {
+        res.redirect(`/?payment=pending`);
       } else {
-        res.redirect(`/?payment=failed&order=${paymobOrderId}`);
+        res.redirect(`/?payment=failed`);
       }
     } catch (error) {
       console.error('Paymob response handling error:', error);
