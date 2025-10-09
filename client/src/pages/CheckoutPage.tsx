@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
@@ -26,6 +27,7 @@ const CheckoutPage = () => {
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [paymentConfirmationImage, setPaymentConfirmationImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [paymobIframeUrl, setPaymobIframeUrl] = useState<string | null>(null);
   
   // Fetch current order with enhanced retry and error handling for onboarding
   const { data: pendingOrder, isLoading, error, refetch } = useQuery<Order>({
@@ -286,8 +288,9 @@ const CheckoutPage = () => {
           }
         );
 
-        // Redirect to Paymob payment page
-        window.location.href = paymobResponse.iframeUrl;
+        // Show Paymob iframe for payment
+        setPaymobIframeUrl(paymobResponse.iframeUrl);
+        setIsSubmitting(false);
         return;
       }
       
@@ -429,6 +432,20 @@ const CheckoutPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Paymob Payment Modal */}
+      <Dialog open={!!paymobIframeUrl} onOpenChange={() => setPaymobIframeUrl(null)}>
+        <DialogContent className="max-w-4xl w-full h-[90vh] p-0">
+          {paymobIframeUrl && (
+            <iframe
+              src={paymobIframeUrl}
+              className="w-full h-full border-0 rounded-lg"
+              title="Paymob Payment"
+              allow="payment"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       <ProgressIndicator steps={steps} currentStep={4} />
       {/* Back Button */}
       <div className="flex justify-start mb-4 mt-6">
