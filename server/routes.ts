@@ -3686,12 +3686,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               <body>
                 <script>
                   if (window.opener) {
-                    // We're in a popup - redirect parent and close
-                    window.opener.location.href = '/account';
+                    // We're in a popup - force full page reload to refresh cache
+                    window.opener.location.href = '/account?refresh=' + Date.now();
                     window.close();
                   } else {
                     // Not in popup - redirect normally
-                    window.location.href = '/account';
+                    window.location.href = '/account?refresh=' + Date.now();
                   }
                 </script>
                 <p>Payment successful! Redirecting...</p>
@@ -3709,10 +3709,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               <body>
                 <script>
                   if (window.opener) {
-                    window.opener.location.href = '/account';
+                    window.opener.location.href = '/account?refresh=' + Date.now();
                     window.close();
                   } else {
-                    window.location.href = '/account';
+                    window.location.href = '/account?refresh=' + Date.now();
                   }
                 </script>
                 <p>Payment pending... Redirecting...</p>
@@ -3730,10 +3730,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               <body>
                 <script>
                   if (window.opener) {
-                    window.opener.location.href = '/checkout';
+                    window.opener.location.href = '/account?failed=true';
                     window.close();
                   } else {
-                    window.location.href = '/checkout';
+                    window.location.href = '/account?failed=true';
                   }
                 </script>
                 <p>Payment failed. Redirecting...</p>
@@ -3754,10 +3754,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             <body>
               <script>
                 if (window.opener) {
-                  window.opener.location.href = '/account';
+                  window.opener.location.href = '/account?refresh=' + Date.now();
                   window.close();
                 } else {
-                  window.location.href = '/account';
+                  window.location.href = '/account?refresh=' + Date.now();
                 }
               </script>
               <p>Payment successful! Redirecting...</p>
@@ -3774,10 +3774,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             <body>
               <script>
                 if (window.opener) {
-                  window.opener.location.href = '/account';
+                  window.opener.location.href = '/account?refresh=' + Date.now();
                   window.close();
                 } else {
-                  window.location.href = '/account';
+                  window.location.href = '/account?refresh=' + Date.now();
                 }
               </script>
               <p>Payment pending... Redirecting...</p>
@@ -3794,10 +3794,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             <body>
               <script>
                 if (window.opener) {
-                  window.opener.location.href = '/checkout';
+                  window.opener.location.href = '/account?failed=true';
                   window.close();
                 } else {
-                  window.location.href = '/checkout';
+                  window.location.href = '/account?failed=true';
                 }
               </script>
               <p>Payment failed. Redirecting...</p>
@@ -3816,10 +3816,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           <body>
             <script>
               if (window.opener) {
-                window.opener.location.href = '/checkout';
+                window.opener.location.href = '/account?error=true';
                 window.close();
               } else {
-                window.location.href = '/checkout';
+                window.location.href = '/account?error=true';
               }
             </script>
             <p>An error occurred. Redirecting...</p>
