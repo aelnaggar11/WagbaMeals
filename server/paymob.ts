@@ -3,6 +3,7 @@ import crypto from 'crypto';
 
 const PAYMOB_API_KEY = process.env.PAYMOB_API_KEY;
 const PAYMOB_INTEGRATION_ID = process.env.PAYMOB_INTEGRATION_ID;
+const PAYMOB_IFRAME_ID = process.env.PAYMOB_IFRAME_ID;
 const PAYMOB_HMAC_SECRET = process.env.PAYMOB_HMAC_SECRET;
 
 const PAYMOB_BASE_URL = 'https://accept.paymob.com/api';
@@ -116,8 +117,16 @@ export class PaymobService {
     const orderId = await this.registerOrder(authToken, amountCents, items);
     const paymentToken = await this.getPaymentToken(authToken, orderId, amountCents, billingData);
 
-    // Use the standalone checkout URL which doesn't require an iframe ID
-    const checkoutUrl = `https://accept.paymob.com/standalone/?ref=${paymentToken}`;
+    // Use iframe URL if PAYMOB_IFRAME_ID is configured, otherwise use standalone
+    let checkoutUrl: string;
+    
+    if (PAYMOB_IFRAME_ID) {
+      checkoutUrl = `https://accept.paymob.com/api/acceptance/iframes/${PAYMOB_IFRAME_ID}?payment_token=${paymentToken}`;
+      console.log('Using iframe checkout with iframe ID:', PAYMOB_IFRAME_ID);
+    } else {
+      checkoutUrl = `https://accept.paymob.com/standalone/?ref=${paymentToken}`;
+      console.log('Using standalone checkout (no iframe ID configured)');
+    }
 
     console.log('=== PAYMOB PAYMENT URL CREATED ===');
     console.log('Order ID:', orderId);
