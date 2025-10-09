@@ -3489,6 +3489,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Don't add delivery fee again - it's already in order.total
       const totalAmount = order.total;
 
+      // Determine the callback URL based on environment
+      // In production, use the wagba.food domain; in dev, use Replit dev URL
+      let callbackUrl: string;
+      if (process.env.NODE_ENV === 'production') {
+        callbackUrl = 'https://wagba.food/api/payments/paymob/response';
+      } else {
+        // Use Replit dev URL from environment or construct from request
+        const replitDevUrl = process.env.REPLIT_DEV_DOMAIN;
+        if (replitDevUrl) {
+          callbackUrl = `https://${replitDevUrl}/api/payments/paymob/response`;
+        } else {
+          // Fallback: construct from request host
+          const protocol = req.get('x-forwarded-proto') || req.protocol;
+          const host = req.get('host');
+          callbackUrl = `${protocol}://${host}/api/payments/paymob/response`;
+        }
+      }
+
+      console.log('Paymob callback URL:', callbackUrl);
+
       // Create payment URL
       const { iframeUrl, orderId: paymobOrderId } = await paymobService.createPaymentUrl(
         totalAmount,
@@ -3506,7 +3526,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           postalCode: billingData.postalCode,
           state: billingData.state
         },
-        paymobItems
+        paymobItems,
+        undefined, // iframeId (using env var)
+        callbackUrl // redirect URL
       );
 
       // Store paymob order ID in our order for reference

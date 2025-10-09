@@ -72,10 +72,11 @@ export class PaymobService {
     authToken: string,
     orderId: number,
     amountCents: number,
-    billingData: BillingData
+    billingData: BillingData,
+    redirectUrl?: string
   ): Promise<string> {
     try {
-      const response = await axios.post(`${PAYMOB_BASE_URL}/acceptance/payment_keys`, {
+      const paymentKeyData: any = {
         auth_token: authToken,
         amount_cents: amountCents.toString(),
         expiration: 3600,
@@ -97,7 +98,15 @@ export class PaymobService {
         },
         currency: 'EGP',
         integration_id: parseInt(PAYMOB_INTEGRATION_ID!)
-      });
+      };
+
+      // Add redirect URL if provided - this tells Paymob where to send users after payment
+      if (redirectUrl) {
+        paymentKeyData.redirection_url = redirectUrl;
+        console.log('Setting Paymob redirect URL:', redirectUrl);
+      }
+
+      const response = await axios.post(`${PAYMOB_BASE_URL}/acceptance/payment_keys`, paymentKeyData);
       return response.data.token;
     } catch (error) {
       console.error('Paymob payment token error:', error);
@@ -109,13 +118,14 @@ export class PaymobService {
     amountEGP: number,
     billingData: BillingData,
     items: PaymobOrderItem[],
-    iframeId?: string
+    iframeId?: string,
+    redirectUrl?: string
   ): Promise<{ paymentToken: string; iframeUrl: string; orderId: number }> {
     const amountCents = Math.round(amountEGP * 100);
 
     const authToken = await this.authenticate();
     const orderId = await this.registerOrder(authToken, amountCents, items);
-    const paymentToken = await this.getPaymentToken(authToken, orderId, amountCents, billingData);
+    const paymentToken = await this.getPaymentToken(authToken, orderId, amountCents, billingData, redirectUrl);
 
     // Use iframe URL if PAYMOB_IFRAME_ID is configured, otherwise use standalone
     let checkoutUrl: string;
