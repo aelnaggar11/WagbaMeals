@@ -3536,33 +3536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymobOrderId: paymobOrderId.toString()
       });
 
-      // Check if iframe URL returns JSON with 3DS redirection_url
-      // Paymob returns JSON instead of HTML when 3DS authentication is required
-      try {
-        const iframeResponse = await fetch(iframeUrl);
-        const responseText = await iframeResponse.text();
-        
-        // Try to parse as JSON
-        try {
-          const jsonData = JSON.parse(responseText);
-          
-          // If we get JSON with redirection_url, use that for 3DS authentication
-          if (jsonData.redirection_url) {
-            console.log('=== 3DS REDIRECT DETECTED ===');
-            console.log('Original iframe URL:', iframeUrl);
-            console.log('3DS authentication URL:', jsonData.redirection_url);
-            console.log('============================');
-            return res.json({ iframeUrl: jsonData.redirection_url, paymobOrderId });
-          }
-        } catch {
-          // Not JSON - it's HTML payment form, return original iframe URL
-          console.log('HTML payment form detected, using original iframe URL');
-        }
-      } catch (fetchError) {
-        // If fetch fails, just return the original URL
-        console.log('Could not fetch iframe URL, returning original:', fetchError);
-      }
-
+      // Return the payment URL (post_pay format handles 3DS automatically)
       res.json({ iframeUrl, paymobOrderId });
     } catch (error) {
       console.error('Paymob payment initiation error:', error);
