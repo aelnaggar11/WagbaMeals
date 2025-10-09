@@ -127,11 +127,9 @@ export class PaymobService {
     const orderId = await this.registerOrder(authToken, amountCents, items);
     const paymentToken = await this.getPaymentToken(authToken, orderId, amountCents, billingData, redirectUrl);
 
-    // IMPORTANT: Use standalone payment page for full browser redirects
-    // The iframe URL doesn't work properly with window.location.href redirects
-    // It's meant to be embedded in an <iframe> element, not used as a direct URL
-    const checkoutUrl = `https://accept.paymob.com/standalone/?ref=${paymentToken}`;
-    console.log('Using standalone checkout for proper 3DS handling');
+    // Use iframe URL with configured iframe ID
+    const checkoutUrl = `https://accept.paymob.com/api/acceptance/iframes/${PAYMOB_IFRAME_ID}?payment_token=${paymentToken}`;
+    console.log('Using iframe checkout with iframe ID:', PAYMOB_IFRAME_ID);
 
     console.log('=== PAYMOB PAYMENT URL CREATED ===');
     console.log('Order ID:', orderId);
