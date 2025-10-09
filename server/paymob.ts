@@ -119,6 +119,12 @@ export class PaymobService {
     const defaultIframeId = iframeId || PAYMOB_INTEGRATION_ID;
     const iframeUrl = `https://accept.paymob.com/api/acceptance/iframes/${defaultIframeId}?payment_token=${paymentToken}`;
 
+    console.log('=== PAYMOB PAYMENT URL CREATED ===');
+    console.log('Order ID:', orderId);
+    console.log('Amount (EGP):', amountEGP);
+    console.log('Payment Token:', paymentToken);
+    console.log('=====================================');
+
     return {
       paymentToken,
       iframeUrl,
