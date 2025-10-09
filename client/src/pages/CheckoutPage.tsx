@@ -286,36 +286,38 @@ const CheckoutPage = () => {
           }
         ) as { iframeUrl: string };
 
-        // Paymob iframe sometimes returns JSON with a redirection_url for 3DS
-        // Check if we get JSON, and if so, extract the redirection_url
-        try {
-          const checkResponse = await fetch(paymobResponse.iframeUrl, {
-            method: 'GET',
-            redirect: 'manual' // Don't follow redirects
+        // Open payment in new window and poll for completion
+        // This handles Paymob's redirection-based flow properly
+        const paymentWindow = window.open(
+          paymobResponse.iframeUrl,
+          'paymob_payment',
+          'width=800,height=700,scrollbars=yes'
+        );
+
+        if (!paymentWindow) {
+          toast({
+            title: "Pop-up blocked",
+            description: "Please allow pop-ups for this site to complete payment",
+            variant: "destructive"
           });
-          
-          const responseText = await checkResponse.text();
-          
-          // Try to parse as JSON
-          try {
-            const jsonData = JSON.parse(responseText);
-            
-            // If we have a redirection_url, use that for 3DS authentication
-            if (jsonData.redirection_url) {
-              console.log('3DS redirect detected, using:', jsonData.redirection_url);
-              window.location.href = jsonData.redirection_url;
-              return;
-            }
-          } catch {
-            // Not JSON, it's HTML - use the original URL
-            console.log('HTML response detected, using original iframe URL');
-          }
-        } catch (fetchError) {
-          console.log('Could not pre-check iframe URL:', fetchError);
+          setIsSubmitting(false);
+          return;
         }
 
-        // Redirect to Paymob payment page
-        window.location.href = paymobResponse.iframeUrl;
+        // Poll for payment completion
+        const pollInterval = setInterval(() => {
+          try {
+            // Check if window is closed
+            if (paymentWindow.closed) {
+              clearInterval(pollInterval);
+              // Refresh page to check payment status
+              window.location.href = '/account';
+            }
+          } catch (error) {
+            // Cross-origin access error is expected
+          }
+        }, 1000);
+
         return;
       }
       
