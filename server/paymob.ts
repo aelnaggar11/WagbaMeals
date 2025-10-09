@@ -127,9 +127,10 @@ export class PaymobService {
     const orderId = await this.registerOrder(authToken, amountCents, items);
     const paymentToken = await this.getPaymentToken(authToken, orderId, amountCents, billingData, redirectUrl);
 
-    // Use iframe URL with configured iframe ID
-    const checkoutUrl = `https://accept.paymob.com/api/acceptance/iframes/${PAYMOB_IFRAME_ID}?payment_token=${paymentToken}`;
-    console.log('Using iframe checkout with iframe ID:', PAYMOB_IFRAME_ID);
+    // Try using the direct payment page URL instead of iframe
+    // This should return an HTML page instead of JSON
+    const checkoutUrl = `https://accept.paymobsolutions.com/api/acceptance/iframes/${PAYMOB_IFRAME_ID}?payment_token=${paymentToken}`;
+    console.log('Using direct payment page with iframe ID:', PAYMOB_IFRAME_ID);
 
     console.log('=== PAYMOB PAYMENT URL CREATED ===');
     console.log('Order ID:', orderId);
