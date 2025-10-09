@@ -16,6 +16,7 @@ import path from "path";
 import fs from "fs";
 import { validateEgyptianPhoneNumber } from "./utils/phoneValidation";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { paymobService } from "./paymob";
 
 declare module 'express-session' {
   interface SessionData {
@@ -3444,6 +3445,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Image not found" });
       }
       return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Paymob payment initiation
+  app.post('/api/payments/paymob/initiate', authMiddleware, async (req, res) => {
+    try {
+      const { orderId, billingData } = req.body;
+      
+      // Get the order
+      const order = await storage.getOrder(orderId);
+      if (!order || order.userId !== req.session.userId) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      // Get order items to build the items list
+      const orderItems = await storage.getOrderItems(orderId);
+      const allMeals = await storage.getAllMeals();
+      
+      const paymobItems = orderItems.map(item => {
+        const meal = allMeals.find((m: any) => m.id === item.mealId);
+        return {
+          name: meal?.title || 'Meal',
+          amountCents: Math.round(item.price * 100),
+          description: `${item.portionSize} portion`,
+          quantity: 1
+        };
+      });
+
+      // Get delivery fee
+      const deliveryFeeConfig = await storage.getPricingConfig('delivery_fee', 'standard');
+      const deliveryFee = deliveryFeeConfig?.price || 100;
+      
+      // Add delivery fee as an item
+      paymobItems.push({
+        name: 'Delivery Fee',
+        amountCents: Math.round(deliveryFee * 100),
+        description: 'Delivery service',
+        quantity: 1
+      });
+
+      // Calculate total amount in EGP
+      const totalAmount = order.total + deliveryFee;
+
+      // Create payment URL
+      const { iframeUrl, orderId: paymobOrderId } = await paymobService.createPaymentUrl(
+        totalAmount,
+        {
+          firstName: billingData.firstName || billingData.name?.split(' ')[0] || 'Customer',
+          lastName: billingData.lastName || billingData.name?.split(' ').slice(1).join(' ') || 'User',
+          email: billingData.email,
+          phone: billingData.phone,
+          apartment: billingData.apartment,
+          floor: billingData.floor,
+          street: billingData.street,
+          building: billingData.building,
+          city: billingData.city,
+          country: 'EG',
+          postalCode: billingData.postalCode,
+          state: billingData.state
+        },
+        paymobItems
+      );
+
+      // Store paymob order ID in our order for reference
+      await storage.updateOrder(orderId, {
+        paymobOrderId: paymobOrderId.toString()
+      });
+
+      res.json({ iframeUrl, paymobOrderId });
+    } catch (error) {
+      console.error('Paymob payment initiation error:', error);
+      res.status(500).json({ message: 'Failed to initiate payment' });
+    }
+  });
+
+  // Paymob webhook callback
+  app.post('/api/payments/paymob/callback', async (req, res) => {
+    try {
+      console.log('=== PAYMOB CALLBACK RECEIVED ===');
+      console.log('Callback data:', JSON.stringify(req.body, null, 2));
+
+      // Verify HMAC signature
+      const isValid = paymobService.verifyCallback(req.body);
+      if (!isValid) {
+        console.error('Invalid HMAC signature');
+        return res.status(400).json({ message: 'Invalid signature' });
+      }
+
+      const { success, order: paymobOrder, id: transactionId } = req.body;
+      
+      if (success === true || success === 'true') {
+        // Find our order by paymob order ID
+        const orders = await storage.getAllOrders();
+        const order = orders.find((o: any) => o.paymobOrderId === paymobOrder.toString() || o.paymobOrderId === paymobOrder?.id?.toString());
+        
+        if (order) {
+          // Update order payment status
+          await storage.updateOrder(order.id, {
+            paymentStatus: 'paid',
+            paymobTransactionId: transactionId.toString()
+          });
+
+          // Mark user as having used trial box if this was a trial order
+          const user = await storage.getUser(order.userId);
+          if (user && !user.hasUsedTrialBox) {
+            await storage.updateUser(order.userId, {
+              hasUsedTrialBox: true
+            });
+          }
+
+          console.log(`Payment successful for order ${order.id}`);
+        } else {
+          console.warn(`Order not found for Paymob order ${paymobOrder}`);
+        }
+      } else {
+        console.log('Payment failed or pending');
+      }
+
+      res.status(200).json({ message: 'Callback processed' });
+    } catch (error) {
+      console.error('Paymob callback processing error:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Paymob response callback (user redirect)
+  app.get('/api/payments/paymob/response', async (req, res) => {
+    try {
+      const { success, order: paymobOrderId } = req.query;
+      
+      // Redirect to appropriate page
+      if (success === 'true') {
+        res.redirect(`/?payment=success&order=${paymobOrderId}`);
+      } else {
+        res.redirect(`/?payment=failed&order=${paymobOrderId}`);
+      }
+    } catch (error) {
+      console.error('Paymob response handling error:', error);
+      res.redirect('/?payment=error');
     }
   });
 

@@ -174,8 +174,10 @@ export const orders = pgTable("orders", {
   deliveryNotes: text("delivery_notes"),
   deliverySlot: text("delivery_slot").default("morning"), // "morning" | "evening"
   paymentMethod: text("payment_method"),
-  paymentStatus: text("payment_status").default("pending"), // "pending" | "processing" | "confirmed" | "failed"
+  paymentStatus: text("payment_status").default("pending"), // "pending" | "processing" | "confirmed" | "failed" | "paid"
   paymentConfirmationImage: text("payment_confirmation_image"), // URL to uploaded payment confirmation
+  paymobOrderId: text("paymob_order_id"), // Paymob order ID for tracking
+  paymobTransactionId: text("paymob_transaction_id"), // Paymob transaction ID
   deliveryDate: text("delivery_date"),
   orderType: text("order_type").default("trial"), // "trial", "subscription"
   createdAt: timestamp("created_at").defaultNow(),
