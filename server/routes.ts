@@ -3618,13 +3618,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Paymob transaction response callback (user redirect) - this is where users land after payment
-  app.get('/api/payments/paymob/response', async (req, res) => {
+  // Paymob transaction response callback (user redirect) - handles both GET and POST
+  const handlePaymobResponse = async (req: any, res: any) => {
     try {
       console.log('=== PAYMOB TRANSACTION RESPONSE (User Redirect) ===');
+      console.log('Method:', req.method);
       console.log('Query params:', req.query);
+      console.log('Body params:', req.body);
       
-      const { success, order: paymobOrderId, id: transactionId, pending } = req.query;
+      // Paymob sends data in body for POST, query for GET
+      const data = req.method === 'POST' ? req.body : req.query;
+      const { success, order: paymobOrderId, id: transactionId, pending } = data;
       
       // Find our order by paymob order ID and update it
       if (paymobOrderId) {
@@ -3672,7 +3676,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Paymob response handling error:', error);
       res.redirect('/?payment=error');
     }
-  });
+  };
+
+  // Register both GET and POST for the response endpoint
+  app.get('/api/payments/paymob/response', handlePaymobResponse);
+  app.post('/api/payments/paymob/response', handlePaymobResponse);
 
   return httpServer;
 }
