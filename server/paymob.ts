@@ -116,18 +116,19 @@ export class PaymobService {
     const orderId = await this.registerOrder(authToken, amountCents, items);
     const paymentToken = await this.getPaymentToken(authToken, orderId, amountCents, billingData);
 
-    const defaultIframeId = iframeId || PAYMOB_INTEGRATION_ID;
-    const iframeUrl = `https://accept.paymob.com/api/acceptance/iframes/${defaultIframeId}?payment_token=${paymentToken}`;
+    // Use the standalone checkout URL which doesn't require an iframe ID
+    const checkoutUrl = `https://accept.paymob.com/standalone/?ref=${paymentToken}`;
 
     console.log('=== PAYMOB PAYMENT URL CREATED ===');
     console.log('Order ID:', orderId);
     console.log('Amount (EGP):', amountEGP);
     console.log('Payment Token:', paymentToken);
+    console.log('Checkout URL:', checkoutUrl);
     console.log('=====================================');
 
     return {
       paymentToken,
-      iframeUrl,
+      iframeUrl: checkoutUrl,
       orderId
     };
   }
