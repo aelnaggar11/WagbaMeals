@@ -127,11 +127,9 @@ export class PaymobService {
     const orderId = await this.registerOrder(authToken, amountCents, items);
     const paymentToken = await this.getPaymentToken(authToken, orderId, amountCents, billingData, redirectUrl);
 
-    // Use unified checkout URL which handles 3DS properly
-    // Format: https://accept.paymob.com/unifiedcheckout/?publicKey={PUBLIC_KEY}&clientSecret={PAYMENT_TOKEN}
-    // Alternative that works: Using payment key directly without iframe wrapper
-    const checkoutUrl = `https://accept.paymob.com/api/acceptance/post_pay?payment_token=${paymentToken}`;
-    console.log('Using direct post_pay URL for 3DS support');
+    // Use iframe URL - we'll handle 3DS redirection on the client side
+    const checkoutUrl = `https://accept.paymobsolutions.com/api/acceptance/iframes/${PAYMOB_IFRAME_ID}?payment_token=${paymentToken}`;
+    console.log('Using iframe URL (client will handle 3DS redirect):', PAYMOB_IFRAME_ID);
 
     console.log('=== PAYMOB PAYMENT URL CREATED ===');
     console.log('Order ID:', orderId);

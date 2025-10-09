@@ -286,8 +286,35 @@ const CheckoutPage = () => {
           }
         ) as { iframeUrl: string };
 
-        // For 3DS authentication, use top-level redirect (recommended by Paymob for 3DS)
-        // This ensures proper 3DS flow and callback handling
+        // Paymob iframe sometimes returns JSON with a redirection_url for 3DS
+        // Check if we get JSON, and if so, extract the redirection_url
+        try {
+          const checkResponse = await fetch(paymobResponse.iframeUrl, {
+            method: 'GET',
+            redirect: 'manual' // Don't follow redirects
+          });
+          
+          const responseText = await checkResponse.text();
+          
+          // Try to parse as JSON
+          try {
+            const jsonData = JSON.parse(responseText);
+            
+            // If we have a redirection_url, use that for 3DS authentication
+            if (jsonData.redirection_url) {
+              console.log('3DS redirect detected, using:', jsonData.redirection_url);
+              window.location.href = jsonData.redirection_url;
+              return;
+            }
+          } catch {
+            // Not JSON, it's HTML - use the original URL
+            console.log('HTML response detected, using original iframe URL');
+          }
+        } catch (fetchError) {
+          console.log('Could not pre-check iframe URL:', fetchError);
+        }
+
+        // Redirect to Paymob payment page
         window.location.href = paymobResponse.iframeUrl;
         return;
       }
