@@ -2360,7 +2360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update order
       await storage.updateOrder(parseInt(orderId), orderUpdateData);
 
-      // Update user address and type
+      // Update user address (but NOT userType - that only happens after successful payment)
       if (currentUser) {
         const addressWithNotes = {
           ...address,
@@ -2372,15 +2372,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           phone: address.phone
         };
         
-        // If this is a trial box order, mark user as having used their trial
-        if (orderType === 'trial') {
-          userUpdateData.hasUsedTrialBox = true;
-        }
-        
-        // If this is a subscription order, update user type
-        if (orderType === 'subscription') {
-          userUpdateData.userType = 'subscriber';
-        }
+        // NOTE: Do NOT update hasUsedTrialBox or userType here
+        // These should only be set after successful payment in the payment callback
         
         await storage.updateUser(req.session.userId!, userUpdateData);
       }
@@ -3831,6 +3824,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           `);
         } else if (order) {
           console.log(`Payment failed for order ${order.id}`);
+          
+          // Reset order to pending state since payment failed
+          await storage.updateOrder(order.id, {
+            status: 'pending',
+            paymentStatus: 'failed'
+          });
+          
           return res.send(`
             <!DOCTYPE html>
             <html>
@@ -3840,13 +3840,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               <body>
                 <script>
                   if (window.opener) {
-                    window.opener.location.href = '/account?failed=true';
+                    window.opener.location.href = '/checkout?payment_failed=true&reason=payment_declined';
                     window.close();
                   } else {
-                    window.location.href = '/account?failed=true';
+                    window.location.href = '/checkout?payment_failed=true&reason=payment_declined';
                   }
                 </script>
-                <p>Payment failed. Redirecting...</p>
+                <p>Payment failed. Redirecting back to checkout...</p>
               </body>
             </html>
           `);

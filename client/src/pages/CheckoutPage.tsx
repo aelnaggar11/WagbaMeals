@@ -174,6 +174,27 @@ const CheckoutPage = () => {
     }
   }, [userProfile]);
 
+  // Check for payment failure and show error message
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentFailed = urlParams.get('payment_failed');
+    const reason = urlParams.get('reason');
+    
+    if (paymentFailed === 'true') {
+      // Clear the query parameters from URL
+      window.history.replaceState({}, '', '/checkout');
+      
+      // Show error toast
+      toast({
+        title: "Payment Failed",
+        description: reason === 'payment_declined' 
+          ? "Your payment was declined. Please check your card details and try again."
+          : "There was an issue processing your payment. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
+
   // Pre-populate neighborhood from pre-onboarding modal
   useEffect(() => {
     const preOnboardingNeighborhood = localStorage.getItem('preOnboardingNeighborhood') || sessionStorage.getItem('preOnboardingNeighborhood');
