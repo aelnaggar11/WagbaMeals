@@ -277,13 +277,14 @@ const CheckoutPage = () => {
           area: address.area
         };
 
-        const paymobResponse = await apiRequest<{ iframeUrl: string }>('/api/payments/paymob/initiate', {
-          method: 'POST',
-          body: JSON.stringify({
+        const paymobResponse = await apiRequest<{ iframeUrl: string }>(
+          'POST',
+          '/api/payments/paymob/initiate',
+          {
             orderId: pendingOrder?.id,
             billingData
-          })
-        });
+          }
+        );
 
         // Redirect to Paymob payment page
         window.location.href = paymobResponse.iframeUrl;
