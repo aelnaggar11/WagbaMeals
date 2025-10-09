@@ -2308,6 +2308,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update order details before payment (for card payments)
+  app.post('/api/orders/update-details', authMiddleware, async (req, res) => {
+    try {
+      const { orderId, orderType, address, deliveryNotes } = req.body;
+      
+      // Validate phone number in address
+      if (address.phone) {
+        const phoneValidation = validateEgyptianPhoneNumber(address.phone);
+        if (!phoneValidation.isValid) {
+          return res.status(400).json({ message: phoneValidation.error });
+        }
+        address.phone = phoneValidation.normalizedPhone;
+      }
+      
+      // Get order
+      const order = await storage.getOrder(parseInt(orderId));
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      // Verify order belongs to user
+      if (order.userId !== req.session.userId) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+
+      // Prepare order update data
+      const orderUpdateData: any = {
+        status: 'selected',
+        deliveryAddress: JSON.stringify(address),
+        deliveryNotes,
+        orderType: orderType || 'trial'
+      };
+
+      // Get user for discount and profile update
+      const currentUser = await storage.getUser(req.session.userId!);
+      const isFirstOrder = currentUser && !currentUser.hasUsedTrialBox;
+      
+      // Apply 10% first-order discount for subscription orders
+      if (isFirstOrder && orderType === 'subscription') {
+        const firstOrderDiscount = Math.round(order.subtotal * 0.1);
+        const newSubtotal = order.subtotal;
+        const newDiscount = order.discount + firstOrderDiscount;
+        const newTotal = newSubtotal - firstOrderDiscount;
+        
+        orderUpdateData.subtotal = newSubtotal;
+        orderUpdateData.discount = newDiscount;
+        orderUpdateData.total = newTotal;
+      }
+
+      // Update order
+      await storage.updateOrder(parseInt(orderId), orderUpdateData);
+
+      // Update user address and type
+      if (currentUser) {
+        const addressWithNotes = {
+          ...address,
+          deliveryNotes: deliveryNotes || ""
+        };
+        
+        const userUpdateData: any = {
+          address: JSON.stringify(addressWithNotes),
+          phone: address.phone
+        };
+        
+        // If this is a trial box order, mark user as having used their trial
+        if (orderType === 'trial') {
+          userUpdateData.hasUsedTrialBox = true;
+        }
+        
+        // If this is a subscription order, update user type
+        if (orderType === 'subscription') {
+          userUpdateData.userType = 'subscriber';
+        }
+        
+        await storage.updateUser(req.session.userId!, userUpdateData);
+      }
+
+      res.json({ success: true, message: 'Order details updated successfully' });
+    } catch (error) {
+      console.error('Error updating order details:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   app.post('/api/orders/checkout', authMiddleware, upload.single('paymentConfirmationImage'), async (req, res) => {
     try {
       console.log('=== CHECKOUT REQUEST RECEIVED ===');
@@ -3587,12 +3671,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             paymobTransactionId: transactionId.toString()
           });
 
-          // Mark user as having used trial box if this was a trial order
+          // Update user based on order type
           const user = await storage.getUser(order.userId);
-          if (user && !user.hasUsedTrialBox) {
-            await storage.updateUser(order.userId, {
-              hasUsedTrialBox: true
-            });
+          if (user) {
+            const updateData: any = {};
+            
+            // If subscription order, mark user as subscriber
+            if (order.orderType === 'subscription') {
+              updateData.userType = 'subscriber';
+              updateData.hasUsedTrialBox = true; // Also mark trial as used
+            } 
+            // If trial order, just mark trial as used
+            else if (order.orderType === 'trial' && !user.hasUsedTrialBox) {
+              updateData.hasUsedTrialBox = true;
+            }
+            
+            // Apply updates if any
+            if (Object.keys(updateData).length > 0) {
+              await storage.updateUser(order.userId, updateData);
+            }
           }
 
           console.log(`Payment successful for order ${order.id}`);
@@ -3668,12 +3765,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             paymobTransactionId: transactionId?.toString()
           });
 
-          // Mark user as having used trial box if this was a trial order
+          // Update user based on order type
           const user = await storage.getUser(order.userId);
-          if (user && !user.hasUsedTrialBox) {
-            await storage.updateUser(order.userId, {
-              hasUsedTrialBox: true
-            });
+          if (user) {
+            const updateData: any = {};
+            
+            // If subscription order, mark user as subscriber
+            if (order.orderType === 'subscription') {
+              updateData.userType = 'subscriber';
+              updateData.hasUsedTrialBox = true; // Also mark trial as used
+            } 
+            // If trial order, just mark trial as used
+            else if (order.orderType === 'trial' && !user.hasUsedTrialBox) {
+              updateData.hasUsedTrialBox = true;
+            }
+            
+            // Apply updates if any
+            if (Object.keys(updateData).length > 0) {
+              await storage.updateUser(order.userId, updateData);
+            }
           }
 
           console.log(`Payment successful for order ${order.id} via transaction response`);

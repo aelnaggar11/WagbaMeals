@@ -262,8 +262,31 @@ const CheckoutPage = () => {
     setIsSubmitting(true);
     
     try {
-      // For card payment, initiate Paymob payment
+      // For card payment, update order first then initiate Paymob payment
       if (paymentMethod === "card") {
+        // First, update the order with orderType and address details
+        const orderUpdateResponse = await apiRequest(
+          'POST',
+          '/api/orders/update-details',
+          {
+            orderId: pendingOrder?.id,
+            orderType: orderType,
+            address: address,
+            deliveryNotes: deliveryNotes
+          }
+        );
+
+        if (!orderUpdateResponse) {
+          toast({
+            title: "Error",
+            description: "Failed to update order details",
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Then initiate Paymob payment
         const billingData = {
           name: address.name,
           firstName: address.name?.split(' ')[0] || 'Customer',
