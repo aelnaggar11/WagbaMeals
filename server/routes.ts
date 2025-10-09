@@ -3677,27 +3677,155 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           console.log(`Payment successful for order ${order.id} via transaction response`);
-          return res.redirect(`/?payment=success&order=${order.id}`);
+          return res.send(`
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <title>Payment Successful</title>
+              </head>
+              <body>
+                <script>
+                  if (window.opener) {
+                    // We're in a popup - redirect parent and close
+                    window.opener.location.href = '/account';
+                    window.close();
+                  } else {
+                    // Not in popup - redirect normally
+                    window.location.href = '/account';
+                  }
+                </script>
+                <p>Payment successful! Redirecting...</p>
+              </body>
+            </html>
+          `);
         } else if (order && pending === 'true') {
           console.log(`Payment pending for order ${order.id}`);
-          return res.redirect(`/?payment=pending&order=${order.id}`);
+          return res.send(`
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <title>Payment Pending</title>
+              </head>
+              <body>
+                <script>
+                  if (window.opener) {
+                    window.opener.location.href = '/account';
+                    window.close();
+                  } else {
+                    window.location.href = '/account';
+                  }
+                </script>
+                <p>Payment pending... Redirecting...</p>
+              </body>
+            </html>
+          `);
         } else if (order) {
           console.log(`Payment failed for order ${order.id}`);
-          return res.redirect(`/?payment=failed&order=${order.id}`);
+          return res.send(`
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <title>Payment Failed</title>
+              </head>
+              <body>
+                <script>
+                  if (window.opener) {
+                    window.opener.location.href = '/checkout';
+                    window.close();
+                  } else {
+                    window.location.href = '/checkout';
+                  }
+                </script>
+                <p>Payment failed. Redirecting...</p>
+              </body>
+            </html>
+          `);
         }
       }
       
       // Fallback redirects
       if (success === 'true') {
-        res.redirect(`/?payment=success`);
+        return res.send(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Payment Successful</title>
+            </head>
+            <body>
+              <script>
+                if (window.opener) {
+                  window.opener.location.href = '/account';
+                  window.close();
+                } else {
+                  window.location.href = '/account';
+                }
+              </script>
+              <p>Payment successful! Redirecting...</p>
+            </body>
+          </html>
+        `);
       } else if (pending === 'true') {
-        res.redirect(`/?payment=pending`);
+        return res.send(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Payment Pending</title>
+            </head>
+            <body>
+              <script>
+                if (window.opener) {
+                  window.opener.location.href = '/account';
+                  window.close();
+                } else {
+                  window.location.href = '/account';
+                }
+              </script>
+              <p>Payment pending... Redirecting...</p>
+            </body>
+          </html>
+        `);
       } else {
-        res.redirect(`/?payment=failed`);
+        return res.send(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Payment Failed</title>
+            </head>
+            <body>
+              <script>
+                if (window.opener) {
+                  window.opener.location.href = '/checkout';
+                  window.close();
+                } else {
+                  window.location.href = '/checkout';
+                }
+              </script>
+              <p>Payment failed. Redirecting...</p>
+            </body>
+          </html>
+        `);
       }
     } catch (error) {
       console.error('Paymob response handling error:', error);
-      res.redirect('/?payment=error');
+      return res.send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Payment Error</title>
+          </head>
+          <body>
+            <script>
+              if (window.opener) {
+                window.opener.location.href = '/checkout';
+                window.close();
+              } else {
+                window.location.href = '/checkout';
+              }
+            </script>
+            <p>An error occurred. Redirecting...</p>
+          </body>
+        </html>
+      `);
     }
   };
 
