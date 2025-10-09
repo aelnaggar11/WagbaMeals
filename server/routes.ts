@@ -3825,9 +3825,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else if (order) {
           console.log(`Payment failed for order ${order.id}`);
           
-          // Reset order to pending state since payment failed
+          // Reset order to not_selected state since payment failed
+          // (not 'pending' because getPendingOrderByUser looks for 'not_selected' or 'selected')
           await storage.updateOrder(order.id, {
-            status: 'pending',
+            status: 'not_selected',
             paymentStatus: 'failed'
           });
           

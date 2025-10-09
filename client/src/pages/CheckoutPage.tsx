@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, X } from "lucide-react";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
@@ -26,6 +28,7 @@ const CheckoutPage = () => {
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [paymentConfirmationImage, setPaymentConfirmationImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [paymentFailureMessage, setPaymentFailureMessage] = useState<string | null>(null);
   
   // Fetch current order with enhanced retry and error handling for onboarding
   const { data: pendingOrder, isLoading, error, refetch } = useQuery<Order>({
@@ -152,8 +155,26 @@ const CheckoutPage = () => {
     }
   }, [error, pendingOrder, isLoading, refetch, queryClient]);
 
-  // Update address form with user profile data when available
+  // Update address form with data from failed order or user profile
   useEffect(() => {
+    // First priority: Load from failed order if it has deliveryAddress
+    if (pendingOrder?.deliveryAddress) {
+      try {
+        const orderAddress = JSON.parse(pendingOrder.deliveryAddress);
+        setAddress({
+          ...address,
+          ...orderAddress
+        });
+        if (pendingOrder.deliveryNotes) {
+          setDeliveryNotes(pendingOrder.deliveryNotes);
+        }
+        return; // Don't load from profile if we have order address
+      } catch (e) {
+        console.error("Error parsing order address:", e);
+      }
+    }
+
+    // Second priority: Load from user profile
     if (userProfile?.address) {
       try {
         const savedAddress = JSON.parse(userProfile.address);
@@ -172,9 +193,9 @@ const CheckoutPage = () => {
         phone: userProfile.phone
       });
     }
-  }, [userProfile]);
+  }, [userProfile, pendingOrder]);
 
-  // Check for payment failure and show error message
+  // Check for payment failure and show persistent error message
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentFailed = urlParams.get('payment_failed');
@@ -184,16 +205,13 @@ const CheckoutPage = () => {
       // Clear the query parameters from URL
       window.history.replaceState({}, '', '/checkout');
       
-      // Show error toast
-      toast({
-        title: "Payment Failed",
-        description: reason === 'payment_declined' 
-          ? "Your payment was declined. Please check your card details and try again."
-          : "There was an issue processing your payment. Please try again.",
-        variant: "destructive",
-      });
+      // Set persistent error message
+      const message = reason === 'payment_declined' 
+        ? "Your payment was declined. Please check your card details and try again."
+        : "There was an issue processing your payment. Please try again.";
+      setPaymentFailureMessage(message);
     }
-  }, [toast]);
+  }, []);
 
   // Pre-populate neighborhood from pre-onboarding modal
   useEffect(() => {
@@ -533,6 +551,25 @@ const CheckoutPage = () => {
       </div>
       <div className="max-w-4xl mx-auto mt-8">
         
+        {/* Payment Failure Alert */}
+        {paymentFailureMessage && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <div className="flex-1">
+              <AlertTitle>Payment Failed</AlertTitle>
+              <AlertDescription>{paymentFailureMessage}</AlertDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => setPaymentFailureMessage(null)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </Alert>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
             {/* Delivery Information */}
