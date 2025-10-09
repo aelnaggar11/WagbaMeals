@@ -3485,8 +3485,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         quantity: 1
       });
 
-      // Calculate total amount in EGP
-      const totalAmount = order.total + deliveryFee;
+      // Use the stored order total (already includes delivery fee)
+      // Don't add delivery fee again - it's already in order.total
+      const totalAmount = order.total;
 
       // Create payment URL
       const { iframeUrl, orderId: paymobOrderId } = await paymobService.createPaymentUrl(
@@ -3520,20 +3521,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Paymob webhook callback
+  // Paymob webhook callback (server-to-server)
   app.post('/api/payments/paymob/callback', async (req, res) => {
     try {
       console.log('=== PAYMOB CALLBACK RECEIVED ===');
       console.log('Callback data:', JSON.stringify(req.body, null, 2));
+      console.log('Headers:', JSON.stringify(req.headers, null, 2));
+
+      // Detect if this is a browser request vs server webhook
+      // Browsers send Accept: text/html, webhooks typically send Accept: application/json or */\*
+      const acceptHeader = req.headers['accept'] || '';
+      const contentType = req.headers['content-type'] || '';
+      const isBrowserRequest = acceptHeader.includes('text/html');
+      
+      console.log('Request type:', isBrowserRequest ? 'Browser' : 'Webhook');
 
       // Verify HMAC signature
       const isValid = paymobService.verifyCallback(req.body);
       if (!isValid) {
         console.error('Invalid HMAC signature');
+        
+        if (isBrowserRequest) {
+          return res.redirect('/?payment=error&reason=invalid_signature');
+        }
         return res.status(400).json({ message: 'Invalid signature' });
       }
 
-      const { success, order: paymobOrder, id: transactionId } = req.body;
+      const { success, order: paymobOrder, id: transactionId, pending } = req.body;
+      
+      let ourOrderId = null;
       
       if (success === true || success === 'true') {
         // Find our order by paymob order ID
@@ -3541,6 +3557,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const order = orders.find((o: any) => o.paymobOrderId === paymobOrder.toString() || o.paymobOrderId === paymobOrder?.id?.toString());
         
         if (order) {
+          ourOrderId = order.id;
           // Update order payment status
           await storage.updateOrder(order.id, {
             paymentStatus: 'paid',
@@ -3556,17 +3573,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           console.log(`Payment successful for order ${order.id}`);
+          
+          if (isBrowserRequest) {
+            // User redirect - send them to success page
+            return res.redirect(`/?payment=success&order=${order.id}`);
+          } else {
+            // Server webhook - acknowledge with JSON
+            return res.status(200).json({ message: 'Callback processed', orderId: order.id });
+          }
         } else {
           console.warn(`Order not found for Paymob order ${paymobOrder}`);
+          
+          if (isBrowserRequest) {
+            return res.redirect('/?payment=error&reason=order_not_found');
+          }
+          return res.status(404).json({ message: 'Order not found' });
         }
+      } else if (pending === true || pending === 'true' || pending === true) {
+        console.log('Payment is pending');
+        
+        if (isBrowserRequest) {
+          return res.redirect('/?payment=pending');
+        }
+        return res.status(200).json({ message: 'Payment pending' });
       } else {
-        console.log('Payment failed or pending');
+        console.log('Payment failed');
+        
+        if (isBrowserRequest) {
+          return res.redirect('/?payment=failed');
+        }
+        return res.status(200).json({ message: 'Payment failed' });
       }
-
-      res.status(200).json({ message: 'Callback processed' });
     } catch (error) {
       console.error('Paymob callback processing error:', error);
-      res.status(500).json({ message: 'Server error' });
+      
+      // Use the same detection (note: isBrowserRequest might not be in scope here if error is early)
+      const acceptHeader = req.headers['accept'] || '';
+      const isBrowserRequest = acceptHeader.includes('text/html');
+      
+      if (isBrowserRequest) {
+        return res.redirect('/?payment=error');
+      }
+      return res.status(500).json({ message: 'Server error' });
     }
   });
 
