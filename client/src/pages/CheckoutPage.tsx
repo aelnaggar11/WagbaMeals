@@ -262,7 +262,35 @@ const CheckoutPage = () => {
     setIsSubmitting(true);
     
     try {
-      // Create FormData for file upload
+      // For card payment, initiate Paymob payment
+      if (paymentMethod === "card") {
+        const billingData = {
+          name: address.name,
+          firstName: address.name?.split(' ')[0] || 'Customer',
+          lastName: address.name?.split(' ').slice(1).join(' ') || 'User',
+          email: userProfile?.email || 'customer@wagba.com',
+          phone: address.phone,
+          street: address.street,
+          apartment: address.apartment,
+          building: address.building,
+          city: address.area,
+          area: address.area
+        };
+
+        const paymobResponse = await apiRequest<{ iframeUrl: string }>('/api/payments/paymob/initiate', {
+          method: 'POST',
+          body: JSON.stringify({
+            orderId: pendingOrder?.id,
+            billingData
+          })
+        });
+
+        // Redirect to Paymob payment page
+        window.location.href = paymobResponse.iframeUrl;
+        return;
+      }
+      
+      // For InstaPay, use the existing flow
       const formData = new FormData();
       formData.append('orderId', pendingOrder?.id?.toString() || '');
       formData.append('paymentMethod', paymentMethod);
@@ -312,19 +340,11 @@ const CheckoutPage = () => {
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       
-      if (paymentMethod === "instapay") {
-        toast({
-          title: "Order submitted successfully!",
-          description: "Your payment is being processed. You'll receive confirmation once verified.",
-          variant: "default"
-        });
-      } else {
-        toast({
-          title: "Order placed successfully!",
-          description: "Your meals will be delivered on the scheduled delivery date.",
-          variant: "default"
-        });
-      }
+      toast({
+        title: "Order submitted successfully!",
+        description: "Your payment is being processed. You'll receive confirmation once verified.",
+        variant: "default"
+      });
       
       // Redirect to account page
       navigate('/account');
@@ -598,25 +618,15 @@ const CheckoutPage = () => {
                       </TabsList>
                       
                       <TabsContent value="card" className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="cardNumber">Card Number</Label>
-                            <Input id="cardNumber" placeholder="1234 5678 9012 3456" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="cardName">Name on Card</Label>
-                            <Input id="cardName" placeholder="John Doe" />
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="expiryDate">Expiry Date</Label>
-                            <Input id="expiryDate" placeholder="MM/YY" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="cvv">CVV</Label>
-                            <Input id="cvv" placeholder="123" />
+                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="flex items-start space-x-3">
+                            <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            <div className="text-sm text-gray-700">
+                              <p className="font-medium mb-1">Secure Payment via Paymob</p>
+                              <p>You'll be redirected to our secure payment page to enter your card details safely.</p>
+                            </div>
                           </div>
                         </div>
                       </TabsContent>
@@ -683,26 +693,14 @@ const CheckoutPage = () => {
                         <p className="text-sm text-gray-600">Subscription orders require a credit card for recurring payments</p>
                       </div>
                       
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="cardNumber">Card Number</Label>
-                            <Input id="cardNumber" placeholder="1234 5678 9012 3456" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="cardName">Name on Card</Label>
-                            <Input id="cardName" placeholder="John Doe" />
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="expiryDate">Expiry Date</Label>
-                            <Input id="expiryDate" placeholder="MM/YY" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="cvv">CVV</Label>
-                            <Input id="cvv" placeholder="123" />
+                      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-start space-x-3">
+                          <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                          <div className="text-sm text-gray-700">
+                            <p className="font-medium mb-1">Secure Payment via Paymob</p>
+                            <p>You'll be redirected to our secure payment page to enter your card details safely.</p>
                           </div>
                         </div>
                       </div>
