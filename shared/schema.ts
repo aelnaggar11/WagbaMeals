@@ -183,6 +183,7 @@ export const orders = pgTable("orders", {
   subscriptionBillingAttemptedAt: timestamp("subscription_billing_attempted_at"), // When auto-charge was attempted
   subscriptionBillingStatus: text("subscription_billing_status"), // "pending" | "success" | "failed" | "skipped"
   subscriptionBillingError: text("subscription_billing_error"), // Error message if billing failed
+  subscriptionBillingRetryCount: integer("subscription_billing_retry_count").default(0), // Number of billing retry attempts
   paymentMethodId: integer("payment_method_id"), // Reference to payment_methods table for subscriptions
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -208,6 +209,7 @@ export const insertOrderSchema = createInsertSchema(orders).pick({
   subscriptionBillingAttemptedAt: true,
   subscriptionBillingStatus: true,
   subscriptionBillingError: true,
+  subscriptionBillingRetryCount: true,
   paymentMethodId: true,
 });
 

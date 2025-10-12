@@ -83,18 +83,21 @@ export class BillingScheduler {
       
       // Filter to subscription orders that need billing
       const ordersToBill = allOrders.filter(order => {
+        const retryCount = order.subscriptionBillingRetryCount || 0;
+        const maxRetries = 3;
+        
         return (
           order.orderType === 'subscription' &&
           order.status !== 'skipped' &&
           // Only bill orders that haven't been successfully charged
           order.paymentStatus !== 'paid' &&
-          // Only bill orders with pending or null billing status (not success/failed)
-          (!order.subscriptionBillingStatus || order.subscriptionBillingStatus === 'pending') &&
-          order.paymentMethodId && // Must have a saved payment method
-          // Don't rebill if already attempted (unless it's been long enough for a retry)
-          (!order.subscriptionBillingAttemptedAt || 
-           order.subscriptionBillingStatus === null || 
-           order.subscriptionBillingStatus === 'pending')
+          // Include failed orders if retry count < max retries
+          (
+            !order.subscriptionBillingStatus || 
+            order.subscriptionBillingStatus === 'pending' ||
+            (order.subscriptionBillingStatus === 'failed' && retryCount < maxRetries)
+          ) &&
+          order.paymentMethodId // Must have a saved payment method
         );
       });
 
@@ -114,8 +117,11 @@ export class BillingScheduler {
   private async billOrder(orderId: number) {
     console.log(`\n--- Billing order ${orderId} ---`);
 
+    // Declare order outside try block so it's accessible in catch
+    let order: any = null;
+
     try {
-      const order = await this.storage.getOrder(orderId);
+      order = await this.storage.getOrder(orderId);
       if (!order) {
         console.error(`Order ${orderId} not found`);
         return;
@@ -159,7 +165,7 @@ export class BillingScheduler {
       const deliveryFee = baseDeliveryConfig?.price || 0;
       const totalAmount = order.total + deliveryFee;
 
-      // Mark billing as attempted
+      // Mark billing as attempted (don't increment retry count yet - only after actual charge attempt)
       await this.storage.updateOrder(orderId, {
         subscriptionBillingAttemptedAt: new Date(),
         subscriptionBillingStatus: 'pending'
@@ -207,22 +213,46 @@ export class BillingScheduler {
           paymobTransactionId: result.transaction_id.toString()
         });
       } else {
+        // Increment retry count only after actual payment attempt
+        const currentRetryCount = order.subscriptionBillingRetryCount || 0;
+        const newRetryCount = currentRetryCount + 1;
+        const maxRetries = 3;
+        
         console.error(`❌ Payment failed for order ${orderId}: ${result.error}`);
+        
+        if (newRetryCount >= maxRetries) {
+          console.error(`⚠️ Max retries (${maxRetries}) exceeded for order ${orderId} - manual intervention required`);
+        } else {
+          console.log(`🔄 Will retry on next billing cycle (attempt ${newRetryCount}/${maxRetries})`);
+        }
         
         await this.storage.updateOrder(orderId, {
           subscriptionBillingStatus: 'failed',
-          subscriptionBillingError: result.error || 'Payment declined'
+          subscriptionBillingError: result.error || 'Payment declined',
+          subscriptionBillingRetryCount: newRetryCount
         });
       }
     } catch (error: any) {
       console.error(`❌ Error billing order ${orderId}:`, error);
       
-      // Update order with error
-      await this.storage.updateOrder(orderId, {
-        subscriptionBillingStatus: 'failed',
-        subscriptionBillingAttemptedAt: new Date(),
-        subscriptionBillingError: error.message || 'Unknown error'
-      });
+      // Only increment retry count if order was loaded (error occurred during/after charge attempt)
+      if (order) {
+        const currentRetryCount = order.subscriptionBillingRetryCount || 0;
+        const newRetryCount = currentRetryCount + 1;
+        const maxRetries = 3;
+        
+        if (newRetryCount >= maxRetries) {
+          console.error(`⚠️ Max retries (${maxRetries}) exceeded for order ${orderId} - manual intervention required`);
+        }
+        
+        // Update order with error
+        await this.storage.updateOrder(orderId, {
+          subscriptionBillingStatus: 'failed',
+          subscriptionBillingAttemptedAt: new Date(),
+          subscriptionBillingError: error.message || 'Unknown error',
+          subscriptionBillingRetryCount: newRetryCount
+        });
+      }
     }
   }
 
