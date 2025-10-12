@@ -77,13 +77,23 @@ async function getBasePricePerMeal(storage: IStorage): Promise<number> {
     const mealBundles = await storage.getPricingConfigsByType('meal_bundle');
     const activeBundles = mealBundles.filter(config => config.isActive);
     
+    console.log('=== BASE PRICE CALCULATION ===');
+    console.log('Total meal bundles:', mealBundles.length);
+    console.log('Active bundles:', activeBundles.length);
+    console.log('Active bundle prices:', activeBundles.map(b => b.price));
+    
     if (activeBundles.length > 0) {
       // Find the highest price (base price from smallest package)
       const maxPrice = Math.max(...activeBundles.map(bundle => bundle.price));
+      console.log('Max price (base price):', maxPrice);
+      console.log('==============================');
       return maxPrice;
     }
+    console.log('No active bundles found, using fallback');
+    console.log('==============================');
   } catch (error) {
     console.error('Error fetching base price from database:', error);
+    console.log('==============================');
   }
   
   // Fallback to default base price (4 meals package)
@@ -2041,6 +2051,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pricePerMeal = await getServerPriceForMealCount(mealCount, storage);
       const largePortionAdditional = await getLargeMealAddonPrice(storage);
       const basePricePerMeal = await getBasePricePerMeal(storage);
+
+      console.log('=== ORDER PRICING DEBUG ===');
+      console.log('Meal count:', mealCount);
+      console.log('Price per meal (discounted):', pricePerMeal);
+      console.log('Base price per meal:', basePricePerMeal);
+      console.log('Large portion additional:', largePortionAdditional);
 
       let subtotal = 0;
       let fullPriceSubtotal = 0;
