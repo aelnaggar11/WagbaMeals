@@ -2307,15 +2307,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Paymob Payment Integration
+  // Paymob Payment Integration - Zod validation schema
+  const createPaymobIntentionSchema = z.object({
+    orderId: z.number().int().positive(),
+    address: z.object({
+      street: z.string().optional(),
+      building: z.string().optional(),
+      apartment: z.string().optional(),
+      floor: z.string().optional(),
+      area: z.string().optional(),
+      city: z.string().optional(),
+      phone: z.string().optional()
+    })
+  });
+
   app.post('/api/payments/paymob/create-intention', authMiddleware, async (req, res) => {
     try {
-      const { orderId, amount, address } = req.body;
+      // Validate request body
+      const validation = createPaymobIntentionSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          message: 'Invalid request data',
+          errors: validation.error.errors 
+        });
+      }
+
+      const { orderId, address } = validation.data;
 
       // Get order to verify ownership and get order details
-      const order = await storage.getOrder(parseInt(orderId));
+      const order = await storage.getOrder(orderId);
       if (!order || order.userId !== req.session.userId) {
         return res.status(404).json({ message: 'Order not found' });
+      }
+
+      // SECURITY: Use server-side order total, never trust client amount
+      const orderAmount = order.total;
+      if (!orderAmount || orderAmount <= 0) {
+        return res.status(400).json({ message: 'Invalid order total' });
       }
 
       // Get user details
@@ -2324,7 +2352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'User not found' });
       }
 
-      // Parse billing address
+      // Construct billing address with validated data
       const billingData = {
         apartment: address.apartment || 'NA',
         first_name: user.name?.split(' ')[0] || 'Customer',
@@ -2342,7 +2370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create payment intention with Paymob
       const { paymobService } = await import('./paymob');
       const intention = await paymobService.createPaymentIntention({
-        amount: Math.round(amount * 100), // Convert to cents
+        amount: Math.round(orderAmount * 100), // Convert to cents from server-side total
         currency: 'EGP',
         billing_data: billingData,
         customer: {
