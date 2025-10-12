@@ -787,11 +787,11 @@ const CheckoutPage = () => {
                     </div>
                   )}
                   
-                  {/* Show additional 10% first-order discount for new subscribers */}
+                  {/* Show additional 10% first-order discount for new subscribers (applied to total after volume discount) */}
                   {!userProfile?.hasUsedTrialBox && orderType === 'subscription' && (
                     <div className="flex justify-between text-green-600">
                       <span>1st Order Discount (10%)</span>
-                      <span className="whitespace-nowrap">-EGP {Math.round(pendingOrder.subtotal * 0.1).toFixed(0)}</span>
+                      <span className="whitespace-nowrap">-EGP {Math.round(pendingOrder.total * 0.1).toFixed(0)}</span>
                     </div>
                   )}
                   
@@ -799,7 +799,7 @@ const CheckoutPage = () => {
                     <span>Total</span>
                     <span className="text-primary whitespace-nowrap">
                       EGP {(!userProfile?.hasUsedTrialBox && orderType === 'subscription'
-                        ? (pendingOrder.subtotal - Math.round(pendingOrder.subtotal * 0.1) + deliveryFee).toFixed(0)
+                        ? (pendingOrder.total - Math.round(pendingOrder.total * 0.1) + deliveryFee).toFixed(0)
                         : (pendingOrder.total + deliveryFee).toFixed(0))}
                     </span>
                 </div>

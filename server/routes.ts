@@ -2590,22 +2590,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('=== FIRST-ORDER SUBSCRIPTION DISCOUNT ===');
         console.log('Applying 10% discount to subscription order');
         console.log('Original subtotal:', order.subtotal);
-        console.log('Original discount:', order.discount);
-        console.log('Original total:', order.total);
+        console.log('Original volume discount:', order.discount);
+        console.log('Original total (after volume discount):', order.total);
         
-        // Calculate 10% discount on the current total
-        const firstOrderDiscount = Math.round(order.subtotal * 0.1);
-        const newSubtotal = order.subtotal;
-        const newDiscount = order.discount + firstOrderDiscount;
-        const newTotal = newSubtotal - firstOrderDiscount;
+        // Calculate 10% discount on the total (after volume discount)
+        const firstOrderDiscount = Math.round(order.total * 0.1);
+        const newTotal = order.total - firstOrderDiscount;
+        const newTotalDiscount = order.discount + firstOrderDiscount;
         
         // Update order data with new pricing
-        orderUpdateData.subtotal = newSubtotal;
-        orderUpdateData.discount = newDiscount;
-        orderUpdateData.total = newTotal;
+        orderUpdateData.subtotal = order.subtotal; // Subtotal stays the same
+        orderUpdateData.discount = newTotalDiscount; // Add first-order discount to total discount
+        orderUpdateData.total = newTotal; // Apply first-order discount to total
         
-        console.log('First-order discount amount:', firstOrderDiscount);
-        console.log('New total discount:', newDiscount);
+        console.log('First-order discount amount (10% of total):', firstOrderDiscount);
+        console.log('New total discount:', newTotalDiscount);
         console.log('New total:', newTotal);
         console.log('==========================================');
       }
