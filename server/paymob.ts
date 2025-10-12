@@ -127,9 +127,10 @@ export class PaymobService {
     const orderId = await this.registerOrder(authToken, amountCents, items);
     const paymentToken = await this.getPaymentToken(authToken, orderId, amountCents, billingData, redirectUrl);
 
-    // Use iframe URL - we'll handle 3DS redirection on the client side
-    const checkoutUrl = `https://accept.paymobsolutions.com/api/acceptance/iframes/${PAYMOB_IFRAME_ID}?payment_token=${paymentToken}`;
-    console.log('Using iframe URL (client will handle 3DS redirect):', PAYMOB_IFRAME_ID);
+    // Use post_pay URL for redirect-based flows (handles 3DS properly)
+    // This URL works for full-page redirects unlike iframe URL which returns JSON
+    const checkoutUrl = `https://accept.paymob.com/api/acceptance/post_pay?source=token&token=${paymentToken}`;
+    console.log('Using post_pay URL for redirect flow (supports 3DS)');
 
     console.log('=== PAYMOB PAYMENT URL CREATED ===');
     console.log('Order ID:', orderId);
