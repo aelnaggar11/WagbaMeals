@@ -3567,22 +3567,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Don't add delivery fee again - it's already in order.total
       const totalAmount = order.total;
 
-      // Use API endpoint as callback - it will handle verification and redirect
+      // Set redirect URL directly to our React callback page (user-facing)
+      // Paymob will append transaction parameters to this URL
       let callbackUrl: string;
       if (process.env.NODE_ENV === 'production') {
-        callbackUrl = 'https://wagba.food/api/payments/paymob/response';
+        callbackUrl = 'https://wagba.food/payment/callback';
       } else {
         const replitDevUrl = process.env.REPLIT_DEV_DOMAIN;
         if (replitDevUrl) {
-          callbackUrl = `https://${replitDevUrl}/api/payments/paymob/response`;
+          callbackUrl = `https://${replitDevUrl}/payment/callback`;
         } else {
           const protocol = req.get('x-forwarded-proto') || req.protocol;
           const host = req.get('host');
-          callbackUrl = `${protocol}://${host}/api/payments/paymob/response`;
+          callbackUrl = `${protocol}://${host}/payment/callback`;
         }
       }
       
-      console.log('Paymob callback URL (API endpoint):', callbackUrl);
+      console.log('Paymob redirect URL (user will see this):', callbackUrl);
 
       // Create payment URL
       const { iframeUrl, orderId: paymobOrderId } = await paymobService.createPaymentUrl(
