@@ -348,38 +348,11 @@ const CheckoutPage = () => {
           }
         ) as { iframeUrl: string };
 
-        // Open payment in new window and poll for completion
-        // This handles Paymob's redirection-based flow properly
-        const paymentWindow = window.open(
-          paymobResponse.iframeUrl,
-          'paymob_payment',
-          'width=800,height=700,scrollbars=yes'
-        );
-
-        if (!paymentWindow) {
-          toast({
-            title: "Pop-up blocked",
-            description: "Please allow pop-ups for this site to complete payment",
-            variant: "destructive"
-          });
-          setIsSubmitting(false);
-          return;
-        }
-
-        // Poll for payment completion
-        const pollInterval = setInterval(() => {
-          try {
-            // Check if window is closed
-            if (paymentWindow.closed) {
-              clearInterval(pollInterval);
-              // Refresh page to check payment status
-              window.location.href = '/account';
-            }
-          } catch (error) {
-            // Cross-origin access error is expected
-          }
-        }, 1000);
-
+        // Redirect to Paymob payment page (no popup needed!)
+        // Paymob will redirect back to our callback URL after payment
+        window.location.href = paymobResponse.iframeUrl;
+        
+        // Note: Execution stops here as page redirects
         return;
       }
       
