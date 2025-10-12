@@ -38,3 +38,30 @@ Wagba utilizes a modern full-stack architecture with separate frontend and backe
 -   **Payment Gateway:** Paymob (for credit card processing).
 -   **Email Service:** Brevo (for transactional emails like welcome and password reset).
 -   **Email Service (legacy/backup):** SendGrid (for InstaPay notifications).
+
+## Recent Changes
+
+### October 12, 2025 - Payment Callback UX Improvement
+- Updated payment response page to show toast notifications and auto-redirect users based on payment status
+- Payment success flow: Shows "Payment Successful" toast and redirects authenticated users to dashboard (/account)
+- Unauthenticated users redirected to login with returnTo parameter
+- Payment failure flow: Shows "Payment Failed" toast and redirects authenticated users to checkout, unauthenticated users to home
+- Unified payment callback route at /payment/response handles both success and failure scenarios with query parameters
+
+### October 12, 2025 - Paymob Payment Gateway Integration  
+- Integrated Paymob for credit card payment processing with full end-to-end flow
+- Added Paymob payment service module with payment intention creation, HMAC webhook verification, and secure API authentication
+- Created backend endpoints: /api/payments/paymob/create-intention for payment setup and /api/payments/paymob/webhook for payment confirmations
+- Updated CheckoutPage to redirect to Paymob hosted checkout for credit card payments while maintaining InstaPay manual flow
+- Enhanced order schema with paymob_transaction_id field for transaction tracking and payment status updates
+- Implemented security measures: Zod validation prevents client-controlled amounts, HMAC verification secures webhooks, server-side order totals prevent manipulation
+- Completed end-to-end testing: verified payment intention creation, webhook processing, HMAC signature validation, and order status updates
+
+## Configuration Notes
+
+### Paymob Setup
+**Important:** Configure the following in your Paymob merchant dashboard:
+- **Transaction Processed Callback (Webhook):** `https://your-domain.com/api/payments/paymob/webhook`
+- **Transaction Response Callback (User Redirect):** `https://your-domain.com/payment/response`
+
+The webhook endpoint receives server-to-server payment confirmations and updates order status. The response callback is where Paymob redirects customers after payment, with `?success=true/false` parameters.
