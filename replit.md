@@ -65,13 +65,18 @@ Wagba utilizes a modern full-stack architecture with separate frontend and backe
 - Implemented security measures: Zod validation prevents client-controlled amounts, HMAC verification secures webhooks, server-side order totals prevent manipulation
 - Completed end-to-end testing: verified payment intention creation, webhook processing, HMAC signature validation, and order status updates
 
-### October 12, 2025 - Subscription Payment System (In Progress)
-- Designed hybrid subscription payment architecture using Paymob card tokenization + custom billing scheduler
-- Added payment_methods table to securely store tokenized card data (card_token, masked_pan, expiry, brand)
-- Added subscription billing tracking fields to orders table (billing_attempted_at, billing_status, billing_error, payment_method_id)
-- Updated storage interface with payment methods CRUD operations
-- Paymob tokenization flow: Initial payment sets save_token_to_be_used=true → Webhook returns token object → Store card_token securely → Use for weekly charges
-- Weekly billing scheduled to run 2 hours after each week's deadline, respecting skip/cancel logic
+### October 12, 2025 - Subscription Payment System
+- **Architecture:** Hybrid approach using Paymob card tokenization + custom billing scheduler for weekly recurring payments
+- **Database Schema:** Added payment_methods table (card_token, masked_pan, card_brand, expiry) and subscription billing fields to orders (billing_attempted_at, billing_status, billing_error, payment_method_id)
+- **Card Tokenization:** Checkout flow enables Paymob tokenization for subscription orders (save_token_to_be_used: true), webhook extracts and stores card tokens with idempotency checks
+- **Billing Scheduler:** Node-cron job runs hourly to charge subscriptions 2 hours after deadline
+  - Processes weeks within 1-hour billing window to prevent duplicate charges
+  - Filters orders: subscription type, not skipped, payment not already successful, has saved payment method
+  - Respects user subscription status (cancelled/paused subscriptions are skipped)
+  - Charges order total + 100 EGP delivery fee using saved card tokens
+  - Updates billing status (success/failed) and stores transaction IDs
+- **Payment Methods CRUD:** Full implementation in DatabaseStorage for managing tokenized cards (get, create, update, delete, set default)
+- **Security:** Card tokens stored securely, idempotent webhook processing, server-side amount validation
 
 ## Configuration Notes
 

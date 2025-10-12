@@ -874,6 +874,94 @@ export class DatabaseStorage implements IStorage {
     await db.delete(pricingConfigs).where(eq(pricingConfigs.id, id));
   }
 
+  // Payment Methods management
+  async getPaymentMethod(id: number): Promise<schema.PaymentMethod | undefined> {
+    const [paymentMethod] = await db
+      .select()
+      .from(schema.paymentMethods)
+      .where(eq(schema.paymentMethods.id, id));
+    return paymentMethod;
+  }
+
+  async getPaymentMethodsByUser(userId: number): Promise<schema.PaymentMethod[]> {
+    return await db
+      .select()
+      .from(schema.paymentMethods)
+      .where(eq(schema.paymentMethods.userId, userId));
+  }
+
+  async getDefaultPaymentMethod(userId: number): Promise<schema.PaymentMethod | undefined> {
+    const [paymentMethod] = await db
+      .select()
+      .from(schema.paymentMethods)
+      .where(and(
+        eq(schema.paymentMethods.userId, userId),
+        eq(schema.paymentMethods.isDefault, true),
+        eq(schema.paymentMethods.isActive, true)
+      ));
+    return paymentMethod;
+  }
+
+  async createPaymentMethod(paymentMethod: schema.InsertPaymentMethod): Promise<schema.PaymentMethod> {
+    // If this is set as default, unset other defaults for this user
+    if (paymentMethod.isDefault) {
+      await db
+        .update(schema.paymentMethods)
+        .set({ isDefault: false })
+        .where(eq(schema.paymentMethods.userId, paymentMethod.userId));
+    }
+
+    const [newPaymentMethod] = await db
+      .insert(schema.paymentMethods)
+      .values(paymentMethod)
+      .returning();
+    return newPaymentMethod;
+  }
+
+  async updatePaymentMethod(id: number, data: Partial<schema.PaymentMethod>): Promise<schema.PaymentMethod> {
+    const now = new Date();
+    
+    // If setting this as default, unset other defaults for this user
+    if (data.isDefault) {
+      const paymentMethod = await this.getPaymentMethod(id);
+      if (paymentMethod) {
+        await db
+          .update(schema.paymentMethods)
+          .set({ isDefault: false })
+          .where(eq(schema.paymentMethods.userId, paymentMethod.userId));
+      }
+    }
+
+    const [updatedPaymentMethod] = await db
+      .update(schema.paymentMethods)
+      .set({ ...data, updatedAt: now })
+      .where(eq(schema.paymentMethods.id, id))
+      .returning();
+    
+    if (!updatedPaymentMethod) {
+      throw new Error(`Payment method not found: ${id}`);
+    }
+    return updatedPaymentMethod;
+  }
+
+  async deletePaymentMethod(id: number): Promise<void> {
+    await db.delete(schema.paymentMethods).where(eq(schema.paymentMethods.id, id));
+  }
+
+  async setDefaultPaymentMethod(userId: number, paymentMethodId: number): Promise<void> {
+    // Unset all defaults for this user
+    await db
+      .update(schema.paymentMethods)
+      .set({ isDefault: false })
+      .where(eq(schema.paymentMethods.userId, userId));
+    
+    // Set the new default
+    await db
+      .update(schema.paymentMethods)
+      .set({ isDefault: true })
+      .where(eq(schema.paymentMethods.id, paymentMethodId));
+  }
+
   // Subscription management methods
   async cancelUserSubscription(userId: number): Promise<User> {
     const [user] = await db

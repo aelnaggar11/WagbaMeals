@@ -281,6 +281,12 @@ async function initializeServer() {
 
     await startServer(port);
 
+    // Initialize billing scheduler for subscription payments
+    const { BillingScheduler } = await import('./billing');
+    const billingScheduler = new BillingScheduler(storage as DatabaseStorage);
+    billingScheduler.start();
+    log('Billing scheduler initialized successfully');
+
     // Graceful shutdown handlers
     const gracefulShutdown = (signal: string) => {
       log(`Received ${signal}, starting graceful shutdown...`);
