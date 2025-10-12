@@ -581,7 +581,11 @@ const AuthPage = () => {
       {/* Pre-onboarding Modal */}
       <PreOnboardingModal
         isOpen={showPreOnboardingModal}
-        onClose={() => setShowPreOnboardingModal(false)}
+        onClose={() => {
+          setShowPreOnboardingModal(false);
+          // Reset direct login access flag when modal is closed
+          setIsDirectLoginAccess(false);
+        }}
         onSuccess={(email) => {
           setShowPreOnboardingModal(false);
           navigate('/meal-plans');
