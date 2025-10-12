@@ -41,6 +41,12 @@ Wagba utilizes a modern full-stack architecture with separate frontend and backe
 
 ## Recent Changes
 
+### October 12, 2025 - Pricing Display Accuracy Fix
+- Fixed subtotal calculation to use base price (249 EGP per meal - smallest package price) before volume discounts
+- Corrected first-order discount to apply 10% to order total after volume discount (not to subtotal)
+- Updated checkout page order summary to accurately show: Subtotal (base price) → Volume Discount → First Order Discount (10%) → Final Total
+- Ensured Paymob payment amount matches the checkout page total displayed to users
+
 ### October 12, 2025 - Payment Callback UX Improvement
 - Updated payment response page to show toast notifications and auto-redirect users based on payment status
 - Payment success flow: Shows "Payment Successful" toast and redirects authenticated users to dashboard (/account)
