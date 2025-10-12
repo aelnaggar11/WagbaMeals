@@ -348,12 +348,27 @@ const CheckoutPage = () => {
           }
         ) as { iframeUrl: string };
 
-        // POST to Paymob payment endpoint
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = paymobResponse.iframeUrl;
-        document.body.appendChild(form);
-        form.submit();
+        // Extract payment token from URL and POST it as form data
+        const url = new URL(paymobResponse.iframeUrl);
+        const paymentToken = url.searchParams.get('payment_token');
+        
+        if (paymentToken) {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = 'https://accept.paymob.com/api/acceptance/payments/pay';
+          
+          const tokenInput = document.createElement('input');
+          tokenInput.type = 'hidden';
+          tokenInput.name = 'payment_token';
+          tokenInput.value = paymentToken;
+          form.appendChild(tokenInput);
+          
+          document.body.appendChild(form);
+          form.submit();
+        } else {
+          // Fallback to direct redirect if token extraction fails
+          window.location.href = paymobResponse.iframeUrl;
+        }
         
         return;
       }
