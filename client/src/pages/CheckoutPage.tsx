@@ -348,11 +348,9 @@ const CheckoutPage = () => {
           }
         ) as { iframeUrl: string };
 
-        // Redirect to Paymob payment page (no popup needed!)
-        // Paymob will redirect back to our callback URL after payment
-        window.location.href = paymobResponse.iframeUrl;
+        // Use our redirect handler to properly handle 3DS
+        window.location.href = `/api/payments/paymob/redirect?url=${encodeURIComponent(paymobResponse.iframeUrl)}`;
         
-        // Note: Execution stops here as page redirects
         return;
       }
       

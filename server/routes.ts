@@ -3651,6 +3651,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Redirect handler for Paymob payments - handles 3DS detection
+  app.get('/api/payments/paymob/redirect', async (req, res) => {
+    try {
+      const paymentUrl = req.query.url as string;
+      
+      if (!paymentUrl) {
+        return res.status(400).send('Payment URL is required');
+      }
+
+      console.log('=== PAYMENT REDIRECT HANDLER ===');
+      console.log('Original URL:', paymentUrl);
+
+      // Fetch the payment URL to check if it returns JSON (3DS required)
+      const checkResponse = await axios.get(paymentUrl);
+      const contentType = checkResponse.headers['content-type'];
+      
+      console.log('Response content type:', contentType);
+
+      // If it's JSON, check for 3DS redirection
+      if (contentType?.includes('application/json')) {
+        const jsonData = checkResponse.data;
+        console.log('JSON response detected:', jsonData);
+        
+        // If there's a redirection_url for 3DS, redirect to it
+        if (jsonData.redirection_url) {
+          console.log('Redirecting to 3DS URL:', jsonData.redirection_url);
+          return res.redirect(jsonData.redirection_url);
+        }
+      }
+
+      // Otherwise, redirect to the original payment URL
+      console.log('Redirecting to original payment URL');
+      res.redirect(paymentUrl);
+    } catch (error) {
+      console.error('Redirect handler error:', error);
+      res.status(500).send('Failed to process payment redirect');
+    }
+  });
+
   // Paymob webhook callback (server-to-server)
   app.post('/api/payments/paymob/callback', async (req, res) => {
     try {
