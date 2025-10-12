@@ -3613,7 +3613,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymobOrderId: paymobOrderId.toString()
       });
 
-      // Return the payment URL (post_pay format handles 3DS automatically)
+      // Check if the iframe URL returns JSON (3DS required)
+      try {
+        const checkResponse = await fetch(iframeUrl);
+        const contentType = checkResponse.headers.get('content-type');
+        
+        if (contentType?.includes('application/json')) {
+          const jsonData = await checkResponse.json();
+          console.log('3DS required - JSON response:', jsonData);
+          
+          // If there's a redirection_url for 3DS, use that instead
+          if (jsonData.redirection_url) {
+            console.log('Using 3DS redirection URL:', jsonData.redirection_url);
+            return res.json({ iframeUrl: jsonData.redirection_url, paymobOrderId });
+          }
+        }
+      } catch (checkError) {
+        console.error('Error checking payment URL:', checkError);
+        // Continue with original URL if check fails
+      }
+
+      // Return the payment URL
       res.json({ iframeUrl, paymobOrderId });
     } catch (error) {
       console.error('Paymob payment initiation error:', error);
