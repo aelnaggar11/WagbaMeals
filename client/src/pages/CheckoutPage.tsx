@@ -348,9 +348,9 @@ const CheckoutPage = () => {
           }
         ) as { iframeUrl: string };
 
-        // Redirect to a payment page that embeds the Paymob iframe
-        const paymentPageUrl = `/payment.html?url=${encodeURIComponent(paymobResponse.iframeUrl)}`;
-        window.location.href = paymentPageUrl;
+        // Redirect directly to Paymob payment page
+        // When payment completes, Paymob will redirect to /payment/callback
+        window.location.href = paymobResponse.iframeUrl;
         
         return;
       }

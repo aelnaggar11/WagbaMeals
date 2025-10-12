@@ -127,9 +127,11 @@ export class PaymobService {
     const orderId = await this.registerOrder(authToken, amountCents, items);
     const paymentToken = await this.getPaymentToken(authToken, orderId, amountCents, billingData, redirectUrl);
 
-    // Use iframe URL - will be embedded on our page
-    const checkoutUrl = `https://accept.paymob.com/api/acceptance/iframes/${PAYMOB_IFRAME_ID}?payment_token=${paymentToken}`;
-    console.log('Using iframe URL for embedded payment');
+    // Use standalone payment page URL (redirect mode) instead of iframe
+    // This will redirect the user to Paymob's hosted payment page
+    const checkoutUrl = `https://accept.paymob.com/api/acceptance/payment_keys/${paymentToken}`;
+    console.log('Using redirect payment URL (not iframe)');
+   
 
     console.log('=== PAYMOB PAYMENT URL CREATED ===');
     console.log('Order ID:', orderId);
