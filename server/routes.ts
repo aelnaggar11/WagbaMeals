@@ -2307,6 +2307,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Paymob Payment Integration
+  app.post('/api/payments/paymob/create-intention', authMiddleware, async (req, res) => {
+    try {
+      const { orderId, amount, address } = req.body;
+
+      // Get order to verify ownership and get order details
+      const order = await storage.getOrder(parseInt(orderId));
+      if (!order || order.userId !== req.session.userId) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      // Get user details
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Parse billing address
+      const billingData = {
+        apartment: address.apartment || 'NA',
+        first_name: user.name?.split(' ')[0] || 'Customer',
+        last_name: user.name?.split(' ').slice(1).join(' ') || 'Name',
+        street: address.street || 'NA',
+        building: address.building || 'NA',
+        phone_number: address.phone || user.phone || '+201000000000',
+        country: 'EG',
+        email: user.email,
+        floor: address.floor || 'NA',
+        state: address.area || 'Cairo',
+        city: address.city || 'Cairo'
+      };
+
+      // Create payment intention with Paymob
+      const { paymobService } = await import('./paymob');
+      const intention = await paymobService.createPaymentIntention({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: 'EGP',
+        billing_data: billingData,
+        customer: {
+          first_name: billingData.first_name,
+          last_name: billingData.last_name,
+          email: billingData.email,
+          phone_number: billingData.phone_number
+        },
+        extras: {
+          merchant_order_id: orderId.toString()
+        }
+      });
+
+      res.json({
+        client_secret: intention.client_secret,
+        intention_id: intention.id,
+        public_key: paymobService.getPublicKey()
+      });
+    } catch (error: any) {
+      console.error('Error creating Paymob payment intention:', error);
+      res.status(500).json({ message: error.message || 'Failed to create payment intention' });
+    }
+  });
+
+  // Paymob Webhook Handler
+  app.post('/api/payments/paymob/webhook', async (req, res) => {
+    try {
+      console.log('=== PAYMOB WEBHOOK RECEIVED ===');
+      const webhookData = req.body;
+      const hmacFromQuery = req.query.hmac as string;
+
+      // Verify HMAC signature
+      const { paymobService } = await import('./paymob');
+      const isValid = paymobService.verifyHmacSignature(webhookData.obj, hmacFromQuery);
+
+      if (!isValid) {
+        console.error('❌ Invalid HMAC signature from Paymob webhook');
+        return res.status(400).json({ message: 'Invalid signature' });
+      }
+
+      console.log('✅ HMAC signature verified');
+
+      const transaction = webhookData.obj;
+      const orderId = transaction.order?.merchant_order_id || transaction.order?.id;
+      const success = transaction.success === 'true' || transaction.success === true;
+
+      console.log('Transaction details:', {
+        id: transaction.id,
+        orderId,
+        amount: transaction.amount_cents / 100,
+        success,
+        pending: transaction.pending
+      });
+
+      // Update order with payment status
+      if (orderId) {
+        const order = await storage.getOrder(parseInt(orderId));
+        if (order) {
+          await storage.updateOrder(order.id, {
+            paymentStatus: success ? 'paid' : 'failed',
+            paymobTransactionId: transaction.id.toString()
+          });
+          
+          console.log(`✅ Order ${orderId} payment status updated to: ${success ? 'paid' : 'failed'}`);
+        }
+      }
+
+      // Always respond 200 OK to Paymob
+      res.status(200).json({ message: 'Webhook processed' });
+    } catch (error) {
+      console.error('Error processing Paymob webhook:', error);
+      // Still return 200 to prevent Paymob from retrying
+      res.status(200).json({ message: 'Webhook received' });
+    }
+  });
+
   app.post('/api/orders/checkout', authMiddleware, upload.single('paymentConfirmationImage'), async (req, res) => {
     try {
       console.log('=== CHECKOUT REQUEST RECEIVED ===');
