@@ -1356,60 +1356,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/orders', authMiddleware, async (req, res) => {
-    try {
-      const { weekId, mealCount, defaultPortionSize, items, totalPrice, deliverySlot } = req.body;
-
-      // Calculate pricing based on meal count and portion size
-      const pricing = await calculateOrderPricing(mealCount, defaultPortionSize || 'standard', storage);
-      
-      // Use calculated pricing if totalPrice not provided
-      const orderSubtotal = totalPrice || pricing.subtotal;
-      const orderDiscount = totalPrice ? 0 : pricing.discount;
-      const orderTotal = totalPrice || pricing.total;
-
-      // Create the order
-      const order = await storage.createOrder({
-        userId: req.session.userId!,
-        weekId,
-        status: 'selected',
-        mealCount,
-        defaultPortionSize: defaultPortionSize || 'standard',
-        subtotal: orderSubtotal,
-        discount: orderDiscount,
-        total: orderTotal,
-        deliveryDate: new Date().toISOString(),
-        deliveryAddress: null,
-        deliveryNotes: null,
-        deliverySlot: deliverySlot || 'morning',
-        paymentMethod: null
-      });
-
-      // Add order items
-      if (items && items.length > 0) {
-        for (const item of items) {
-          const meal = await storage.getMeal(item.mealId);
-          if (meal) {
-            const basePrice = 249;
-            const price = item.portionSize === 'large' ? basePrice * 1.2 : basePrice;
-            
-            await storage.addOrderItem({
-              orderId: order.id,
-              mealId: item.mealId,
-              portionSize: item.portionSize,
-              price: Math.round(price * 100) / 100
-            });
-          }
-        }
-      }
-
-      res.status(201).json(order);
-    } catch (error) {
-      console.error('Error creating order:', error);
-      res.status(500).json({ message: 'Server error' });
-    }
-  });
-
   // Get order details with items and meal info
   app.get('/api/orders/:orderId/details', authMiddleware, async (req, res) => {
     try {
