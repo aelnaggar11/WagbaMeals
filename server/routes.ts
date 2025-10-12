@@ -3614,36 +3614,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymobOrderId: paymobOrderId.toString()
       });
 
-      // Check if the iframe URL returns JSON (3DS required)
-      // We need to simulate a browser request to get the same response
+      // ALWAYS check the iframe URL because it returns JSON with the real 3DS URL
       try {
-        console.log('Checking payment URL for 3DS requirement...');
-        const checkResponse = await axios.get(iframeUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
-          }
-        });
-        const contentType = checkResponse.headers['content-type'];
+        console.log('Fetching Paymob URL to get 3DS redirect...');
+        const checkResponse = await axios.get(iframeUrl);
+        const jsonData = checkResponse.data;
         
-        console.log('Response content type:', contentType);
+        console.log('Paymob response:', JSON.stringify(jsonData).substring(0, 200));
         
-        if (contentType?.includes('application/json')) {
-          const jsonData = checkResponse.data;
-          console.log('3DS required - JSON response:', jsonData);
-          
-          // If there's a redirection_url for 3DS, use that instead
-          if (jsonData.redirection_url) {
-            console.log('Using 3DS redirection URL:', jsonData.redirection_url);
-            return res.json({ iframeUrl: jsonData.redirection_url, paymobOrderId });
-          }
+        // Extract the 3DS redirection URL from JSON response
+        if (jsonData && typeof jsonData === 'object' && jsonData.redirection_url) {
+          console.log('✅ Found 3DS redirect URL:', jsonData.redirection_url);
+          return res.json({ iframeUrl: jsonData.redirection_url, paymobOrderId });
         }
       } catch (checkError: any) {
-        console.error('Error checking payment URL:', checkError.message);
-        // Continue with original URL if check fails
+        console.error('Error fetching Paymob URL:', checkError.message);
       }
 
-      // Return the payment URL
+      // Fallback to original URL if extraction fails
+      console.log('Using original iframe URL as fallback');
       res.json({ iframeUrl, paymobOrderId });
     } catch (error) {
       console.error('Paymob payment initiation error:', error);
