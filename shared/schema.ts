@@ -179,6 +179,11 @@ export const orders = pgTable("orders", {
   paymobTransactionId: text("paymob_transaction_id"), // Paymob transaction reference
   deliveryDate: text("delivery_date"),
   orderType: text("order_type").default("trial"), // "trial", "subscription"
+  // Subscription payment tracking fields
+  subscriptionBillingAttemptedAt: timestamp("subscription_billing_attempted_at"), // When auto-charge was attempted
+  subscriptionBillingStatus: text("subscription_billing_status"), // "pending" | "success" | "failed" | "skipped"
+  subscriptionBillingError: text("subscription_billing_error"), // Error message if billing failed
+  paymentMethodId: integer("payment_method_id"), // Reference to payment_methods table for subscriptions
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -200,6 +205,10 @@ export const insertOrderSchema = createInsertSchema(orders).pick({
   paymentConfirmationImage: true,
   deliveryDate: true,
   orderType: true,
+  subscriptionBillingAttemptedAt: true,
+  subscriptionBillingStatus: true,
+  subscriptionBillingError: true,
+  paymentMethodId: true,
 });
 
 // OrderItem Model
@@ -508,5 +517,34 @@ export type InsertLandingCarouselMeal = z.infer<typeof insertLandingCarouselMeal
 
 export type LandingFaq = typeof landingFaqs.$inferSelect;
 export type InsertLandingFaq = z.infer<typeof insertLandingFaqSchema>;
+
+// Payment Methods Model (for storing tokenized card data for subscriptions)
+export const paymentMethods = pgTable("payment_methods", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  paymobCardToken: text("paymob_card_token").notNull(), // Tokenized card from Paymob
+  maskedPan: text("masked_pan"), // Last 4 digits for display (e.g., "**** 4242")
+  cardBrand: text("card_brand"), // "visa", "mastercard", etc.
+  expiryMonth: text("expiry_month"),
+  expiryYear: text("expiry_year"),
+  isDefault: boolean("is_default").default(false),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertPaymentMethodSchema = createInsertSchema(paymentMethods).pick({
+  userId: true,
+  paymobCardToken: true,
+  maskedPan: true,
+  cardBrand: true,
+  expiryMonth: true,
+  expiryYear: true,
+  isDefault: true,
+  isActive: true,
+});
+
+export type PaymentMethod = typeof paymentMethods.$inferSelect;
+export type InsertPaymentMethod = z.infer<typeof insertPaymentMethodSchema>;
 
 // Helper functions for pricing

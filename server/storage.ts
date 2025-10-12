@@ -7,7 +7,8 @@ import {
   Order, InsertOrder,
   OrderItemFull, InsertOrderItem,
   UserWeekStatus, InsertUserWeekStatus,
-  PricingConfig, InsertPricingConfig
+  PricingConfig, InsertPricingConfig,
+  PaymentMethod, InsertPaymentMethod
 } from "@shared/schema";
 
 export interface IStorage {
@@ -62,6 +63,15 @@ export interface IStorage {
   createPricingConfig(config: InsertPricingConfig): Promise<PricingConfig>;
   updatePricingConfig(id: number, configData: Partial<PricingConfig>): Promise<PricingConfig>;
   deletePricingConfig(id: number): Promise<void>;
+  
+  // Payment Methods (for subscription card tokenization)
+  getPaymentMethod(id: number): Promise<PaymentMethod | undefined>;
+  getPaymentMethodsByUser(userId: number): Promise<PaymentMethod[]>;
+  getDefaultPaymentMethod(userId: number): Promise<PaymentMethod | undefined>;
+  createPaymentMethod(paymentMethod: InsertPaymentMethod): Promise<PaymentMethod>;
+  updatePaymentMethod(id: number, data: Partial<PaymentMethod>): Promise<PaymentMethod>;
+  deletePaymentMethod(id: number): Promise<void>;
+  setDefaultPaymentMethod(userId: number, paymentMethodId: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
