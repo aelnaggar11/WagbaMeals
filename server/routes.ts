@@ -17,6 +17,7 @@ import fs from "fs";
 import { validateEgyptianPhoneNumber } from "./utils/phoneValidation";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { paymobService } from "./paymob";
+import axios from "axios";
 
 declare module 'express-session' {
   interface SessionData {
@@ -3615,11 +3616,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if the iframe URL returns JSON (3DS required)
       try {
-        const checkResponse = await fetch(iframeUrl);
-        const contentType = checkResponse.headers.get('content-type');
+        console.log('Checking payment URL for 3DS requirement...');
+        const checkResponse = await axios.get(iframeUrl);
+        const contentType = checkResponse.headers['content-type'];
+        
+        console.log('Response content type:', contentType);
         
         if (contentType?.includes('application/json')) {
-          const jsonData = await checkResponse.json();
+          const jsonData = checkResponse.data;
           console.log('3DS required - JSON response:', jsonData);
           
           // If there's a redirection_url for 3DS, use that instead
@@ -3628,8 +3632,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return res.json({ iframeUrl: jsonData.redirection_url, paymobOrderId });
           }
         }
-      } catch (checkError) {
-        console.error('Error checking payment URL:', checkError);
+      } catch (checkError: any) {
+        console.error('Error checking payment URL:', checkError.message);
         // Continue with original URL if check fails
       }
 
