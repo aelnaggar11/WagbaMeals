@@ -3614,25 +3614,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymobOrderId: paymobOrderId.toString()
       });
 
-      // ALWAYS check the iframe URL because it returns JSON with the real 3DS URL
-      try {
-        console.log('Fetching Paymob URL to get 3DS redirect...');
-        const checkResponse = await axios.get(iframeUrl);
-        const jsonData = checkResponse.data;
-        
-        console.log('Paymob response:', JSON.stringify(jsonData).substring(0, 200));
-        
-        // Extract the 3DS redirection URL from JSON response
-        if (jsonData && typeof jsonData === 'object' && jsonData.redirection_url) {
-          console.log('✅ Found 3DS redirect URL:', jsonData.redirection_url);
-          return res.json({ iframeUrl: jsonData.redirection_url, paymobOrderId });
-        }
-      } catch (checkError: any) {
-        console.error('Error fetching Paymob URL:', checkError.message);
-      }
-
-      // Fallback to original URL if extraction fails
-      console.log('Using original iframe URL as fallback');
+      // Return the iframe URL for embedding
       res.json({ iframeUrl, paymobOrderId });
     } catch (error) {
       console.error('Paymob payment initiation error:', error);
