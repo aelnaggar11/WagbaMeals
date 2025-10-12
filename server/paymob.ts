@@ -127,9 +127,9 @@ export class PaymobService {
     const orderId = await this.registerOrder(authToken, amountCents, items);
     const paymentToken = await this.getPaymentToken(authToken, orderId, amountCents, billingData, redirectUrl);
 
-    // Use iframe URL - works for both embedding and full-page redirects
-    const checkoutUrl = `https://accept.paymob.com/api/acceptance/iframes/${PAYMOB_IFRAME_ID}?payment_token=${paymentToken}`;
-    console.log('Using iframe URL for redirect flow');
+    // Use hosted payment URL for redirect-based flow (not iframe URL)
+    const checkoutUrl = `https://accept.paymob.com/api/acceptance/payments/pay?payment_token=${paymentToken}`;
+    console.log('Using hosted payment URL for redirect flow');
 
     console.log('=== PAYMOB PAYMENT URL CREATED ===');
     console.log('Order ID:', orderId);

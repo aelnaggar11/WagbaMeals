@@ -348,39 +348,8 @@ const CheckoutPage = () => {
           }
         ) as { iframeUrl: string };
 
-        // Open iframe in full-page mode
-        const paymentWindow = window.open(
-          '',
-          '_self'
-        );
-        
-        if (paymentWindow) {
-          paymentWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <title>Payment</title>
-              <style>
-                body, html {
-                  margin: 0;
-                  padding: 0;
-                  height: 100%;
-                  overflow: hidden;
-                }
-                iframe {
-                  border: none;
-                  width: 100%;
-                  height: 100%;
-                }
-              </style>
-            </head>
-            <body>
-              <iframe src="${paymobResponse.iframeUrl}" allow="payment"></iframe>
-            </body>
-            </html>
-          `);
-          paymentWindow.document.close();
-        }
+        // Redirect to Paymob hosted payment page
+        window.location.href = paymobResponse.iframeUrl;
         
         return;
       }
