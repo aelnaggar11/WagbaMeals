@@ -65,18 +65,26 @@ Wagba utilizes a modern full-stack architecture with separate frontend and backe
 - Implemented security measures: Zod validation prevents client-controlled amounts, HMAC verification secures webhooks, server-side order totals prevent manipulation
 - Completed end-to-end testing: verified payment intention creation, webhook processing, HMAC signature validation, and order status updates
 
-### October 12, 2025 - Subscription Payment System
+### October 12, 2025 - Subscription Payment System (COMPLETED)
 - **Architecture:** Hybrid approach using Paymob card tokenization + custom billing scheduler for weekly recurring payments
-- **Database Schema:** Added payment_methods table (card_token, masked_pan, card_brand, expiry) and subscription billing fields to orders (billing_attempted_at, billing_status, billing_error, payment_method_id)
+- **Database Schema:** Added payment_methods table (card_token, masked_pan, card_brand, expiry) and subscription billing fields to orders (billing_attempted_at, billing_status, billing_error, billing_retry_count, payment_method_id)
 - **Card Tokenization:** Checkout flow enables Paymob tokenization for subscription orders (save_token_to_be_used: true), webhook extracts and stores card tokens with idempotency checks
 - **Billing Scheduler:** Node-cron job runs hourly to charge subscriptions 2 hours after deadline
-  - Processes weeks within 1-hour billing window to prevent duplicate charges
-  - Filters orders: subscription type, not skipped, payment not already successful, has saved payment method
+  - Billing window: 90 minutes (handles operational delays and cold starts)
+  - Finds weeks where deadline + 2 hours falls within last 90 minutes
+  - Filters orders: subscription type, not skipped, payment not paid, retry count < 3
   - Respects user subscription status (cancelled/paused subscriptions are skipped)
   - Charges order total + 100 EGP delivery fee using saved card tokens
   - Updates billing status (success/failed) and stores transaction IDs
+- **Retry Logic:** Smart retry system that only increments count after actual payment attempts
+  - Pre-check failures (no payment method, cancelled subscription) don't consume retries
+  - Payment failures increment retry count, max 3 attempts
+  - Max retries exceeded: Logged for manual intervention, excluded from future billing
+  - Order scoping fixed: retry count accessible in both try and catch blocks
 - **Payment Methods CRUD:** Full implementation in DatabaseStorage for managing tokenized cards (get, create, update, delete, set default)
+- **Skip/Cancel Logic:** Fully functional - skips orders with status='skipped' and users with cancelled/paused subscriptions
 - **Security:** Card tokens stored securely, idempotent webhook processing, server-side amount validation
+- **Testing:** E2E verification completed - authentication, database schema, API endpoints, and billing scheduler all functional and production-ready
 
 ## Configuration Notes
 
