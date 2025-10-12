@@ -2528,29 +2528,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.log('Masked PAN:', maskedPan);
               console.log('Card subtype:', cardSubtype);
               
-              // Create payment method
-              const paymentMethod = await storage.createPaymentMethod({
-                userId: order.userId,
-                paymobCardToken: cardToken,
-                maskedPan: maskedPan,
-                cardBrand: cardSubtype.toLowerCase(),
-                expiryMonth: null, // Paymob doesn't provide expiry in token
-                expiryYear: null,
-                isDefault: true, // First card is always default
-                isActive: true
-              });
-              
-              // Link payment method to order
-              await storage.updateOrder(order.id, {
-                paymentMethodId: paymentMethod.id
-              });
-              
-              console.log(`✅ Card token saved for subscription order ${orderId}`);
-              console.log(`Payment method ID: ${paymentMethod.id}`);
+              // Check if this order already has a payment method (idempotency for webhook retries)
+              if (order.paymentMethodId) {
+                console.log(`ℹ️ Order ${orderId} already has payment method ${order.paymentMethodId}, skipping token save`);
+              } else {
+                // Create payment method
+                const paymentMethod = await storage.createPaymentMethod({
+                  userId: order.userId,
+                  paymobCardToken: cardToken,
+                  maskedPan: maskedPan,
+                  cardBrand: cardSubtype.toLowerCase(),
+                  expiryMonth: null, // Paymob doesn't provide expiry in token
+                  expiryYear: null,
+                  isDefault: true, // First card is always default
+                  isActive: true
+                });
+                
+                // Link payment method to order
+                await storage.updateOrder(order.id, {
+                  paymentMethodId: paymentMethod.id
+                });
+                
+                console.log(`✅ Card token saved for subscription order ${orderId}`);
+                console.log(`Payment method ID: ${paymentMethod.id}`);
+              }
             } catch (tokenError) {
               console.error('❌ Error saving card token:', tokenError);
               // Don't fail the webhook if token save fails
             }
+          } else if (success && order.orderType === 'subscription' && !transaction.token) {
+            // Log missing token for subscription order
+            console.error(`⚠️ Subscription order ${orderId} succeeded but no token received from Paymob`);
           }
         }
       }
