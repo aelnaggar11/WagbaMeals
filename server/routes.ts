@@ -2078,6 +2078,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate total
       const total = subtotal;
 
+      console.log('=== FINAL ORDER PRICING ===');
+      console.log('fullPriceSubtotal:', fullPriceSubtotal);
+      console.log('subtotal (discounted):', subtotal);
+      console.log('discount:', discount);
+      console.log('total:', total);
+      console.log('============================');
+
       // Create order with full price as subtotal
       const order = await storage.createOrder({
         userId: req.session.userId!,
