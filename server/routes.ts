@@ -2616,6 +2616,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderUpdateData.paymentStatus = 'confirmed';
       }
 
+      // Recalculate subtotal and discount based on actual order items
+      const orderItems = await storage.getOrderItems(parseInt(orderId));
+      if (orderItems && orderItems.length > 0) {
+        const basePricePerMeal = await getBasePricePerMeal(storage);
+        const largePortionAdditional = await getLargeMealAddonPrice(storage);
+        
+        let recalculatedFullPriceSubtotal = 0;
+        let recalculatedDiscountedTotal = 0;
+        
+        orderItems.forEach(item => {
+          if (item.portionSize === 'large') {
+            recalculatedFullPriceSubtotal += basePricePerMeal + largePortionAdditional;
+            recalculatedDiscountedTotal += item.price;
+          } else {
+            recalculatedFullPriceSubtotal += basePricePerMeal;
+            recalculatedDiscountedTotal += item.price;
+          }
+        });
+        
+        const recalculatedDiscount = recalculatedFullPriceSubtotal - recalculatedDiscountedTotal;
+        
+        console.log('=== RECALCULATED PRICING ===');
+        console.log('Recalculated subtotal (base price):', recalculatedFullPriceSubtotal);
+        console.log('Recalculated total (discounted):', recalculatedDiscountedTotal);
+        console.log('Recalculated volume discount:', recalculatedDiscount);
+        console.log('============================');
+        
+        // Update order with recalculated values
+        orderUpdateData.subtotal = recalculatedFullPriceSubtotal;
+        orderUpdateData.discount = recalculatedDiscount;
+        orderUpdateData.total = recalculatedDiscountedTotal;
+      }
+      
       // Get user once for discount and profile update
       const currentUser = await storage.getUser(req.session.userId!);
       const isFirstOrder = currentUser && !currentUser.hasUsedTrialBox;
@@ -2624,18 +2657,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isFirstOrder && orderType === 'subscription') {
         console.log('=== FIRST-ORDER SUBSCRIPTION DISCOUNT ===');
         console.log('Applying 10% discount to subscription order');
-        console.log('Original subtotal:', order.subtotal);
-        console.log('Original volume discount:', order.discount);
-        console.log('Original total (after volume discount):', order.total);
+        console.log('Subtotal (base price):', orderUpdateData.subtotal);
+        console.log('Volume discount:', orderUpdateData.discount);
+        console.log('Total (after volume discount):', orderUpdateData.total);
         
         // Calculate 10% discount on the total (after volume discount)
-        const firstOrderDiscount = Math.round(order.total * 0.1);
-        const newTotal = order.total - firstOrderDiscount;
-        const newTotalDiscount = order.discount + firstOrderDiscount;
+        const firstOrderDiscount = Math.round(orderUpdateData.total * 0.1);
+        const newTotal = orderUpdateData.total - firstOrderDiscount;
+        const newTotalDiscount = orderUpdateData.discount + firstOrderDiscount;
         
         // Update order data with new pricing
-        orderUpdateData.subtotal = order.subtotal; // Subtotal stays the same
-        orderUpdateData.discount = newTotalDiscount; // Add first-order discount to total discount
+        // orderUpdateData.subtotal stays the same (base price)
+        orderUpdateData.discount = newTotalDiscount; // Add first-order discount to volume discount
         orderUpdateData.total = newTotal; // Apply first-order discount to total
         
         console.log('First-order discount amount (10% of total):', firstOrderDiscount);

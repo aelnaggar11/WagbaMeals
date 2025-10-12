@@ -46,7 +46,8 @@ Wagba utilizes a modern full-stack architecture with separate frontend and backe
 - Corrected first-order discount to apply 10% to order total after volume discount (not to subtotal)
 - Updated checkout page order summary to accurately show: Subtotal (base price) → Volume Discount → First Order Discount (10%) → Final Total
 - Fixed Paymob payment amount to include delivery fee (order total + 100 EGP delivery fee)
-- Ensured Paymob payment amount matches the checkout page total displayed to users
+- Fixed mixed portion pricing: checkout now recalculates subtotal/discount based on actual selected meals (e.g., 3 standard + 3 large)
+- Ensured accurate pricing for all portion combinations and payment amounts match checkout display
 
 ### October 12, 2025 - Payment Callback UX Improvement
 - Updated payment response page to show toast notifications and auto-redirect users based on payment status
