@@ -32,7 +32,17 @@ export default function PaymentCallbackPage() {
           
           // Redirect to account page after 2 seconds
           setTimeout(() => {
-            setLocation("/account");
+            // Try to break out of iframe if present, otherwise use regular navigation
+            try {
+              if (window.top && window.top !== window) {
+                window.top.location.href = '/account';
+              } else {
+                window.location.href = '/account';
+              }
+            } catch {
+              // Fallback if iframe access is blocked
+              window.location.href = '/account';
+            }
           }, 2000);
         } else {
           throw new Error(data.message || "Payment verification failed");
@@ -43,7 +53,15 @@ export default function PaymentCallbackPage() {
         
         // Redirect to account page after 4 seconds even on error
         setTimeout(() => {
-          setLocation("/account");
+          try {
+            if (window.top && window.top !== window) {
+              window.top.location.href = '/account';
+            } else {
+              window.location.href = '/account';
+            }
+          } catch {
+            window.location.href = '/account';
+          }
         }, 4000);
       }
     }
