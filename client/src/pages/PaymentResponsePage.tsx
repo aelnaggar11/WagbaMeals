@@ -1,13 +1,24 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
+import { User } from "@shared/schema";
 
 const PaymentResponsePage = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   
+  // Check authentication status
+  const { data: user, isLoading } = useQuery<User | null>({
+    queryKey: ['/api/auth/me'],
+    retry: false,
+  });
+  
   useEffect(() => {
+    // Wait for auth check to complete
+    if (isLoading) return;
+
     // Parse URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const isSuccess = urlParams.get('success') === 'true';
@@ -23,9 +34,14 @@ const PaymentResponsePage = () => {
         duration: 3000,
       });
 
-      // Redirect to account page after a brief delay
+      // Redirect based on auth status
       setTimeout(() => {
-        navigate('/account');
+        if (user) {
+          navigate('/account');
+        } else {
+          // If not authenticated, redirect to login with return path
+          window.location.href = '/auth?returnTo=' + encodeURIComponent('/account');
+        }
       }, 1500);
     } else {
       // Show failure toast
@@ -36,12 +52,16 @@ const PaymentResponsePage = () => {
         duration: 4000,
       });
 
-      // Redirect to checkout page to retry
+      // Redirect to checkout or home based on auth status
       setTimeout(() => {
-        navigate('/checkout');
+        if (user) {
+          navigate('/checkout');
+        } else {
+          navigate('/');
+        }
       }, 2000);
     }
-  }, [navigate, toast]);
+  }, [user, isLoading, navigate, toast]);
 
   // Show a simple loading state while redirecting
   return (
