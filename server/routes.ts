@@ -3777,10 +3777,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Query params:', req.query);
       console.log('Body params:', req.body);
       
-      // Detect if this is an API call (from React page) or browser navigation (from Paymob iframe)
+      // Detect if this is an API call (from React page) or browser navigation (from Paymob redirect)
+      // Browsers prioritize text/html first, API calls prioritize application/json
       const acceptHeader = req.headers['accept'] || '';
-      const isApiCall = acceptHeader.includes('application/json') || req.headers['x-requested-with'];
-      console.log('Is API call:', isApiCall, 'Accept header:', acceptHeader);
+      const isApiCall = (acceptHeader.startsWith('application/json') || req.headers['x-requested-with'] === 'XMLHttpRequest');
+      const isBrowserRedirect = acceptHeader.includes('text/html') && !isApiCall;
+      console.log('Is API call:', isApiCall, 'Is browser redirect:', isBrowserRedirect, 'Accept header:', acceptHeader);
       
       // Paymob sends data in body for POST, query for GET
       const data = req.method === 'POST' ? req.body : req.query;
@@ -3824,45 +3826,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           console.log(`Payment successful for order ${order.id} via transaction response`);
           
-          // For API calls (from React page), return JSON
-          if (isApiCall) {
-            return res.status(200).json({
-              success: true,
-              orderId: order.id,
-              paymobOrderId: paymobOrderId.toString(),
-              transactionId: transactionId?.toString() || ''
+          // For browser redirects (from Paymob), always redirect to callback page
+          if (isBrowserRedirect || !isApiCall) {
+            const successParams = new URLSearchParams({
+              success: 'true',
+              order: paymobOrderId.toString(),
+              id: transactionId?.toString() || '',
+              ...data
             });
+            return res.redirect(`/payment/callback?${successParams.toString()}`);
           }
           
-          // For browser navigation (from Paymob iframe), redirect to React callback page
-          const successParams = new URLSearchParams({
-            success: 'true',
-            order: paymobOrderId.toString(),
-            id: transactionId?.toString() || '',
-            ...data
+          // For API calls (from React page), return JSON
+          return res.status(200).json({
+            success: true,
+            orderId: order.id,
+            paymobOrderId: paymobOrderId.toString(),
+            transactionId: transactionId?.toString() || ''
           });
-          return res.redirect(`/payment/callback?${successParams.toString()}`);
         } else if (order && pending === 'true') {
           console.log(`Payment pending for order ${order.id}`);
           
-          // For API calls, return JSON
-          if (isApiCall) {
-            return res.status(200).json({
-              success: false,
-              pending: true,
-              message: 'Payment is pending',
-              orderId: order.id
+          // For browser redirects, always redirect to callback page
+          if (isBrowserRedirect || !isApiCall) {
+            const pendingParams = new URLSearchParams({
+              success: 'false',
+              pending: 'true',
+              order: paymobOrderId.toString(),
+              ...data
             });
+            return res.redirect(`/payment/callback?${pendingParams.toString()}`);
           }
           
-          // For browser navigation, redirect
-          const pendingParams = new URLSearchParams({
-            success: 'false',
-            pending: 'true',
-            order: paymobOrderId.toString(),
-            ...data
+          // For API calls, return JSON
+          return res.status(200).json({
+            success: false,
+            pending: true,
+            message: 'Payment is pending',
+            orderId: order.id
           });
-          return res.redirect(`/payment/callback?${pendingParams.toString()}`);
         } else if (order) {
           console.log(`Payment failed for order ${order.id}`);
           
@@ -3872,23 +3874,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
             paymentStatus: 'failed'
           });
           
-          // For API calls, return JSON
-          if (isApiCall) {
-            return res.status(200).json({
-              success: false,
-              message: 'Payment failed',
-              orderId: order.id
+          // For browser redirects, always redirect to callback page
+          if (isBrowserRedirect || !isApiCall) {
+            const failedParams = new URLSearchParams({
+              success: 'false',
+              order: paymobOrderId.toString(),
+              payment_failed: 'true',
+              ...data
             });
+            return res.redirect(`/payment/callback?${failedParams.toString()}`);
           }
           
-          // For browser navigation, redirect
-          const failedParams = new URLSearchParams({
-            success: 'false',
-            order: paymobOrderId.toString(),
-            payment_failed: 'true',
-            ...data
+          // For API calls, return JSON
+          return res.status(200).json({
+            success: false,
+            message: 'Payment failed',
+            orderId: order.id
           });
-          return res.redirect(`/payment/callback?${failedParams.toString()}`);
         }
       }
       
