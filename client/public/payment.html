@@ -75,6 +75,32 @@
             };
             
             iframe.src = decodeURIComponent(paymentUrl);
+            
+            // Listen for messages from Paymob iframe
+            window.addEventListener('message', function(event) {
+                console.log('Received message from iframe:', event);
+                
+                // Check if message is from Paymob
+                if (event.origin.includes('paymob') || event.origin.includes('accept.paymobsolutions.com')) {
+                    console.log('Payment message data:', event.data);
+                    
+                    // Paymob sends transaction data when payment completes
+                    if (event.data && typeof event.data === 'object') {
+                        // Redirect to our callback page with the transaction data
+                        const params = new URLSearchParams();
+                        
+                        // Add all transaction parameters
+                        Object.keys(event.data).forEach(key => {
+                            if (event.data[key] !== null && event.data[key] !== undefined) {
+                                params.append(key, String(event.data[key]));
+                            }
+                        });
+                        
+                        // Redirect to React callback page
+                        window.location.href = '/payment/callback?' + params.toString();
+                    }
+                }
+            });
         } else {
             document.getElementById('loading').innerHTML = 
                 '<p style="color: red;">Invalid payment URL</p>' +

@@ -3567,25 +3567,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Don't add delivery fee again - it's already in order.total
       const totalAmount = order.total;
 
-      // Determine the callback URL based on environment
-      // Use React page for payment callback
+      // Use API endpoint as callback - it will handle verification and redirect
       let callbackUrl: string;
       if (process.env.NODE_ENV === 'production') {
-        callbackUrl = 'https://wagba.food/payment/callback';
+        callbackUrl = 'https://wagba.food/api/payments/paymob/response';
       } else {
-        // Use Replit dev URL from environment or construct from request
         const replitDevUrl = process.env.REPLIT_DEV_DOMAIN;
         if (replitDevUrl) {
-          callbackUrl = `https://${replitDevUrl}/payment/callback`;
+          callbackUrl = `https://${replitDevUrl}/api/payments/paymob/response`;
         } else {
-          // Fallback: construct from request host
           const protocol = req.get('x-forwarded-proto') || req.protocol;
           const host = req.get('host');
-          callbackUrl = `${protocol}://${host}/payment/callback`;
+          callbackUrl = `${protocol}://${host}/api/payments/paymob/response`;
         }
       }
-
-      console.log('Paymob callback URL (React page):', callbackUrl);
+      
+      console.log('Paymob callback URL (API endpoint):', callbackUrl);
 
       // Create payment URL
       const { iframeUrl, orderId: paymobOrderId } = await paymobService.createPaymentUrl(
@@ -3774,10 +3771,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Paymob transaction response callback (user redirect) - handles both GET and POST
   const handlePaymobResponse = async (req: any, res: any) => {
     try {
-      console.log('=== PAYMOB TRANSACTION RESPONSE (User Redirect) ===');
+      console.log('=== PAYMOB TRANSACTION RESPONSE ===');
       console.log('Method:', req.method);
       console.log('Query params:', req.query);
       console.log('Body params:', req.body);
+      
+      // Detect if this is an API call (from React page) or browser navigation (from Paymob iframe)
+      const acceptHeader = req.headers['accept'] || '';
+      const isApiCall = acceptHeader.includes('application/json') || req.headers['x-requested-with'];
+      console.log('Is API call:', isApiCall, 'Accept header:', acceptHeader);
       
       // Paymob sends data in body for POST, query for GET
       const data = req.method === 'POST' ? req.body : req.query;
@@ -3820,163 +3822,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           console.log(`Payment successful for order ${order.id} via transaction response`);
-          return res.send(`
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <title>Payment Successful</title>
-              </head>
-              <body>
-                <script>
-                  if (window.opener) {
-                    // We're in a popup - force full page reload to refresh cache
-                    window.opener.location.href = '/account?refresh=' + Date.now();
-                    window.close();
-                  } else {
-                    // Not in popup - redirect normally
-                    window.location.href = '/account?refresh=' + Date.now();
-                  }
-                </script>
-                <p>Payment successful! Redirecting...</p>
-              </body>
-            </html>
-          `);
+          
+          // For API calls (from React page), return JSON
+          if (isApiCall) {
+            return res.status(200).json({
+              success: true,
+              orderId: order.id,
+              paymobOrderId: paymobOrderId.toString(),
+              transactionId: transactionId?.toString() || ''
+            });
+          }
+          
+          // For browser navigation (from Paymob iframe), redirect to React callback page
+          const successParams = new URLSearchParams({
+            success: 'true',
+            order: paymobOrderId.toString(),
+            id: transactionId?.toString() || '',
+            ...data
+          });
+          return res.redirect(`/payment/callback?${successParams.toString()}`);
         } else if (order && pending === 'true') {
           console.log(`Payment pending for order ${order.id}`);
-          return res.send(`
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <title>Payment Pending</title>
-              </head>
-              <body>
-                <script>
-                  if (window.opener) {
-                    window.opener.location.href = '/account?refresh=' + Date.now();
-                    window.close();
-                  } else {
-                    window.location.href = '/account?refresh=' + Date.now();
-                  }
-                </script>
-                <p>Payment pending... Redirecting...</p>
-              </body>
-            </html>
-          `);
+          
+          // For API calls, return JSON
+          if (isApiCall) {
+            return res.status(200).json({
+              success: false,
+              pending: true,
+              message: 'Payment is pending',
+              orderId: order.id
+            });
+          }
+          
+          // For browser navigation, redirect
+          const pendingParams = new URLSearchParams({
+            success: 'false',
+            pending: 'true',
+            order: paymobOrderId.toString(),
+            ...data
+          });
+          return res.redirect(`/payment/callback?${pendingParams.toString()}`);
         } else if (order) {
           console.log(`Payment failed for order ${order.id}`);
           
           // Reset order to not_selected state since payment failed
-          // (not 'pending' because getPendingOrderByUser looks for 'not_selected' or 'selected')
           await storage.updateOrder(order.id, {
             status: 'not_selected',
             paymentStatus: 'failed'
           });
           
-          return res.send(`
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <title>Payment Failed</title>
-              </head>
-              <body>
-                <script>
-                  if (window.opener) {
-                    window.opener.location.href = '/checkout?payment_failed=true&reason=payment_declined';
-                    window.close();
-                  } else {
-                    window.location.href = '/checkout?payment_failed=true&reason=payment_declined';
-                  }
-                </script>
-                <p>Payment failed. Redirecting back to checkout...</p>
-              </body>
-            </html>
-          `);
+          // For API calls, return JSON
+          if (isApiCall) {
+            return res.status(200).json({
+              success: false,
+              message: 'Payment failed',
+              orderId: order.id
+            });
+          }
+          
+          // For browser navigation, redirect
+          const failedParams = new URLSearchParams({
+            success: 'false',
+            order: paymobOrderId.toString(),
+            payment_failed: 'true',
+            ...data
+          });
+          return res.redirect(`/payment/callback?${failedParams.toString()}`);
         }
       }
       
-      // Fallback redirects
+      // Fallback responses when order not found
+      if (isApiCall) {
+        // For API calls, return JSON
+        if (success === 'true') {
+          return res.status(200).json({ success: true, message: 'Payment successful (order not found in our system)' });
+        } else if (pending === 'true') {
+          return res.status(200).json({ success: false, pending: true, message: 'Payment pending' });
+        } else {
+          return res.status(200).json({ success: false, message: 'Payment failed' });
+        }
+      }
+      
+      // For browser navigation, redirect to callback page
       if (success === 'true') {
-        return res.send(`
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <title>Payment Successful</title>
-            </head>
-            <body>
-              <script>
-                if (window.opener) {
-                  window.opener.location.href = '/account?refresh=' + Date.now();
-                  window.close();
-                } else {
-                  window.location.href = '/account?refresh=' + Date.now();
-                }
-              </script>
-              <p>Payment successful! Redirecting...</p>
-            </body>
-          </html>
-        `);
+        const params = new URLSearchParams({ success: 'true', ...data });
+        return res.redirect(`/payment/callback?${params.toString()}`);
       } else if (pending === 'true') {
-        return res.send(`
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <title>Payment Pending</title>
-            </head>
-            <body>
-              <script>
-                if (window.opener) {
-                  window.opener.location.href = '/account?refresh=' + Date.now();
-                  window.close();
-                } else {
-                  window.location.href = '/account?refresh=' + Date.now();
-                }
-              </script>
-              <p>Payment pending... Redirecting...</p>
-            </body>
-          </html>
-        `);
+        const params = new URLSearchParams({ success: 'false', pending: 'true', ...data });
+        return res.redirect(`/payment/callback?${params.toString()}`);
       } else {
-        return res.send(`
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <title>Payment Failed</title>
-            </head>
-            <body>
-              <script>
-                if (window.opener) {
-                  window.opener.location.href = '/account?failed=true';
-                  window.close();
-                } else {
-                  window.location.href = '/account?failed=true';
-                }
-              </script>
-              <p>Payment failed. Redirecting...</p>
-            </body>
-          </html>
-        `);
+        const params = new URLSearchParams({ success: 'false', payment_failed: 'true', ...data });
+        return res.redirect(`/payment/callback?${params.toString()}`);
       }
     } catch (error) {
       console.error('Paymob response handling error:', error);
-      return res.send(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Payment Error</title>
-          </head>
-          <body>
-            <script>
-              if (window.opener) {
-                window.opener.location.href = '/account?error=true';
-                window.close();
-              } else {
-                window.location.href = '/account?error=true';
-              }
-            </script>
-            <p>An error occurred. Redirecting...</p>
-          </body>
-        </html>
-      `);
+      
+      const acceptHeader = req.headers['accept'] || '';
+      const isApiCall = acceptHeader.includes('application/json');
+      
+      if (isApiCall) {
+        return res.status(500).json({ success: false, message: 'An error occurred processing the payment' });
+      }
+      
+      return res.redirect('/payment/callback?success=false&error=true');
     }
   };
 
