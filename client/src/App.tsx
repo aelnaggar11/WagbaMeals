@@ -206,8 +206,11 @@ function App() {
         </Layout>
       </Route>
       
-      {/* Payment callback route */}
+      {/* Payment callback routes - support both singular and plural */}
       <Route path="/payment/response">
+        <PaymentResponsePage />
+      </Route>
+      <Route path="/payments/response">
         <PaymentResponsePage />
       </Route>
       
