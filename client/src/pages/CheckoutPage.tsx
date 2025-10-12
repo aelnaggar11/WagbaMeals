@@ -348,8 +348,8 @@ const CheckoutPage = () => {
           }
         ) as { iframeUrl: string };
 
-        // Use our redirect handler to properly handle 3DS
-        window.location.href = `/api/payments/paymob/redirect?url=${encodeURIComponent(paymobResponse.iframeUrl)}`;
+        // Use HTML redirect page to handle 3DS properly
+        window.location.href = `/payment-redirect.html?url=${encodeURIComponent(paymobResponse.iframeUrl)}`;
         
         return;
       }
