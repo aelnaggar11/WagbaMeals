@@ -1717,6 +1717,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!pendingOrder) {
         return res.status(404).json(null);
       }
+      
+      // Recalculate pricing based on actual order items for mixed portions
+      const orderItems = await storage.getOrderItems(pendingOrder.id);
+      if (orderItems && orderItems.length > 0) {
+        const basePricePerMeal = await getBasePricePerMeal(storage);
+        const largePortionAdditional = await getLargeMealAddonPrice(storage);
+        
+        let recalculatedFullPriceSubtotal = 0;
+        let recalculatedDiscountedTotal = 0;
+        
+        orderItems.forEach(item => {
+          if (item.portionSize === 'large') {
+            recalculatedFullPriceSubtotal += basePricePerMeal + largePortionAdditional;
+            recalculatedDiscountedTotal += item.price;
+          } else {
+            recalculatedFullPriceSubtotal += basePricePerMeal;
+            recalculatedDiscountedTotal += item.price;
+          }
+        });
+        
+        const recalculatedDiscount = recalculatedFullPriceSubtotal - recalculatedDiscountedTotal;
+        
+        // Return order with corrected pricing
+        const correctedOrder = {
+          ...pendingOrder,
+          subtotal: recalculatedFullPriceSubtotal,
+          discount: recalculatedDiscount,
+          total: recalculatedDiscountedTotal
+        };
+        
+        return res.json(correctedOrder);
+      }
+      
       res.json(pendingOrder);
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
