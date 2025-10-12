@@ -8,8 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, X } from "lucide-react";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
@@ -28,7 +26,6 @@ const CheckoutPage = () => {
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [paymentConfirmationImage, setPaymentConfirmationImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [paymentFailureMessage, setPaymentFailureMessage] = useState<string | null>(null);
   
   // Fetch current order with enhanced retry and error handling for onboarding
   const { data: pendingOrder, isLoading, error, refetch } = useQuery<Order>({
@@ -155,26 +152,8 @@ const CheckoutPage = () => {
     }
   }, [error, pendingOrder, isLoading, refetch, queryClient]);
 
-  // Update address form with data from failed order or user profile
+  // Update address form with user profile data when available
   useEffect(() => {
-    // First priority: Load from failed order if it has deliveryAddress
-    if (pendingOrder?.deliveryAddress) {
-      try {
-        const orderAddress = JSON.parse(pendingOrder.deliveryAddress);
-        setAddress({
-          ...address,
-          ...orderAddress
-        });
-        if (pendingOrder.deliveryNotes) {
-          setDeliveryNotes(pendingOrder.deliveryNotes);
-        }
-        return; // Don't load from profile if we have order address
-      } catch (e) {
-        console.error("Error parsing order address:", e);
-      }
-    }
-
-    // Second priority: Load from user profile
     if (userProfile?.address) {
       try {
         const savedAddress = JSON.parse(userProfile.address);
@@ -193,25 +172,7 @@ const CheckoutPage = () => {
         phone: userProfile.phone
       });
     }
-  }, [userProfile, pendingOrder]);
-
-  // Check for payment failure and show persistent error message
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const paymentFailed = urlParams.get('payment_failed');
-    const reason = urlParams.get('reason');
-    
-    if (paymentFailed === 'true') {
-      // Clear the query parameters from URL
-      window.history.replaceState({}, '', '/checkout');
-      
-      // Set persistent error message
-      const message = reason === 'payment_declined' 
-        ? "Your payment was declined. Please check your card details and try again."
-        : "There was an issue processing your payment. Please try again.";
-      setPaymentFailureMessage(message);
-    }
-  }, []);
+  }, [userProfile]);
 
   // Pre-populate neighborhood from pre-onboarding modal
   useEffect(() => {
@@ -301,61 +262,7 @@ const CheckoutPage = () => {
     setIsSubmitting(true);
     
     try {
-      // For card payment, update order first then initiate Paymob payment
-      if (paymentMethod === "card") {
-        // First, update the order with orderType and address details
-        const orderUpdateResponse = await apiRequest(
-          'POST',
-          '/api/orders/update-details',
-          {
-            orderId: pendingOrder?.id,
-            orderType: orderType,
-            address: address,
-            deliveryNotes: deliveryNotes
-          }
-        );
-
-        if (!orderUpdateResponse) {
-          toast({
-            title: "Error",
-            description: "Failed to update order details",
-            variant: "destructive"
-          });
-          setIsSubmitting(false);
-          return;
-        }
-
-        // Then initiate Paymob payment
-        const billingData = {
-          name: address.name,
-          firstName: address.name?.split(' ')[0] || 'Customer',
-          lastName: address.name?.split(' ').slice(1).join(' ') || 'User',
-          email: userProfile?.email || 'customer@wagba.com',
-          phone: address.phone,
-          street: address.street,
-          apartment: address.apartment,
-          building: address.building,
-          city: address.area,
-          area: address.area
-        };
-
-        const paymobResponse = await apiRequest(
-          'POST',
-          '/api/payments/paymob/initiate',
-          {
-            orderId: pendingOrder?.id,
-            billingData
-          }
-        ) as { iframeUrl: string };
-
-        // Redirect directly to Paymob payment page
-        // When payment completes, Paymob will redirect to /payment/callback
-        window.location.href = paymobResponse.iframeUrl;
-        
-        return;
-      }
-      
-      // For InstaPay, use the existing flow
+      // Create FormData for file upload
       const formData = new FormData();
       formData.append('orderId', pendingOrder?.id?.toString() || '');
       formData.append('paymentMethod', paymentMethod);
@@ -405,11 +312,19 @@ const CheckoutPage = () => {
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       
-      toast({
-        title: "Order submitted successfully!",
-        description: "Your payment is being processed. You'll receive confirmation once verified.",
-        variant: "default"
-      });
+      if (paymentMethod === "instapay") {
+        toast({
+          title: "Order submitted successfully!",
+          description: "Your payment is being processed. You'll receive confirmation once verified.",
+          variant: "default"
+        });
+      } else {
+        toast({
+          title: "Order placed successfully!",
+          description: "Your meals will be delivered on the scheduled delivery date.",
+          variant: "default"
+        });
+      }
       
       // Redirect to account page
       navigate('/account');
@@ -523,25 +438,6 @@ const CheckoutPage = () => {
       </div>
       <div className="max-w-4xl mx-auto mt-8">
         
-        {/* Payment Failure Alert */}
-        {paymentFailureMessage && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <div className="flex-1">
-              <AlertTitle>Payment Failed</AlertTitle>
-              <AlertDescription>{paymentFailureMessage}</AlertDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={() => setPaymentFailureMessage(null)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </Alert>
-        )}
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
             {/* Delivery Information */}
@@ -702,15 +598,25 @@ const CheckoutPage = () => {
                       </TabsList>
                       
                       <TabsContent value="card" className="space-y-4">
-                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                          <div className="flex items-start space-x-3">
-                            <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
-                            <div className="text-sm text-gray-700">
-                              <p className="font-medium mb-1">Secure Payment via Paymob</p>
-                              <p>You'll be redirected to our secure payment page to enter your card details safely.</p>
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="cardNumber">Card Number</Label>
+                            <Input id="cardNumber" placeholder="1234 5678 9012 3456" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="cardName">Name on Card</Label>
+                            <Input id="cardName" placeholder="John Doe" />
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="expiryDate">Expiry Date</Label>
+                            <Input id="expiryDate" placeholder="MM/YY" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="cvv">CVV</Label>
+                            <Input id="cvv" placeholder="123" />
                           </div>
                         </div>
                       </TabsContent>
@@ -777,14 +683,26 @@ const CheckoutPage = () => {
                         <p className="text-sm text-gray-600">Subscription orders require a credit card for recurring payments</p>
                       </div>
                       
-                      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                        <div className="flex items-start space-x-3">
-                          <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                          </svg>
-                          <div className="text-sm text-gray-700">
-                            <p className="font-medium mb-1">Secure Payment via Paymob</p>
-                            <p>You'll be redirected to our secure payment page to enter your card details safely.</p>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="cardNumber">Card Number</Label>
+                            <Input id="cardNumber" placeholder="1234 5678 9012 3456" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="cardName">Name on Card</Label>
+                            <Input id="cardName" placeholder="John Doe" />
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="expiryDate">Expiry Date</Label>
+                            <Input id="expiryDate" placeholder="MM/YY" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="cvv">CVV</Label>
+                            <Input id="cvv" placeholder="123" />
                           </div>
                         </div>
                       </div>
