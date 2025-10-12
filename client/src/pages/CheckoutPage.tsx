@@ -262,7 +262,56 @@ const CheckoutPage = () => {
     setIsSubmitting(true);
     
     try {
-      // Create FormData for file upload
+      // For credit card payment, use Paymob payment gateway
+      if (paymentMethod === "card") {
+        // First, update order with delivery details
+        const formData = new FormData();
+        formData.append('orderId', pendingOrder?.id?.toString() || '');
+        formData.append('paymentMethod', paymentMethod);
+        formData.append('orderType', orderType);
+        formData.append('address', JSON.stringify(address));
+        formData.append('deliveryNotes', deliveryNotes);
+        
+        const checkoutResponse = await fetch('/api/orders/checkout', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+        
+        if (!checkoutResponse.ok) {
+          const errorData = await checkoutResponse.json();
+          throw new Error(errorData.message || 'Failed to prepare order');
+        }
+        
+        // Create Paymob payment intention
+        const intentionResponse = await fetch('/api/payments/paymob/create-intention', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderId: pendingOrder?.id,
+            address: address
+          }),
+          credentials: 'include'
+        });
+        
+        if (!intentionResponse.ok) {
+          const errorData = await intentionResponse.json();
+          throw new Error(errorData.message || 'Failed to initialize payment');
+        }
+        
+        const { client_secret, intention_id, public_key } = await intentionResponse.json();
+        
+        // Construct Paymob checkout URL
+        const paymobCheckoutUrl = `https://accept.paymob.com/unifiedcheckout/?publicKey=${public_key}&clientSecret=${client_secret}`;
+        
+        // Redirect to Paymob checkout
+        window.location.href = paymobCheckoutUrl;
+        return;
+      }
+      
+      // For InstaPay or other methods, use original flow
       const formData = new FormData();
       formData.append('orderId', pendingOrder?.id?.toString() || '');
       formData.append('paymentMethod', paymentMethod);

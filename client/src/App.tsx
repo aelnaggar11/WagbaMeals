@@ -14,6 +14,8 @@ import AdminDashboard from "@/pages/admin/Dashboard";
 import MenuManagement from "@/pages/admin/MenuManagement";
 import OrdersManagement from "@/pages/admin/OrdersManagement";
 import MealsPage from "@/pages/MealsPage";
+import PaymentSuccessPage from "@/pages/PaymentSuccessPage";
+import PaymentFailurePage from "@/pages/PaymentFailurePage";
 import { useQuery } from "@tanstack/react-query";
 import { User, Admin } from "@shared/schema";
 import { Loader2 } from "lucide-react";
@@ -203,6 +205,14 @@ function App() {
         <Layout>
           <AccountPage />
         </Layout>
+      </Route>
+      
+      {/* Payment callback routes */}
+      <Route path="/payment/success">
+        <PaymentSuccessPage />
+      </Route>
+      <Route path="/payment/failure">
+        <PaymentFailurePage />
       </Route>
       
       {/* Admin authentication */}
