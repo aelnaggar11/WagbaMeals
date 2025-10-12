@@ -2369,6 +2369,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid order total' });
       }
 
+      // Get delivery fee from pricing configs
+      const baseDeliveryConfig = await storage.getPricingConfig('delivery', 'base_delivery');
+      const deliveryFee = baseDeliveryConfig?.price || 0;
+
+      // Calculate total amount including delivery fee
+      const totalAmount = orderAmount + deliveryFee;
+      console.log('=== PAYMOB PAYMENT AMOUNT ===');
+      console.log('Order total:', orderAmount);
+      console.log('Delivery fee:', deliveryFee);
+      console.log('Total amount to charge:', totalAmount);
+      console.log('============================');
+
       // Get user details
       const user = await storage.getUser(req.session.userId);
       if (!user) {
@@ -2393,7 +2405,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create payment intention with Paymob
       const { paymobService } = await import('./paymob');
       const intention = await paymobService.createPaymentIntention({
-        amount: Math.round(orderAmount * 100), // Convert to cents from server-side total
+        amount: Math.round(totalAmount * 100), // Convert to cents, includes delivery fee
         currency: 'EGP',
         billing_data: billingData,
         customer: {

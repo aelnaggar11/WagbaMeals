@@ -45,6 +45,7 @@ Wagba utilizes a modern full-stack architecture with separate frontend and backe
 - Fixed subtotal calculation to use base price (249 EGP per meal - smallest package price) before volume discounts
 - Corrected first-order discount to apply 10% to order total after volume discount (not to subtotal)
 - Updated checkout page order summary to accurately show: Subtotal (base price) → Volume Discount → First Order Discount (10%) → Final Total
+- Fixed Paymob payment amount to include delivery fee (order total + 100 EGP delivery fee)
 - Ensured Paymob payment amount matches the checkout page total displayed to users
 
 ### October 12, 2025 - Payment Callback UX Improvement
