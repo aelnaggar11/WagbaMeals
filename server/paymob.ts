@@ -31,6 +31,24 @@ interface PaymentIntentionData {
     merchant_order_id?: string;
     [key: string]: any;
   };
+  save_token?: boolean; // Enable card tokenization for subscriptions
+}
+
+interface SavedCardPaymentData {
+  amount: number; // Amount in cents (EGP)
+  currency: string;
+  card_token: string; // Saved card token
+  billing_data: BillingData;
+  customer: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone_number: string;
+  };
+  extras?: {
+    merchant_order_id?: string;
+    [key: string]: any;
+  };
 }
 
 interface PaymentIntentionResponse {
@@ -79,16 +97,60 @@ export class PaymobService {
    */
   async createPaymentIntention(data: PaymentIntentionData): Promise<PaymentIntentionResponse> {
     try {
+      const payload: any = {
+        amount: data.amount, // Already in cents
+        currency: data.currency,
+        payment_methods: [parseInt(this.integrationId)],
+        items: [],
+        billing_data: data.billing_data,
+        customer: data.customer,
+        extras: data.extras || {}
+      };
+
+      // Enable card tokenization for subscription payments
+      if (data.save_token) {
+        payload.special_reference = data.extras?.merchant_order_id || '';
+        payload.save_token_to_be_used = true;
+      }
+
+      const response = await axios.post(
+        `${PAYMOB_API_URL}/intention/`,
+        payload,
+        {
+          headers: {
+            'Authorization': `Token ${this.secretKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('✅ Paymob payment intention created:', response.data.id, data.save_token ? '(with tokenization)' : '');
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Paymob payment intention error:', error.response?.data || error.message);
+      throw new Error(`Failed to create payment intention: ${error.response?.data?.message || error.message}`);
+    }
+  }
+
+  /**
+   * Charge a saved card token for subscription payments
+   */
+  async chargeSubscriptionCard(data: SavedCardPaymentData): Promise<any> {
+    try {
+      console.log('🔄 Charging saved card for subscription payment...');
+      
       const response = await axios.post(
         `${PAYMOB_API_URL}/intention/`,
         {
-          amount: data.amount, // Already in cents
+          amount: data.amount,
           currency: data.currency,
           payment_methods: [parseInt(this.integrationId)],
           items: [],
           billing_data: data.billing_data,
           customer: data.customer,
-          extras: data.extras || {}
+          extras: data.extras || {},
+          card_token: data.card_token, // Use saved card token
+          special_reference: data.extras?.merchant_order_id || ''
         },
         {
           headers: {
@@ -98,11 +160,11 @@ export class PaymobService {
         }
       );
 
-      console.log('✅ Paymob payment intention created:', response.data.id);
+      console.log('✅ Subscription charge initiated:', response.data.id);
       return response.data;
     } catch (error: any) {
-      console.error('❌ Paymob payment intention error:', error.response?.data || error.message);
-      throw new Error(`Failed to create payment intention: ${error.response?.data?.message || error.message}`);
+      console.error('❌ Subscription charge error:', error.response?.data || error.message);
+      throw new Error(`Failed to charge subscription: ${error.response?.data?.message || error.message}`);
     }
   }
 

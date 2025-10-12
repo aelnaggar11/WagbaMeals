@@ -65,6 +65,14 @@ Wagba utilizes a modern full-stack architecture with separate frontend and backe
 - Implemented security measures: Zod validation prevents client-controlled amounts, HMAC verification secures webhooks, server-side order totals prevent manipulation
 - Completed end-to-end testing: verified payment intention creation, webhook processing, HMAC signature validation, and order status updates
 
+### October 12, 2025 - Subscription Payment System (In Progress)
+- Designed hybrid subscription payment architecture using Paymob card tokenization + custom billing scheduler
+- Added payment_methods table to securely store tokenized card data (card_token, masked_pan, expiry, brand)
+- Added subscription billing tracking fields to orders table (billing_attempted_at, billing_status, billing_error, payment_method_id)
+- Updated storage interface with payment methods CRUD operations
+- Paymob tokenization flow: Initial payment sets save_token_to_be_used=true → Webhook returns token object → Store card_token securely → Use for weekly charges
+- Weekly billing scheduled to run 2 hours after each week's deadline, respecting skip/cancel logic
+
 ## Configuration Notes
 
 ### Paymob Setup
