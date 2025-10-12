@@ -3615,9 +3615,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Check if the iframe URL returns JSON (3DS required)
+      // We need to simulate a browser request to get the same response
       try {
         console.log('Checking payment URL for 3DS requirement...');
-        const checkResponse = await axios.get(iframeUrl);
+        const checkResponse = await axios.get(iframeUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+          }
+        });
         const contentType = checkResponse.headers['content-type'];
         
         console.log('Response content type:', contentType);
