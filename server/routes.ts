@@ -2437,6 +2437,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create payment intention with Paymob
       const { paymobService } = await import('./paymob');
+      
+      // Enable card tokenization for subscription orders
+      const isSubscription = order.orderType === 'subscription';
+      console.log('=== SUBSCRIPTION TOKENIZATION ===');
+      console.log('Order type:', order.orderType);
+      console.log('Enable tokenization:', isSubscription);
+      console.log('================================');
+      
       const intention = await paymobService.createPaymentIntention({
         amount: Math.round(totalAmount * 100), // Convert to cents, includes delivery fee
         currency: 'EGP',
@@ -2449,7 +2457,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         extras: {
           merchant_order_id: orderId.toString()
-        }
+        },
+        save_token: isSubscription // Enable tokenization for subscriptions
       });
 
       res.json({
@@ -2503,6 +2512,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           
           console.log(`✅ Order ${orderId} payment status updated to: ${success ? 'paid' : 'failed'}`);
+          
+          // Save card token for subscription orders
+          if (success && order.orderType === 'subscription' && transaction.token) {
+            console.log('=== SUBSCRIPTION CARD TOKEN RECEIVED ===');
+            console.log('Order type:', order.orderType);
+            console.log('Token object present:', !!transaction.token);
+            
+            try {
+              const cardToken = transaction.token.card_token;
+              const maskedPan = transaction.token.masked_pan || '';
+              const cardSubtype = transaction.token.card_subtype || '';
+              
+              console.log('Card token:', cardToken?.substring(0, 10) + '...');
+              console.log('Masked PAN:', maskedPan);
+              console.log('Card subtype:', cardSubtype);
+              
+              // Create payment method
+              const paymentMethod = await storage.createPaymentMethod({
+                userId: order.userId,
+                paymobCardToken: cardToken,
+                maskedPan: maskedPan,
+                cardBrand: cardSubtype.toLowerCase(),
+                expiryMonth: null, // Paymob doesn't provide expiry in token
+                expiryYear: null,
+                isDefault: true, // First card is always default
+                isActive: true
+              });
+              
+              // Link payment method to order
+              await storage.updateOrder(order.id, {
+                paymentMethodId: paymentMethod.id
+              });
+              
+              console.log(`✅ Card token saved for subscription order ${orderId}`);
+              console.log(`Payment method ID: ${paymentMethod.id}`);
+            } catch (tokenError) {
+              console.error('❌ Error saving card token:', tokenError);
+              // Don't fail the webhook if token save fails
+            }
+          }
         }
       }
 
