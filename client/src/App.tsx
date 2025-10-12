@@ -8,6 +8,7 @@ import CheckoutPage from "@/pages/CheckoutPage";
 import AccountPage from "@/pages/AccountPage";
 import AuthPage from "@/pages/AuthPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
+import PaymentCallbackPage from "@/pages/PaymentCallbackPage";
 import AdminAuthPage from "@/pages/AdminAuthPage";
 import NotFound from "@/pages/not-found";
 import AdminDashboard from "@/pages/admin/Dashboard";
@@ -191,6 +192,9 @@ function App() {
       </Route>
       <Route path="/meals">
         <MealsPage />
+      </Route>
+      <Route path="/payment/callback">
+        <PaymentCallbackPage />
       </Route>
       
       {/* User routes */}
