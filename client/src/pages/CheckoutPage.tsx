@@ -348,8 +348,12 @@ const CheckoutPage = () => {
           }
         ) as { iframeUrl: string };
 
-        // Redirect to Paymob hosted payment page
-        window.location.href = paymobResponse.iframeUrl;
+        // POST to Paymob payment endpoint
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = paymobResponse.iframeUrl;
+        document.body.appendChild(form);
+        form.submit();
         
         return;
       }
