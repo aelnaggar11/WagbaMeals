@@ -65,6 +65,17 @@ Wagba utilizes a modern full-stack architecture with separate frontend and backe
 - Implemented security measures: Zod validation prevents client-controlled amounts, HMAC verification secures webhooks, server-side order totals prevent manipulation
 - Completed end-to-end testing: verified payment intention creation, webhook processing, HMAC signature validation, and order status updates
 
+### October 13, 2025 - HMAC Verification Fix (COMPLETED)
+- **Root Cause:** Payment methods weren't saving during checkout because HMAC signature verification was failing
+- **Issue:** Used incorrect field structure (flat fields like `source_data_pan` instead of nested `source_data.pan`)
+- **Fix:** Updated HMAC calculation to use correct nested structure per Paymob documentation:
+  - Changed from `data.source_data_pan` to `data.source_data?.pan`
+  - Changed from `data.source_data_sub_type` to `data.source_data?.sub_type`
+  - Changed from `data.source_data_type` to `data.source_data?.type`
+- **Impact:** Webhooks now verify correctly, allowing card tokens to be saved during subscription checkout
+- **Testing:** Added diagnostic tool (`server/test-hmac.ts`) for manual HMAC verification testing
+- **Documentation:** Added detailed logging showing all webhook fields and HMAC calculation steps
+
 ### October 13, 2025 - Payment Method Update Feature (COMPLETED)
 - **User Experience:** Subscribers can now update their saved payment method from the Subscription tab in their account dashboard
 - **Payment Method Display:** Shows current saved card (masked PAN, brand) or "No payment method saved" message in Subscription Settings section
