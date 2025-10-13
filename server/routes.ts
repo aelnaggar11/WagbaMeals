@@ -2453,8 +2453,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (order.orderType === 'subscription') {
           const user = await storage.getUser(req.session.userId!);
           const userOrders = await storage.getOrdersByUser(req.session.userId!);
+          // Exclude the CURRENT order when checking for previous confirmed orders
           const confirmedOrders = userOrders.filter(o => 
-            o.paymentStatus === 'confirmed' || o.paymentStatus === 'paid'
+            o.id !== order.id && (o.paymentStatus === 'confirmed' || o.paymentStatus === 'paid')
           );
           
           if (confirmedOrders.length === 0) {
