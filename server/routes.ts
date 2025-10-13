@@ -2447,7 +2447,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
         
-        orderAmount = recalculatedDiscountedTotal;
+        const volumeDiscount = recalculatedFullPriceSubtotal - recalculatedDiscountedTotal;
+        
+        // Apply 10% first-order discount for subscription orders
+        if (order.orderType === 'subscription') {
+          const user = await storage.getUser(req.session.userId!);
+          const userOrders = await storage.getOrdersByUser(req.session.userId!);
+          const confirmedOrders = userOrders.filter(o => 
+            o.paymentStatus === 'confirmed' || o.paymentStatus === 'paid'
+          );
+          
+          if (confirmedOrders.length === 0) {
+            // This is the first order - apply 10% discount
+            const firstOrderDiscountAmount = Math.round(recalculatedDiscountedTotal * 0.1);
+            orderAmount = recalculatedDiscountedTotal - firstOrderDiscountAmount;
+            
+            console.log('=== PAYMENT FIRST-ORDER DISCOUNT ===');
+            console.log('Subtotal (base):', recalculatedFullPriceSubtotal);
+            console.log('Volume discount:', volumeDiscount);
+            console.log('Total after volume discount:', recalculatedDiscountedTotal);
+            console.log('First-order discount (10%):', firstOrderDiscountAmount);
+            console.log('Final total:', orderAmount);
+            console.log('====================================');
+          } else {
+            orderAmount = recalculatedDiscountedTotal;
+          }
+        } else {
+          orderAmount = recalculatedDiscountedTotal;
+        }
         
         console.log('=== PAYMENT INTENTION PRICING ===');
         console.log('Old order total:', order.total);
