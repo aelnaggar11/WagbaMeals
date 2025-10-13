@@ -41,6 +41,17 @@ Wagba utilizes a modern full-stack architecture with separate frontend and backe
 
 ## Recent Changes
 
+### October 13, 2025 - Checkout UX & Account Access Control (COMPLETED)
+- **Checkout Page Improvements:** Removed redundant card input fields (card number, expiry, CVV, cardholder name) from checkout page
+  - Card details now collected only by Paymob on their secure hosted checkout page
+  - Replaced card fields with informative message about Paymob secure payment process
+  - InstaPay payment option unchanged - still has payment instructions and file upload functionality
+- **Account Access Control:** Implemented complete access restriction for users without paid orders
+  - Backend: /api/orders endpoint returns 403 with requiresPayment flag when user has no paid orders
+  - Frontend: AccountPage automatically redirects to /checkout when user attempts access without payment
+  - Logo navigation: Disabled logo click on checkout page to prevent users from leaving checkout flow
+  - Security: Users cannot access account dashboard until they complete at least one payment
+
 ### October 13, 2025 - Payment Bypass Prevention & Pricing Fixes (COMPLETED)
 - **Issue:** Users could bypass payment during onboarding by clicking Wagba logo after registration, seeing "confirmed" orders without paying
 - **Root Cause:** Checkout endpoint incorrectly marked card payment orders as paymentStatus='confirmed' before actual payment completion
