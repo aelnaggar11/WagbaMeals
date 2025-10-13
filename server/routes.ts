@@ -2361,6 +2361,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Creating tokenization intent');
       console.log('============================');
       
+      // Generate unique reference for payment method update
+      const updateReference = `PM_UPDATE_${req.session.userId}_${Date.now()}`;
+      
       const intention = await paymobService.createPaymentIntention({
         amount: 100, // 1 EGP verification charge (will be refunded)
         currency: 'EGP',
@@ -2373,7 +2376,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         extras: {
           payment_method_update: 'true', // Flag to indicate this is a payment method update
-          user_id: req.session.userId.toString()
+          user_id: req.session.userId.toString(),
+          merchant_order_id: updateReference // Required for special_reference
         },
         save_token: true // Enable tokenization
       });
