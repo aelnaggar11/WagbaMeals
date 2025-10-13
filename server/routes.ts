@@ -2426,8 +2426,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Order not found' });
       }
 
+      // CRITICAL: Recalculate pricing based on actual order items to prevent stale pricing
+      const paymobOrderItems = await storage.getOrderItems(order.id);
+      let orderAmount = order.total;
+      
+      if (paymobOrderItems && paymobOrderItems.length > 0) {
+        const basePricePerMeal = await getBasePricePerMeal(storage);
+        const largePortionAdditional = await getLargeMealAddonPrice(storage);
+        
+        let recalculatedFullPriceSubtotal = 0;
+        let recalculatedDiscountedTotal = 0;
+        
+        paymobOrderItems.forEach(item => {
+          if (item.portionSize === 'large') {
+            recalculatedFullPriceSubtotal += basePricePerMeal + largePortionAdditional;
+            recalculatedDiscountedTotal += item.price;
+          } else {
+            recalculatedFullPriceSubtotal += basePricePerMeal;
+            recalculatedDiscountedTotal += item.price;
+          }
+        });
+        
+        orderAmount = recalculatedDiscountedTotal;
+        
+        console.log('=== PAYMENT INTENTION PRICING ===');
+        console.log('Old order total:', order.total);
+        console.log('Recalculated total:', orderAmount);
+        console.log('================================');
+      }
+      
       // SECURITY: Use server-side order total, never trust client amount
-      const orderAmount = order.total;
       if (!orderAmount || orderAmount <= 0) {
         return res.status(400).json({ message: 'Invalid order total' });
       }
@@ -2697,13 +2725,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Forbidden' });
       }
 
-      // Prepare order update data
+      // CRITICAL: Recalculate pricing based on actual order items to prevent stale pricing
+      const checkoutOrderItems = await storage.getOrderItems(order.id);
+      let finalSubtotal = order.subtotal;
+      let finalDiscount = order.discount;
+      let finalTotal = order.total;
+      
+      if (checkoutOrderItems && checkoutOrderItems.length > 0) {
+        const basePricePerMeal = await getBasePricePerMeal(storage);
+        const largePortionAdditional = await getLargeMealAddonPrice(storage);
+        
+        let recalculatedFullPriceSubtotal = 0;
+        let recalculatedDiscountedTotal = 0;
+        
+        checkoutOrderItems.forEach(item => {
+          if (item.portionSize === 'large') {
+            recalculatedFullPriceSubtotal += basePricePerMeal + largePortionAdditional;
+            recalculatedDiscountedTotal += item.price;
+          } else {
+            recalculatedFullPriceSubtotal += basePricePerMeal;
+            recalculatedDiscountedTotal += item.price;
+          }
+        });
+        
+        const recalculatedDiscount = recalculatedFullPriceSubtotal - recalculatedDiscountedTotal;
+        
+        finalSubtotal = recalculatedFullPriceSubtotal;
+        finalDiscount = recalculatedDiscount;
+        finalTotal = recalculatedDiscountedTotal;
+        
+        console.log('=== PRICING RECALCULATION ===');
+        console.log('Old pricing - Subtotal:', order.subtotal, 'Discount:', order.discount, 'Total:', order.total);
+        console.log('New pricing - Subtotal:', finalSubtotal, 'Discount:', finalDiscount, 'Total:', finalTotal);
+        console.log('============================');
+      }
+
+      // Prepare order update data with recalculated pricing
       const orderUpdateData: any = {
         status: 'selected',
         deliveryAddress: JSON.stringify(parsedAddress),
         deliveryNotes,
         paymentMethod: paymentMethod || null,
-        orderType: orderType || 'trial'
+        orderType: orderType || 'trial',
+        subtotal: finalSubtotal,
+        discount: finalDiscount,
+        total: finalTotal
       };
       
       console.log('=== PAYMENT METHOD DEBUG ===');
@@ -2746,7 +2812,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               <p><strong>Email:</strong> ${user.email}</p>
               <p><strong>Phone:</strong> ${parsedAddress.phone}</p>
               <p><strong>Order Type:</strong> ${orderType}</p>
-              <p><strong>Total:</strong> ${order.total} EGP</p>
+              <p><strong>Total:</strong> ${finalTotal} EGP</p>
               
               <h3>Delivery Address:</h3>
               <p>${parsedAddress.name}<br/>
