@@ -9,12 +9,16 @@ interface LogoProps {
 }
 
 const Logo = ({ className = "", color = "dark" }: LogoProps) => {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
+    // Don't navigate away from checkout page
+    if (location === '/checkout') {
+      return;
+    }
     navigate("/");
-  }, [navigate]);
+  }, [navigate, location]);
   
   return (
     <div 

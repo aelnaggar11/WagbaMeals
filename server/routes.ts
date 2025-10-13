@@ -1352,6 +1352,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allOrders = await storage.getOrdersByUser(req.session.userId!);
       // Only return orders that have been paid (exclude pending/unpaid orders)
       const paidOrders = allOrders.filter(order => order.paymentStatus === 'paid');
+      
+      // If user has no paid orders, they shouldn't access account page
+      if (paidOrders.length === 0) {
+        return res.status(403).json({ 
+          message: 'No payment completed',
+          requiresPayment: true 
+        });
+      }
+      
       res.json({ orders: paidOrders });
     } catch (error) {
       res.status(500).json({ message: 'Server error' });

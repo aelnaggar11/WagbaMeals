@@ -114,7 +114,21 @@ const AccountPage = () => {
 
   const { data: ordersData } = useQuery<any>({
     queryKey: ['/api/orders'],
-    enabled: !!currentUser
+    enabled: !!currentUser,
+    retry: false,
+    queryFn: async () => {
+      const res = await fetch('/api/orders', { credentials: 'include' });
+      if (res.status === 403) {
+        const data = await res.json();
+        if (data.requiresPayment) {
+          // User has no paid orders, redirect to checkout
+          navigate('/checkout');
+          throw new Error('Payment required');
+        }
+      }
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return res.json();
+    }
   });
 
   const { data: weeksData } = useQuery<any>({
