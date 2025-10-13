@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { and, eq, inArray, or, sql } from "drizzle-orm";
+import { and, eq, inArray, or, sql, desc } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { users, admins, meals, weeks, weekMeals, orders, orderItems, userWeekStatuses, neighborhoods, invitationCodes, waitlist, pricingConfigs, passwordResetTokens, landingHero, landingCarouselMeals, landingFaqs } from "@shared/schema";
 import type { 
@@ -320,6 +320,7 @@ export class DatabaseStorage implements IStorage {
           )
         )
       )
+      .orderBy(desc(orders.createdAt))
       .limit(1);
     
     return order;
