@@ -65,6 +65,21 @@ Wagba utilizes a modern full-stack architecture with separate frontend and backe
 - Implemented security measures: Zod validation prevents client-controlled amounts, HMAC verification secures webhooks, server-side order totals prevent manipulation
 - Completed end-to-end testing: verified payment intention creation, webhook processing, HMAC signature validation, and order status updates
 
+### October 13, 2025 - Payment Method Update Feature (COMPLETED)
+- **User Experience:** Subscribers can now update their saved payment method from the Subscription tab in their account dashboard
+- **Payment Method Display:** Shows current saved card (masked PAN, brand) or "No payment method saved" message in Subscription Settings section
+- **Update Flow:** "Update Payment Method" button initiates 1 EGP Paymob verification charge with card tokenization
+  - Generates unique reference: PM_UPDATE_{userId}_{timestamp}
+  - Creates Paymob intention with extras.payment_method_update flag and save_token=true
+  - Redirects to Paymob unified checkout for secure card entry
+- **Webhook Processing:** Enhanced webhook handler detects payment method updates via extras.payment_method_update flag
+  - Deactivates existing payment methods when new card is saved
+  - Saves new card token as default payment method
+  - Prevents duplicate processing (early return after handling update)
+- **API Endpoints:** Added GET /api/payment-methods (returns user's saved cards) and POST /api/payment-methods/update (initiates tokenization)
+- **Security:** All endpoints protected by authMiddleware, user ID from session (not client), server-side reference generation
+- **Testing:** E2E verification completed - UI displays correctly, API endpoints functional, Paymob redirect works, no validation errors
+
 ### October 12, 2025 - Subscription Payment System (COMPLETED)
 - **Architecture:** Hybrid approach using Paymob card tokenization + custom billing scheduler for weekly recurring payments
 - **Database Schema:** Added payment_methods table (card_token, masked_pan, card_brand, expiry) and subscription billing fields to orders (billing_attempted_at, billing_status, billing_error, billing_retry_count, payment_method_id)
