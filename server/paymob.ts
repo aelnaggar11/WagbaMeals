@@ -193,14 +193,18 @@ export class PaymobService {
         order_id: data.order?.id || data.order,
         owner: data.owner,
         pending: data.pending,
-        source_data_pan: data.source_data_pan,
-        source_data_sub_type: data.source_data_sub_type,
-        source_data_type: data.source_data_type,
+        source_data_pan: data.source_data?.pan,
+        source_data_sub_type: data.source_data?.sub_type,
+        source_data_type: data.source_data?.type,
         success: data.success
       });
       
       // Paymob HMAC calculation for transaction processed callback
       // Order of fields is critical - must match Paymob's documentation exactly
+      // Fields are: amount_cents, created_at, currency, error_occured, has_parent_transaction,
+      // id, integration_id, is_3d_secure, is_auth, is_capture, is_refunded,
+      // is_standalone_payment, is_voided, order.id, owner, pending,
+      // source_data.pan, source_data.sub_type, source_data.type, success
       const concatenatedString = [
         data.amount_cents,
         data.created_at,
@@ -218,9 +222,9 @@ export class PaymobService {
         data.order?.id || data.order,
         data.owner,
         data.pending,
-        data.source_data_pan,
-        data.source_data_sub_type,
-        data.source_data_type,
+        data.source_data?.pan || '',
+        data.source_data?.sub_type || '',
+        data.source_data?.type || '',
         data.success
       ].join('');
 
