@@ -647,25 +647,12 @@ const CheckoutPage = () => {
                       </TabsList>
                       
                       <TabsContent value="card" className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="cardNumber">Card Number</Label>
-                            <Input id="cardNumber" placeholder="1234 5678 9012 3456" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="cardName">Name on Card</Label>
-                            <Input id="cardName" placeholder="John Doe" />
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="expiryDate">Expiry Date</Label>
-                            <Input id="expiryDate" placeholder="MM/YY" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="cvv">CVV</Label>
-                            <Input id="cvv" placeholder="123" />
+                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                          <h4 className="font-medium mb-2">Secure Payment with Paymob</h4>
+                          <div className="text-sm text-gray-700 space-y-2">
+                            <p>• You'll be redirected to our secure payment partner Paymob</p>
+                            <p>• Enter your card details on their secure page</p>
+                            <p>• Your payment information is protected with bank-level security</p>
                           </div>
                         </div>
                       </TabsContent>
@@ -732,27 +719,13 @@ const CheckoutPage = () => {
                         <p className="text-sm text-gray-600">Subscription orders require a credit card for recurring payments</p>
                       </div>
                       
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="cardNumber">Card Number</Label>
-                            <Input id="cardNumber" placeholder="1234 5678 9012 3456" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="cardName">Name on Card</Label>
-                            <Input id="cardName" placeholder="John Doe" />
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="expiryDate">Expiry Date</Label>
-                            <Input id="expiryDate" placeholder="MM/YY" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="cvv">CVV</Label>
-                            <Input id="cvv" placeholder="123" />
-                          </div>
+                      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <h4 className="font-medium mb-2">Secure Payment with Paymob</h4>
+                        <div className="text-sm text-gray-700 space-y-2">
+                          <p>• You'll be redirected to our secure payment partner Paymob</p>
+                          <p>• Enter your card details on their secure page</p>
+                          <p>• Your payment information is protected with bank-level security</p>
+                          <p>• Your card will be securely saved for weekly automatic payments</p>
                         </div>
                       </div>
                     </div>
