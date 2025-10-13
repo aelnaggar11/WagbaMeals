@@ -2309,6 +2309,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user's payment methods
+  app.get('/api/payment-methods', authMiddleware, async (req, res) => {
+    try {
+      const paymentMethods = await storage.getPaymentMethodsByUser(req.session.userId);
+      res.json(paymentMethods);
+    } catch (error) {
+      console.error('Error fetching payment methods:', error);
+      res.status(500).json({ message: 'Failed to fetch payment methods' });
+    }
+  });
+
+  // Update payment method (initiates Paymob tokenization flow)
+  app.post('/api/payment-methods/update', authMiddleware, async (req, res) => {
+    try {
+      const { address } = req.body;
+      
+      // Get user details
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Construct billing address
+      const billingData = {
+        apartment: address?.apartment || 'NA',
+        first_name: user.name?.split(' ')[0] || 'Customer',
+        last_name: user.name?.split(' ').slice(1).join(' ') || 'Name',
+        street: address?.street || 'NA',
+        building: address?.building || 'NA',
+        phone_number: address?.phone || user.phone || '+201000000000',
+        country: 'EG',
+        email: user.email,
+        floor: address?.floor || 'NA',
+        state: address?.area || 'Cairo',
+        city: address?.city || 'Cairo'
+      };
+
+      // Create payment intention for card tokenization only (1 EGP charge for verification)
+      const { paymobService } = await import('./paymob');
+      
+      console.log('=== PAYMENT METHOD UPDATE ===');
+      console.log('User ID:', req.session.userId);
+      console.log('Creating tokenization intent');
+      console.log('============================');
+      
+      const intention = await paymobService.createPaymentIntention({
+        amount: 100, // 1 EGP verification charge (will be refunded)
+        currency: 'EGP',
+        billing_data: billingData,
+        customer: {
+          first_name: billingData.first_name,
+          last_name: billingData.last_name,
+          email: billingData.email,
+          phone_number: billingData.phone_number
+        },
+        extras: {
+          payment_method_update: 'true', // Flag to indicate this is a payment method update
+          user_id: req.session.userId.toString()
+        },
+        save_token: true // Enable tokenization
+      });
+
+      res.json({
+        client_secret: intention.client_secret,
+        intention_id: intention.id,
+        public_key: paymobService.getPublicKey()
+      });
+    } catch (error: any) {
+      console.error('Error creating payment method update intention:', error);
+      res.status(500).json({ message: error.message || 'Failed to create payment method update intention' });
+    }
+  });
+
   // Paymob Payment Integration - Zod validation schema
   const createPaymobIntentionSchema = z.object({
     orderId: z.number().int().positive(),
@@ -2439,17 +2512,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const transaction = webhookData.obj;
       const orderId = transaction.order?.merchant_order_id || transaction.order?.id;
       const success = transaction.success === 'true' || transaction.success === true;
+      
+      // Check if this is a payment method update (not a regular order payment)
+      const isPaymentMethodUpdate = transaction.order?.extras?.payment_method_update === 'true';
+      const userId = transaction.order?.extras?.user_id ? parseInt(transaction.order?.extras?.user_id) : null;
 
       console.log('Transaction details:', {
         id: transaction.id,
         orderId,
         amount: transaction.amount_cents / 100,
         success,
-        pending: transaction.pending
+        pending: transaction.pending,
+        isPaymentMethodUpdate,
+        userId
       });
 
+      // Handle payment method update
+      if (isPaymentMethodUpdate && userId && success && transaction.token) {
+        console.log('=== PAYMENT METHOD UPDATE WEBHOOK ===');
+        console.log('User ID:', userId);
+        console.log('Token received:', !!transaction.token);
+        
+        try {
+          const cardToken = transaction.token.card_token;
+          const maskedPan = transaction.token.masked_pan || '';
+          const cardSubtype = transaction.token.card_subtype || '';
+          
+          console.log('Card token:', cardToken?.substring(0, 10) + '...');
+          console.log('Masked PAN:', maskedPan);
+          console.log('Card brand:', cardSubtype);
+          
+          // Deactivate all existing payment methods for this user
+          const existingMethods = await storage.getPaymentMethodsByUser(userId);
+          for (const method of existingMethods) {
+            await storage.updatePaymentMethod(method.id, { isDefault: false });
+          }
+          
+          // Create new payment method
+          const paymentMethod = await storage.createPaymentMethod({
+            userId: userId,
+            paymobCardToken: cardToken,
+            maskedPan: maskedPan,
+            cardBrand: cardSubtype.toLowerCase(),
+            expiryMonth: null,
+            expiryYear: null,
+            isDefault: true, // New card becomes default
+            isActive: true
+          });
+          
+          console.log(`✅ Payment method updated for user ${userId}`);
+          console.log(`New payment method ID: ${paymentMethod.id}`);
+        } catch (tokenError) {
+          console.error('❌ Error updating payment method:', tokenError);
+        }
+        
+        // Always respond 200 OK to Paymob
+        return res.status(200).json({ message: 'Payment method updated' });
+      }
+
       // Update order with payment status
-      if (orderId) {
+      if (orderId && !isPaymentMethodUpdate) {
         const order = await storage.getOrder(parseInt(orderId));
         if (order) {
           await storage.updateOrder(order.id, {
