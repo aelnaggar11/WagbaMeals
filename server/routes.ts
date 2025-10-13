@@ -2550,19 +2550,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('Transaction ID:', transaction.id);
         
         try {
-          // Retrieve card tokens from Paymob API (tokens are not in webhook)
-          const { paymobService } = await import('./paymob');
-          const tokenData = await paymobService.getCardTokens(transaction.id);
-          
-          if (!tokenData || !tokenData.results || tokenData.results.length === 0) {
-            console.error('⚠️ No card tokens found for transaction:', transaction.id);
-            return res.status(200).json({ message: 'No tokens available' });
-          }
-          
-          const cardInfo = tokenData.results[0];
-          const cardToken = cardInfo.token;
-          const maskedPan = cardInfo.card_mask || transaction.source_data?.pan || '';
-          const cardSubtype = cardInfo.card_type || transaction.source_data?.sub_type || '';
+          // Save card details from webhook (Paymob doesn't provide tokens in webhooks for Egypt)
+          // We use transaction ID as a pseudo-token for record keeping
+          const cardToken = `paymob_txn_${transaction.id}`;
+          const maskedPan = transaction.source_data?.pan || '';
+          const cardSubtype = transaction.source_data?.sub_type || '';
           
           console.log('Card token:', cardToken?.substring(0, 10) + '...');
           console.log('Masked PAN:', maskedPan);
