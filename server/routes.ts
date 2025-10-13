@@ -2529,8 +2529,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const success = transaction.success === 'true' || transaction.success === true;
       
       // Check if this is a payment method update (not a regular order payment)
-      const isPaymentMethodUpdate = transaction.order?.extras?.payment_method_update === 'true';
-      const userId = transaction.order?.extras?.user_id ? parseInt(transaction.order?.extras?.user_id) : null;
+      // Paymob sends extras in payment_key_claims.extra, not in order.extras
+      const isPaymentMethodUpdate = transaction.payment_key_claims?.extra?.payment_method_update === 'true';
+      const userId = transaction.payment_key_claims?.extra?.user_id ? parseInt(transaction.payment_key_claims?.extra?.user_id) : null;
 
       console.log('Transaction details:', {
         id: transaction.id,
@@ -2543,10 +2544,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Handle payment method update
-      if (isPaymentMethodUpdate && userId && success && transaction.token) {
+      if (isPaymentMethodUpdate && userId && success) {
         console.log('=== PAYMENT METHOD UPDATE WEBHOOK ===');
         console.log('User ID:', userId);
         console.log('Token received:', !!transaction.token);
+        console.log('Full transaction object keys:', Object.keys(transaction));
+        
+        if (!transaction.token) {
+          console.error('⚠️ No token found in webhook! Available fields:', Object.keys(transaction));
+          console.error('Source data:', transaction.source_data);
+          console.error('Data field:', transaction.data);
+          return res.status(200).json({ message: 'No token in webhook' });
+        }
         
         try {
           const cardToken = transaction.token.card_token;
