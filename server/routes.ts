@@ -2312,6 +2312,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user's payment methods
   app.get('/api/payment-methods', authMiddleware, async (req, res) => {
     try {
+      if (!req.session.userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
       const paymentMethods = await storage.getPaymentMethodsByUser(req.session.userId);
       res.json(paymentMethods);
     } catch (error) {
@@ -2323,6 +2326,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update payment method (initiates Paymob tokenization flow)
   app.post('/api/payment-methods/update', authMiddleware, async (req, res) => {
     try {
+      if (!req.session.userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+      
       const { address } = req.body;
       
       // Get user details

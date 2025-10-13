@@ -93,6 +93,7 @@ const AccountPage = () => {
     deliverySlot: 'morning' as 'morning' | 'evening'
   });
   const [activeTab, setActiveTab] = useState("upcoming");
+  const [isUpdatingPaymentMethod, setIsUpdatingPaymentMethod] = useState(false);
 
   // ALL QUERIES MUST BE DECLARED BEFORE ANY CONDITIONAL LOGIC
   const { data: currentUser, isLoading: isUserLoading } = useQuery<User | null>({
@@ -132,6 +133,12 @@ const AccountPage = () => {
 
   const { data: subscriptionStatus, refetch: refetchSubscriptionStatus } = useQuery<any>({
     queryKey: ['/api/user/subscription/status'],
+    enabled: !!currentUser,
+    refetchOnWindowFocus: true,
+  });
+
+  const { data: paymentMethods, isLoading: isLoadingPaymentMethods, refetch: refetchPaymentMethods } = useQuery<any[]>({
+    queryKey: ['/api/payment-methods'],
     enabled: !!currentUser,
     refetchOnWindowFocus: true,
   });
@@ -539,6 +546,31 @@ const AccountPage = () => {
       });
     } finally {
       setIsProcessingSubscription(false);
+    }
+  };
+
+  // Handle payment method update
+  const handleUpdatePaymentMethod = async () => {
+    setIsUpdatingPaymentMethod(true);
+    try {
+      // Get user's address from profile for billing data
+      const addressData = profile?.address ? JSON.parse(profile.address) : {};
+      
+      const response = await apiRequest('POST', '/api/payment-methods/update', {
+        address: addressData
+      });
+
+      // Redirect to Paymob checkout for card tokenization
+      const paymobUrl = `https://accept.paymob.com/unifiedcheckout/?publicKey=${response.public_key}&clientSecret=${response.client_secret}`;
+      window.location.href = paymobUrl;
+    } catch (error) {
+      console.error('Payment method update error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to initiate payment method update. Please try again.",
+        variant: "destructive"
+      });
+      setIsUpdatingPaymentMethod(false);
     }
   };
 
@@ -1572,12 +1604,43 @@ const AccountPage = () => {
                             </div>
                           </div>
 
+                          {/* Payment Method Section */}
+                          <div className="bg-green-50 p-4 rounded-lg mb-4">
+                            <h5 className="font-medium text-green-900 mb-2">Payment Method</h5>
+                            {isLoadingPaymentMethods ? (
+                              <p className="text-sm text-green-700">Loading payment methods...</p>
+                            ) : paymentMethods && paymentMethods.length > 0 ? (
+                              <div className="space-y-2">
+                                {paymentMethods
+                                  .filter((pm: any) => pm.isDefault)
+                                  .map((pm: any) => (
+                                    <div key={pm.id} className="flex items-center justify-between">
+                                      <div className="flex items-center space-x-3">
+                                        <svg className="h-6 w-6 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                        </svg>
+                                        <div>
+                                          <p className="font-medium text-green-900 capitalize">
+                                            {pm.cardBrand || 'Card'} •••• {pm.maskedPan?.slice(-4) || '****'}
+                                          </p>
+                                          <p className="text-xs text-green-600">Default payment method</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-green-700">No payment method saved</p>
+                            )}
+                          </div>
+
                           {/* Edit buttons */}
                           <div className="flex flex-wrap gap-3">
                             <Button
                               variant="outline"
                               onClick={() => setShowSubscriptionEditModal(true)}
                               className="flex items-center"
+                              data-testid="button-edit-subscription-defaults"
                             >
                               <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -1588,12 +1651,25 @@ const AccountPage = () => {
                               variant="outline"
                               onClick={() => setActiveTab('profile')}
                               className="flex items-center"
+                              data-testid="button-edit-delivery-address"
                             >
                               <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                               </svg>
                               Edit Delivery Address
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={handleUpdatePaymentMethod}
+                              disabled={isUpdatingPaymentMethod}
+                              className="flex items-center"
+                              data-testid="button-update-payment-method"
+                            >
+                              <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                              </svg>
+                              {isUpdatingPaymentMethod ? "Processing..." : "Update Payment Method"}
                             </Button>
                           </div>
                         </div>
