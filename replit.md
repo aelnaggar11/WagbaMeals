@@ -41,6 +41,19 @@ Wagba utilizes a modern full-stack architecture with separate frontend and backe
 
 ## Recent Changes
 
+### October 13, 2025 - Payment Bypass Prevention & Pricing Fixes (COMPLETED)
+- **Issue:** Users could bypass payment during onboarding by clicking Wagba logo after registration, seeing "confirmed" orders without paying
+- **Root Cause:** Checkout endpoint incorrectly marked card payment orders as paymentStatus='confirmed' before actual payment completion
+- **Security Fixes:**
+  1. Removed premature payment confirmation: Card payment orders now remain paymentStatus='pending' until Paymob webhook confirms payment
+  2. Account page security: /api/orders endpoint now filters to only return orders with paymentStatus='paid', preventing display of unpaid orders
+  3. Payment status flow: pending (checkout) → paid (webhook) - users cannot access account with unpaid orders
+- **Pricing Fixes:**
+  1. Fixed getPendingOrderByUser to return most recent pending order using ORDER BY createdAt DESC (prevents showing old orders when users change meal selections)
+  2. Fixed Paymob first-order discount: Excludes current order when checking for previous confirmed orders, correctly applies 10% discount to first subscription
+  3. Corrected discount calculation: 10% applied to order total after volume discount (e.g., 10 meals at 199 EGP = 1990 EGP, minus 10% = 1791 EGP)
+- **Testing:** E2E verification completed - users cannot bypass payment, pricing accurate throughout checkout flow, Paymob charges correct amounts
+
 ### October 12, 2025 - Pricing Display Accuracy Fix
 - Fixed subtotal calculation to use base price (249 EGP per meal - smallest package price) before volume discounts
 - Corrected first-order discount to apply 10% to order total after volume discount (not to subtotal)
