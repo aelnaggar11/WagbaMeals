@@ -169,6 +169,33 @@ export class PaymobService {
   }
 
   /**
+   * Retrieve saved card tokens for a payment (after successful tokenization)
+   */
+  async getCardTokens(transactionId: number): Promise<any> {
+    try {
+      // Paymob's token retrieval API
+      const response = await axios.post(
+        `https://flashapi.paymob.com/v1/customer/card/tokens/`,
+        {
+          transaction_id: transactionId
+        },
+        {
+          headers: {
+            'Authorization': `Token ${this.secretKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('Card tokens retrieved:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error retrieving card tokens:', error.response?.data || error.message);
+      throw error;
+    }
+  }
+
+  /**
    * Verify HMAC signature from Paymob webhook
    * Following Paymob's official HMAC calculation order
    */

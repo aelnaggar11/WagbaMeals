@@ -2547,20 +2547,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isPaymentMethodUpdate && userId && success) {
         console.log('=== PAYMENT METHOD UPDATE WEBHOOK ===');
         console.log('User ID:', userId);
-        console.log('Token received:', !!transaction.token);
-        console.log('Full transaction object keys:', Object.keys(transaction));
-        
-        if (!transaction.token) {
-          console.error('⚠️ No token found in webhook! Available fields:', Object.keys(transaction));
-          console.error('Source data:', transaction.source_data);
-          console.error('Data field:', transaction.data);
-          return res.status(200).json({ message: 'No token in webhook' });
-        }
+        console.log('Transaction ID:', transaction.id);
         
         try {
-          const cardToken = transaction.token.card_token;
-          const maskedPan = transaction.token.masked_pan || '';
-          const cardSubtype = transaction.token.card_subtype || '';
+          // Retrieve card tokens from Paymob API (tokens are not in webhook)
+          const { paymobService } = await import('./paymob');
+          const tokenData = await paymobService.getCardTokens(transaction.id);
+          
+          if (!tokenData || !tokenData.results || tokenData.results.length === 0) {
+            console.error('⚠️ No card tokens found for transaction:', transaction.id);
+            return res.status(200).json({ message: 'No tokens available' });
+          }
+          
+          const cardInfo = tokenData.results[0];
+          const cardToken = cardInfo.token;
+          const maskedPan = cardInfo.card_mask || transaction.source_data?.pan || '';
+          const cardSubtype = cardInfo.card_type || transaction.source_data?.sub_type || '';
           
           console.log('Card token:', cardToken?.substring(0, 10) + '...');
           console.log('Masked PAN:', maskedPan);
