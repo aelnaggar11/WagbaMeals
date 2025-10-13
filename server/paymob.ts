@@ -174,6 +174,31 @@ export class PaymobService {
    */
   verifyHmacSignature(data: any, receivedHmac: string): boolean {
     try {
+      // Log all fields for debugging
+      console.log('=== HMAC VERIFICATION DEBUG ===');
+      console.log('Webhook data fields:', {
+        amount_cents: data.amount_cents,
+        created_at: data.created_at,
+        currency: data.currency,
+        error_occured: data.error_occured,
+        has_parent_transaction: data.has_parent_transaction,
+        id: data.id,
+        integration_id: data.integration_id,
+        is_3d_secure: data.is_3d_secure,
+        is_auth: data.is_auth,
+        is_capture: data.is_capture,
+        is_refunded: data.is_refunded,
+        is_standalone_payment: data.is_standalone_payment,
+        is_voided: data.is_voided,
+        order_id: data.order?.id || data.order,
+        owner: data.owner,
+        pending: data.pending,
+        source_data_pan: data.source_data_pan,
+        source_data_sub_type: data.source_data_sub_type,
+        source_data_type: data.source_data_type,
+        success: data.success
+      });
+      
       // Paymob HMAC calculation for transaction processed callback
       // Order of fields is critical - must match Paymob's documentation exactly
       const concatenatedString = [
@@ -195,9 +220,12 @@ export class PaymobService {
         data.pending,
         data.source_data_pan,
         data.source_data_sub_type,
-        data.source_data_type, // This was missing!
+        data.source_data_type,
         data.success
       ].join('');
+
+      console.log('Concatenated string for HMAC:', concatenatedString);
+      console.log('Concatenated string length:', concatenatedString.length);
 
       const calculatedHmac = crypto
         .createHmac('sha512', this.hmacSecret)
@@ -210,6 +238,9 @@ export class PaymobService {
         console.error('❌ HMAC verification failed');
         console.log('Calculated HMAC:', calculatedHmac);
         console.log('Received HMAC:', receivedHmac);
+        console.log('HMAC secret length:', this.hmacSecret.length);
+      } else {
+        console.log('✅ HMAC verification successful');
       }
 
       return isValid;

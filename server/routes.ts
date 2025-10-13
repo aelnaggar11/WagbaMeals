@@ -2508,6 +2508,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('=== PAYMOB WEBHOOK RECEIVED ===');
       const webhookData = req.body;
       const hmacFromQuery = req.query.hmac as string;
+      
+      // Log full webhook for debugging
+      console.log('Full webhook body:', JSON.stringify(webhookData, null, 2));
+      console.log('HMAC from query:', hmacFromQuery);
 
       // Verify HMAC signature
       const { paymobService } = await import('./paymob');
