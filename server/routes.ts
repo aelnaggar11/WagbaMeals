@@ -1349,8 +1349,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Order Routes
   app.get('/api/orders', authMiddleware, async (req, res) => {
     try {
-      const orders = await storage.getOrdersByUser(req.session.userId!);
-      res.json({ orders });
+      const allOrders = await storage.getOrdersByUser(req.session.userId!);
+      // Only return orders that have been paid (exclude pending/unpaid orders)
+      const paidOrders = allOrders.filter(order => order.paymentStatus === 'paid');
+      res.json({ orders: paidOrders });
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
     }
@@ -2881,10 +2883,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log('Email sent successfully to admin for order:', orderId);
           }
         }
-      } else {
-        // For card payments, set status to confirmed
-        orderUpdateData.paymentStatus = 'confirmed';
       }
+      // Note: For card payments, payment status remains 'pending' until Paymob webhook confirms payment
 
       // Recalculate subtotal and discount based on actual order items
       const orderItems = await storage.getOrderItems(parseInt(orderId));
