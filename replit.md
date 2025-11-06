@@ -41,6 +41,15 @@ Wagba utilizes a modern full-stack architecture with separate frontend and backe
 
 ## Recent Changes
 
+### October 13, 2025 - Payment Callback Redirect Fix (COMPLETED)
+- **Issue:** After successful payment on Paymob, users sometimes redirected to "Finalize Account" step instead of account dashboard
+- **Root Cause:** PaymentResponsePage checked user authentication status with a query; session sometimes not recognized after Paymob redirect, causing redirect to auth page
+- **Fix:** Removed authentication query dependency and changed all redirects to use window.location.href for full page reload
+  - Success payments: Always redirect to /account with full page reload to re-establish session
+  - Failed payments: Always redirect to /checkout with full page reload
+  - Added cache invalidation for /api/auth/me to ensure fresh authentication state
+- **Impact:** Eliminates intermittent "Finalize Account" redirects, ensures reliable redirect to account dashboard after payment
+
 ### October 13, 2025 - Checkout UX & Account Access Control (COMPLETED)
 - **Checkout Page Improvements:** Removed redundant card input fields (card number, expiry, CVV, cardholder name) from checkout page
   - Card details now collected only by Paymob on their secure hosted checkout page
