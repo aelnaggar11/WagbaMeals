@@ -1,30 +1,18 @@
 import { useEffect } from "react";
-import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { User } from "@shared/schema";
 
 const PaymentResponsePage = () => {
-  const [, navigate] = useLocation();
   const { toast } = useToast();
   
-  // Check authentication status
-  const { data: user, isLoading } = useQuery<User | null>({
-    queryKey: ['/api/auth/me'],
-    retry: false,
-  });
-  
   useEffect(() => {
-    // Wait for auth check to complete
-    if (isLoading) return;
-
     // Parse URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const isSuccess = urlParams.get('success') === 'true';
 
     // Invalidate queries to refresh order data
     queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
 
     if (isSuccess) {
       // Show success toast
@@ -34,14 +22,10 @@ const PaymentResponsePage = () => {
         duration: 3000,
       });
 
-      // Redirect based on auth status
+      // Always redirect to account page with full page reload to re-establish session
+      // This prevents intermittent issues where session isn't recognized after Paymob redirect
       setTimeout(() => {
-        if (user) {
-          navigate('/account');
-        } else {
-          // If not authenticated, redirect to login with return path
-          window.location.href = '/auth?returnTo=' + encodeURIComponent('/account');
-        }
+        window.location.href = '/account';
       }, 1500);
     } else {
       // Show failure toast
@@ -52,16 +36,12 @@ const PaymentResponsePage = () => {
         duration: 4000,
       });
 
-      // Redirect to checkout or home based on auth status
+      // Redirect to checkout with full page reload
       setTimeout(() => {
-        if (user) {
-          navigate('/checkout');
-        } else {
-          navigate('/');
-        }
+        window.location.href = '/checkout';
       }, 2000);
     }
-  }, [user, isLoading, navigate, toast]);
+  }, [toast]);
 
   // Show a simple loading state while redirecting
   return (
