@@ -37,23 +37,22 @@ Wagba uses a modern full-stack architecture with distinct frontend and backend c
 - **TOKEN webhooks:** 8 fields in ALPHABETICAL order (card_subtype, created_at, email, id, masked_pan, merchant_id, order_id, token) - discovered through testing with actual webhook data
 - **SUBSCRIPTION webhooks:** Format "{trigger_type}for{subscription_id}" (e.g., "suspendedfor1264")
 
-**Subscription Flow:**
+**Subscription Flow (Asynchronous via Webhooks):**
 1. Create payment intention with `save_token=true` for subscription orders
-2. Webhooks arrive (order may vary - TOKEN often arrives BEFORE TRANSACTION)
+2. Payment webhooks arrive (order may vary - TOKEN often arrives BEFORE TRANSACTION)
 3. TRANSACTION webhook: Payment confirmed, HMAC verified
 4. TOKEN webhook: Card token received, HMAC verified using alphabetical field order
-5. Create payment method from token
-6. Create Paymob subscription plan (returns integer plan_id)
-7. Create Paymob subscription intention with card token and plan_id
-8. Extract subscription ID from API response and link to user record
+5. Create payment method from token and store plan ID on user record
+6. SUBSCRIPTION webhook: Paymob sends webhook with subscription ID after creating subscription
+7. Find user by email from `client_info.email` in webhook payload
+8. Link subscription ID to user record (first time) or update subscription status (subsequent webhooks)
 
-**Subscription ID Extraction (In Progress):**
-- Added comprehensive logging to capture actual Paymob API response structure
-- Code attempts to extract subscription ID from multiple possible locations:
-  - `response.data.subscription_data.id` (webhook format)
-  - `response.data.id` (direct format)
-  - `response.data.subscription.id` (alternative format)
-- Database fields: `paymobSubscriptionId` (integer) and `paymobPlanId` (integer)
+**Key Implementation Details:**
+- **Payment intention API does NOT return subscription ID** - it returns `object: "paymentintention"` with status "intended"
+- **Subscription creation is ASYNCHRONOUS** - Paymob creates subscriptions after payment success and delivers subscription ID via webhook
+- **SUBSCRIPTION webhook contains:** `subscription_data.id` (integer), `client_info.email`, `plan_id`, `state`, `trigger_type`
+- **Database fields:** `paymobSubscriptionId` (integer), `paymobPlanId` (integer)
+- **User lookup strategy:** Find by subscription ID (existing subscriptions) OR by email (new subscriptions from client_info)
 
 **Webhook Ordering Solution:**
 - TOKEN webhooks may arrive before TRANSACTION webhooks (race condition)
