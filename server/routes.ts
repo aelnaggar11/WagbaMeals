@@ -2787,9 +2787,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             paymentMethodId: paymentMethod.id
           });
           
-          // Create Paymob subscription (user was already fetched earlier by email)
-          if (user && !user.paymobSubscriptionId) {
-            console.log('=== CREATING PAYMOB SUBSCRIPTION ===');
+          // Store plan ID for subscription flow (subscription will be created via webhook)
+          if (user && !user.paymobSubscriptionId && order.orderType === 'subscription') {
+            console.log('=== PREPARING FOR PAYMOB SUBSCRIPTION ===');
+            console.log(`Card token saved for user ${user.id}`);
+            console.log('Subscription will be created when Paymob sends SUBSCRIPTION webhook');
             
             try {
               // Get or create weekly subscription plan
@@ -2809,61 +2811,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log(`✅ Created subscription plan: ${planId}`);
               }
               
-              // Validate plan ID before using
-              if (!planId) {
-                throw new Error('Failed to create or retrieve subscription plan');
-              }
-              
-              // Get delivery address
-              const address = order.deliveryAddress ? JSON.parse(order.deliveryAddress) : {};
-              const nameParts = user.name?.split(' ') || ['Customer'];
-              const firstName = nameParts[0] || 'Customer';
-              const lastName = nameParts.slice(1).join(' ') || 'Name'; // Default to 'Name' if no last name
-              
-              const billingData = {
-                apartment: address.apartment || 'NA',
-                first_name: firstName,
-                last_name: lastName,
-                street: address.street || 'NA',
-                building: address.building || 'NA',
-                phone_number: address.phone || user.phone || '+201000000000',
-                country: 'EG',
-                email: user.email,
-                floor: address.floor || 'NA',
-                state: address.area || 'Cairo',
-                city: address.city || 'Cairo'
-              };
-              
-              // Create subscription
-              const subscription = await paymobService.createSubscription({
-                plan_id: planId,
-                card_token: cardToken,
-                billing_data: billingData,
-                customer: {
-                  first_name: billingData.first_name,
-                  last_name: billingData.last_name,
-                  email: user.email,
-                  phone_number: billingData.phone_number
-                },
-                starts_at: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-              });
-              
-              console.log(`✅ Paymob subscription created: ${subscription.subscriptionId}`);
-              console.log(`Plan ID: ${planId}, Subscription ID: ${subscription.subscriptionId}`);
-              
-              // Update user with subscription IDs (both should be integers)
+              // Store plan ID on user for when subscription webhook arrives
               await storage.updateUser(user.id, {
-                paymobSubscriptionId: subscription.subscriptionId,
-                paymobPlanId: planId,
-                subscriptionStatus: 'active',
-                subscriptionStartedAt: new Date(),
-                isSubscriber: true,
-                userType: 'subscription'
+                paymobPlanId: planId
               });
               
-              console.log(`✅ User ${user.id} subscription setup complete`);
-            } catch (subscriptionError) {
-              console.error('❌ Error creating Paymob subscription:', subscriptionError);
+              console.log(`✅ Plan ID ${planId} stored for user ${user.id}`);
+              console.log(`Awaiting SUBSCRIPTION webhook from Paymob to complete setup`);
+            } catch (planError) {
+              console.error('❌ Error creating subscription plan:', planError);
             }
           } else if (user?.paymobSubscriptionId) {
             console.log(`ℹ️ User ${user.id} already has subscription ${user.paymobSubscriptionId}`);
@@ -3148,20 +3104,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         state: subscriptionData.state,
         trigger_type: triggerType,
         plan_id: subscriptionData.plan_id,
-        next_billing: subscriptionData.next_billing
+        next_billing: subscriptionData.next_billing,
+        client_email: subscriptionData.client_info?.email
       });
 
-      // Find user by Paymob subscription ID
+      // Find user - first by subscription ID (for existing subscriptions), then by email (for new subscriptions)
       const users = await storage.getAllUsers();
-      const user = users.find(u => u.paymobSubscriptionId === subscriptionId);
+      let user = users.find(u => u.paymobSubscriptionId === subscriptionId);
+
+      if (!user && subscriptionData.client_info?.email) {
+        // New subscription - find user by email
+        console.log(`Looking for user by email: ${subscriptionData.client_info.email}`);
+        user = users.find(u => u.email === subscriptionData.client_info.email);
+        
+        if (user && !user.paymobSubscriptionId) {
+          console.log(`✅ Found user ${user.id} for NEW subscription ${subscriptionId}`);
+          // This is a new subscription being created - set the subscription ID
+          await storage.updateUser(user.id, {
+            paymobSubscriptionId: subscriptionId,
+            subscriptionStartedAt: new Date(),
+            isSubscriber: true
+          });
+          console.log(`✅ Subscription ID ${subscriptionId} linked to user ${user.id}`);
+        }
+      }
 
       if (!user) {
-        console.error(`❌ No user found with subscription ID ${subscriptionId}`);
+        console.error(`❌ No user found for subscription ID ${subscriptionId} or email ${subscriptionData.client_info?.email}`);
         // Still return 200 to acknowledge receipt
         return res.status(200).json({ message: 'User not found but webhook acknowledged' });
       }
 
-      console.log(`Found user ${user.id} (${user.email}) for subscription ${subscriptionId}`);
+      console.log(`Processing subscription ${subscriptionId} for user ${user.id} (${user.email})`);
 
       // Update user subscription status based on trigger type
       let newStatus = user.subscriptionStatus;
