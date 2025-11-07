@@ -2671,16 +2671,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('=== TOKEN WEBHOOK DETECTED ===');
         const tokenData = webhookData.obj;
         
-        // Try to verify TOKEN webhook HMAC (may have different format)
+        // SECURITY: Verify TOKEN webhook HMAC signature
+        // Format: created_at, email, id, merchant_id, order_id, token
         const isValidToken = paymobService.verifyTokenHmac(tokenData, hmacFromQuery);
         
         if (!isValidToken) {
-          console.warn('⚠️ TOKEN HMAC verification failed, but processing anyway (TOKEN webhooks may not use HMAC)');
-          // Continue processing - TOKEN webhooks may not require HMAC verification
-          // They're triggered by successful payment which was already verified
-        } else {
-          console.log('✅ TOKEN HMAC verified');
+          console.error('❌ CRITICAL: TOKEN HMAC verification failed - rejecting webhook');
+          console.error('TOKEN webhook rejected to prevent potential card token injection attack');
+          return res.status(400).json({ message: 'Invalid TOKEN HMAC signature' });
         }
+        
+        console.log('✅ TOKEN HMAC verified successfully');
         
         // Extract token information
         const cardToken = tokenData.token;

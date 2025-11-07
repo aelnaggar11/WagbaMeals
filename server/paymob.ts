@@ -491,17 +491,21 @@ export class PaymobService {
       });
       
       // Paymob TOKEN webhook HMAC concatenation
-      // Order of fields: created_at, email, id, merchant_id, order_id, token
+      // IMPORTANT: Fields are concatenated in ALPHABETICAL order
+      // Order: card_subtype, created_at, email, id, masked_pan, merchant_id, order_id, token
+      // This was determined through testing with actual webhook data from Paymob
       const concatenatedString = [
+        data.card_subtype,
         data.created_at,
         data.email,
         data.id,
+        data.masked_pan,
         data.merchant_id,
         data.order_id,
         data.token
       ].join('');
 
-      console.log('Concatenated string for TOKEN HMAC (first 50 chars):', concatenatedString.substring(0, 50) + '...');
+      console.log('Concatenated string for TOKEN HMAC (first 80 chars):', concatenatedString.substring(0, 80) + '...');
       console.log('Concatenated string length:', concatenatedString.length);
 
       const calculatedHmac = crypto
@@ -515,6 +519,16 @@ export class PaymobService {
         console.error('❌ TOKEN HMAC verification failed');
         console.log('Calculated HMAC:', calculatedHmac);
         console.log('Received HMAC:', receivedHmac);
+        console.log('Field values used:', {
+          card_subtype: data.card_subtype,
+          created_at: data.created_at,
+          email: data.email,
+          id: data.id,
+          masked_pan: data.masked_pan,
+          merchant_id: data.merchant_id,
+          order_id: data.order_id,
+          token: data.token?.substring(0, 10) + '...'
+        });
       } else {
         console.log('✅ TOKEN HMAC verification successful');
       }
