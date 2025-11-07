@@ -39,11 +39,19 @@ Wagba uses a modern full-stack architecture with distinct frontend and backend c
 
 **Subscription Flow:**
 1. Create payment intention with `save_token=true` for subscription orders
-2. TRANSACTION webhook arrives (payment successful, HMAC verified)
-3. TOKEN webhook arrives with card token (HMAC verified using alphabetical field order)
-4. Create payment method from token
-5. Create Paymob subscription using card token
-6. Link subscription ID to user record
+2. Webhooks arrive (order may vary - TOKEN often arrives BEFORE TRANSACTION)
+3. TRANSACTION webhook: Payment confirmed, HMAC verified
+4. TOKEN webhook: Card token received, HMAC verified using alphabetical field order
+5. Create payment method from token
+6. Create Paymob subscription using card token
+7. Link subscription ID to user record
+
+**Webhook Ordering Solution:**
+- TOKEN webhooks may arrive before TRANSACTION webhooks (race condition)
+- Solution: Use email-based order lookup instead of Paymob order ID
+- Process: Find user by email → Find their most recent pending subscription order → Link card token
+- Database field: `paymobOrderId` tracks Paymob's internal order ID for cross-referencing
+- This approach works regardless of webhook arrival order
 
 **Security:**
 - All webhooks require strict HMAC verification
