@@ -181,6 +181,7 @@ export const orders = pgTable("orders", {
   paymentStatus: text("payment_status").default("pending"), // "pending" | "processing" | "confirmed" | "failed"
   paymentConfirmationImage: text("payment_confirmation_image"), // URL to uploaded payment confirmation
   paymobTransactionId: text("paymob_transaction_id"), // Paymob transaction reference
+  paymobOrderId: text("paymob_order_id"), // Paymob order ID (from webhooks)
   deliveryDate: text("delivery_date"),
   orderType: text("order_type").default("trial"), // "trial", "subscription"
   // Subscription payment tracking fields

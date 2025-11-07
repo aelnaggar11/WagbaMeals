@@ -2698,27 +2698,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: email
         });
         
-        if (!cardToken || !orderId) {
-          console.error('❌ Missing required token or order_id in TOKEN webhook');
-          return res.status(400).json({ message: 'Missing token or order_id' });
+        if (!cardToken || !email) {
+          console.error('❌ Missing required token or email in TOKEN webhook');
+          return res.status(400).json({ message: 'Missing token or email' });
         }
         
         // Find the order and create subscription
         try {
-          // Find order by Paymob order ID
-          const allOrders = await storage.getAllOrders();
-          const order = allOrders.find(o => {
-            // Match by Paymob order ID in the transaction
-            return o.id.toString() === orderId.toString() || 
-                   o.paymobTransactionId?.includes(orderId.toString());
-          });
+          // STRATEGY: Use email to find user and their most recent subscription order
+          // This works regardless of webhook arrival order (TOKEN may arrive before TRANSACTION)
+          console.log('=== TOKEN WEBHOOK ORDER LOOKUP ===');
+          console.log('Looking up user by email:', email);
+          console.log('Paymob order ID:', orderId);
           
-          if (!order) {
-            console.error(`❌ No order found for Paymob order ID ${orderId}`);
-            return res.status(200).json({ message: 'Order not found but acknowledged' });
+          // Find user by email
+          const allUsers = await storage.getAllUsers();
+          const user = allUsers.find(u => u.email === email);
+          
+          if (!user) {
+            console.error(`❌ No user found with email ${email}`);
+            return res.status(200).json({ message: 'User not found but acknowledged' });
           }
           
-          console.log(`✅ Found order ${order.id} for TOKEN webhook`);
+          console.log(`✅ Found user ${user.id} (${email})`);
+          
+          // Find user's most recent subscription order awaiting payment
+          // Order should be in 'selected' status with 'pending' or 'paid' payment status
+          const allOrders = await storage.getAllOrders();
+          const userOrders = allOrders
+            .filter(o => 
+              o.userId === user.id && 
+              o.orderType === 'subscription' &&
+              (o.paymentStatus === 'pending' || o.paymentStatus === 'paid') &&
+              !o.paymentMethodId // Not already processed
+            )
+            .sort((a, b) => b.id - a.id); // Most recent first
+          
+          const order = userOrders[0];
+          
+          if (!order) {
+            console.error(`❌ No pending subscription order found for user ${user.id}`);
+            console.log('User orders:', userOrders.map(o => ({ id: o.id, status: o.status, paymentStatus: o.paymentStatus, type: o.orderType })));
+            return res.status(200).json({ message: 'No pending subscription order found' });
+          }
+          
+          console.log(`✅ Found subscription order ${order.id} for TOKEN webhook`);
+          console.log('Order details:', { 
+            id: order.id, 
+            status: order.status, 
+            paymentStatus: order.paymentStatus,
+            paymobOrderId: orderId
+          });
+          
+          // Save Paymob order ID to our order for future reference
+          await storage.updateOrder(order.id, {
+            paymobOrderId: orderId
+          });
+          console.log(`✅ Saved Paymob order ID ${orderId} to Order ${order.id}`);
           
           // Only process subscription orders
           if (order.orderType !== 'subscription') {
@@ -2751,8 +2787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             paymentMethodId: paymentMethod.id
           });
           
-          // Create Paymob subscription
-          const user = await storage.getUser(order.userId);
+          // Create Paymob subscription (user was already fetched earlier by email)
           if (user && !user.paymobSubscriptionId) {
             console.log('=== CREATING PAYMOB SUBSCRIPTION ===');
             
