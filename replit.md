@@ -43,8 +43,17 @@ Wagba uses a modern full-stack architecture with distinct frontend and backend c
 3. TRANSACTION webhook: Payment confirmed, HMAC verified
 4. TOKEN webhook: Card token received, HMAC verified using alphabetical field order
 5. Create payment method from token
-6. Create Paymob subscription using card token
-7. Link subscription ID to user record
+6. Create Paymob subscription plan (returns integer plan_id)
+7. Create Paymob subscription intention with card token and plan_id
+8. Extract subscription ID from API response and link to user record
+
+**Subscription ID Extraction (In Progress):**
+- Added comprehensive logging to capture actual Paymob API response structure
+- Code attempts to extract subscription ID from multiple possible locations:
+  - `response.data.subscription_data.id` (webhook format)
+  - `response.data.id` (direct format)
+  - `response.data.subscription.id` (alternative format)
+- Database fields: `paymobSubscriptionId` (integer) and `paymobPlanId` (integer)
 
 **Webhook Ordering Solution:**
 - TOKEN webhooks may arrive before TRANSACTION webhooks (race condition)
