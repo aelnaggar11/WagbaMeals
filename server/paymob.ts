@@ -467,6 +467,11 @@ export class PaymobService {
     starts_at?: string; // YYYY-MM-DD format
   }): Promise<any> {
     try {
+      console.log('=== CREATING PAYMOB SUBSCRIPTION ===');
+      console.log('Plan ID:', subscriptionData.plan_id);
+      console.log('Customer email:', subscriptionData.customer.email);
+      console.log('Starts at:', subscriptionData.starts_at || new Date().toISOString().split('T')[0]);
+
       const response = await axios.post(
         `${PAYMOB_API_URL}/intention/`,
         {
@@ -488,15 +493,39 @@ export class PaymobService {
         }
       );
 
+      console.log('=== PAYMOB SUBSCRIPTION API RESPONSE ===');
+      console.log('Response status:', response.status);
+      console.log('Response data keys:', Object.keys(response.data));
+      console.log('Full response data:', JSON.stringify(response.data, null, 2));
+
       // Extract subscription ID from response
-      // Paymob returns subscription data with the actual subscription ID (integer)
-      const subscriptionId = response.data.subscription_data?.id;
-      if (!subscriptionId || typeof subscriptionId !== 'number') {
-        console.error('❌ Invalid or missing subscription ID in response');
-        throw new Error('Paymob API did not return a valid subscription ID');
+      // Try multiple possible locations where the subscription ID might be
+      let subscriptionId: number | null = null;
+
+      // Try response.data.subscription_data.id (webhook format)
+      if (response.data.subscription_data?.id && typeof response.data.subscription_data.id === 'number') {
+        subscriptionId = response.data.subscription_data.id;
+        console.log('✅ Found subscription ID in subscription_data.id:', subscriptionId);
+      }
+      // Try response.data.id (direct format)
+      else if (response.data.id && typeof response.data.id === 'number') {
+        subscriptionId = response.data.id;
+        console.log('✅ Found subscription ID in root id:', subscriptionId);
+      }
+      // Try response.data.subscription.id
+      else if (response.data.subscription?.id && typeof response.data.subscription.id === 'number') {
+        subscriptionId = response.data.subscription.id;
+        console.log('✅ Found subscription ID in subscription.id:', subscriptionId);
+      }
+
+      if (!subscriptionId) {
+        console.error('❌ Could not find valid subscription ID in response');
+        console.error('Response structure:', JSON.stringify(response.data, null, 2));
+        throw new Error('Paymob API did not return a valid subscription ID in expected locations');
       }
       
       console.log('✅ Paymob subscription created with ID:', subscriptionId);
+      console.log('=====================================');
       
       // Return enhanced response with extracted subscription ID
       return {
@@ -504,7 +533,13 @@ export class PaymobService {
         subscriptionId: subscriptionId
       };
     } catch (error: any) {
-      console.error('❌ Failed to create subscription:', error.response?.data || error.message);
+      console.error('❌ Failed to create subscription');
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response data:', JSON.stringify(error.response.data, null, 2));
+      } else {
+        console.error('Error message:', error.message);
+      }
       throw new Error(`Failed to create subscription: ${error.response?.data?.message || error.message}`);
     }
   }
