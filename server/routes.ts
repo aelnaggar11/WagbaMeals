@@ -905,6 +905,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId) {
         return res.status(401).json({ message: 'Unauthorized - No user session' });
       }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // If user has a Paymob subscription, cancel it through Paymob API
+      if (user.paymobSubscriptionId) {
+        console.log(`Cancelling Paymob subscription ${user.paymobSubscriptionId} for user ${userId}`);
+        try {
+          const { paymobService } = await import('./paymob');
+          await paymobService.cancelSubscription(user.paymobSubscriptionId);
+          console.log(`✅ Paymob subscription ${user.paymobSubscriptionId} cancelled`);
+        } catch (paymobError) {
+          console.error('❌ Error cancelling Paymob subscription:', paymobError);
+          return res.status(502).json({ message: 'Failed to cancel subscription with payment provider' });
+        }
+      }
+
+      // Update local subscription status only after Paymob confirms cancellation
       const updatedUser = await storage.cancelUserSubscription(userId);
       
       res.json({ 
@@ -924,6 +944,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId) {
         return res.status(401).json({ message: 'Unauthorized - No user session' });
       }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // If user has a Paymob subscription, resume it through Paymob API
+      if (user.paymobSubscriptionId) {
+        console.log(`Resuming Paymob subscription ${user.paymobSubscriptionId} for user ${userId}`);
+        try {
+          const { paymobService } = await import('./paymob');
+          await paymobService.resumeSubscription(user.paymobSubscriptionId);
+          console.log(`✅ Paymob subscription ${user.paymobSubscriptionId} resumed`);
+        } catch (paymobError) {
+          console.error('❌ Error resuming Paymob subscription:', paymobError);
+          return res.status(502).json({ message: 'Failed to resume subscription with payment provider' });
+        }
+      }
+
+      // Update local subscription status only after Paymob confirms resumption
       const updatedUser = await storage.resumeUserSubscription(userId);
       
       res.json({ 
@@ -933,6 +973,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Error resuming subscription:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Pause/suspend subscription endpoint
+  app.post('/api/user/subscription/pause', authMiddleware, async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized - No user session' });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // If user has a Paymob subscription, suspend it through Paymob API
+      if (user.paymobSubscriptionId) {
+        console.log(`Suspending Paymob subscription ${user.paymobSubscriptionId} for user ${userId}`);
+        try {
+          const { paymobService } = await import('./paymob');
+          await paymobService.suspendSubscription(user.paymobSubscriptionId);
+          console.log(`✅ Paymob subscription ${user.paymobSubscriptionId} suspended`);
+        } catch (paymobError) {
+          console.error('❌ Error suspending Paymob subscription:', paymobError);
+          return res.status(502).json({ message: 'Failed to pause subscription with payment provider' });
+        }
+      }
+
+      // Update local subscription status
+      const updatedUser = await storage.updateUser(userId, {
+        subscriptionStatus: 'paused',
+        subscriptionPausedAt: new Date()
+      });
+      
+      res.json({ 
+        message: 'Subscription paused successfully',
+        subscriptionStatus: updatedUser.subscriptionStatus,
+        subscriptionPausedAt: updatedUser.subscriptionPausedAt
+      });
+    } catch (error) {
+      console.error('Error pausing subscription:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });
@@ -2666,7 +2749,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           console.log(`✅ Order ${orderId} payment status updated to: ${success ? 'paid' : 'failed'}`);
           
-          // Save card token for subscription orders
+          // Handle subscription orders: save card token and create Paymob subscription
           if (success && order.orderType === 'subscription' && transaction.token) {
             console.log('=== SUBSCRIPTION CARD TOKEN RECEIVED ===');
             console.log('Order type:', order.orderType);
@@ -2704,9 +2787,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 
                 console.log(`✅ Card token saved for subscription order ${orderId}`);
                 console.log(`Payment method ID: ${paymentMethod.id}`);
+                
+                // Create Paymob subscription for this user
+                const user = await storage.getUser(order.userId);
+                if (user && !user.paymobSubscriptionId) {
+                  console.log('=== CREATING PAYMOB SUBSCRIPTION ===');
+                  console.log('User ID:', user.id);
+                  console.log('User Email:', user.email);
+                  
+                  try {
+                    // Get or create weekly subscription plan
+                    // Weekly billing at 7-day intervals
+                    const webhookUrl = process.env.PAYMOB_SUBSCRIPTION_WEBHOOK_URL || 
+                      `${process.env.REPLIT_DOMAINS?.split(',')[0] || ''}/api/payments/paymob/subscription-webhook`;
+                    
+                    let planId = process.env.PAYMOB_WEEKLY_PLAN_ID ? parseInt(process.env.PAYMOB_WEEKLY_PLAN_ID) : null;
+                    
+                    // If no plan ID configured, create a new plan
+                    if (!planId) {
+                      console.log('No plan ID configured, creating new weekly subscription plan...');
+                      const plan = await paymobService.createSubscriptionPlan({
+                        frequency: 7, // Weekly (7 days)
+                        name: 'Weekly Meal Delivery',
+                        amount_cents: Math.round(order.total * 100), // Use order total as initial amount
+                        webhook_url: webhookUrl
+                      });
+                      planId = plan.id;
+                      console.log(`✅ Created subscription plan: ${planId}`);
+                    }
+                    
+                    // Get delivery address from order
+                    const address = order.deliveryAddress ? JSON.parse(order.deliveryAddress) : {};
+                    const billingData = {
+                      apartment: address.apartment || 'NA',
+                      first_name: user.name?.split(' ')[0] || 'Customer',
+                      last_name: user.name?.split(' ').slice(1).join(' ') || '',
+                      street: address.street || 'NA',
+                      building: address.building || 'NA',
+                      phone_number: address.phone || user.phone || '+201000000000',
+                      country: 'EG',
+                      email: user.email,
+                      floor: address.floor || 'NA',
+                      state: address.area || 'Cairo',
+                      city: address.city || 'Cairo'
+                    };
+                    
+                    // Create Paymob subscription (only if we have a plan ID)
+                    if (!planId) {
+                      throw new Error('Failed to create or retrieve subscription plan');
+                    }
+                    
+                    const subscription = await paymobService.createSubscription({
+                      plan_id: planId,
+                      card_token: cardToken,
+                      billing_data: billingData,
+                      customer: {
+                        first_name: billingData.first_name,
+                        last_name: billingData.last_name,
+                        email: user.email,
+                        phone_number: billingData.phone_number
+                      },
+                      starts_at: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // Start next week
+                    });
+                    
+                    console.log(`✅ Paymob subscription created: ${subscription.id}`);
+                    
+                    // Update user with subscription IDs
+                    await storage.updateUser(user.id, {
+                      paymobSubscriptionId: subscription.id,
+                      paymobPlanId: planId,
+                      subscriptionStatus: 'active',
+                      subscriptionStartedAt: new Date(),
+                      isSubscriber: true,
+                      userType: 'subscription'
+                    });
+                    
+                    console.log(`✅ User ${user.id} subscription setup complete`);
+                  } catch (subscriptionError) {
+                    console.error('❌ Error creating Paymob subscription:', subscriptionError);
+                    // Don't fail the webhook - subscription can be created later
+                  }
+                } else if (user?.paymobSubscriptionId) {
+                  console.log(`ℹ️ User ${user.id} already has Paymob subscription ${user.paymobSubscriptionId}`);
+                }
               }
             } catch (tokenError) {
-              console.error('❌ Error saving card token:', tokenError);
+              console.error('❌ Error processing subscription:', tokenError);
               // Don't fail the webhook if token save fails
             }
           } else if (success && order.orderType === 'subscription' && !transaction.token) {
@@ -2722,6 +2888,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error processing Paymob webhook:', error);
       // Still return 200 to prevent Paymob from retrying
       res.status(200).json({ message: 'Webhook received' });
+    }
+  });
+
+  // Paymob Subscription Webhook Handler
+  app.post('/api/payments/paymob/subscription-webhook', async (req, res) => {
+    try {
+      console.log('=== PAYMOB SUBSCRIPTION WEBHOOK RECEIVED ===');
+      const webhookData = req.body;
+      
+      // Log full webhook for debugging
+      console.log('Full subscription webhook body:', JSON.stringify(webhookData, null, 2));
+
+      // Extract subscription data and HMAC
+      const subscriptionData = webhookData.subscription_data;
+      const triggerType = webhookData.trigger_type;
+      const receivedHmac = webhookData.hmac;
+
+      if (!subscriptionData || !triggerType || !receivedHmac) {
+        console.error('❌ Invalid subscription webhook payload');
+        return res.status(400).json({ message: 'Invalid payload' });
+      }
+
+      const subscriptionId = subscriptionData.id;
+
+      // Verify HMAC signature
+      const { paymobService } = await import('./paymob');
+      const isValid = paymobService.verifySubscriptionHmac(
+        subscriptionId,
+        triggerType,
+        receivedHmac
+      );
+
+      if (!isValid) {
+        console.error('❌ Invalid HMAC signature from Paymob subscription webhook');
+        return res.status(400).json({ message: 'Invalid signature' });
+      }
+
+      console.log('✅ Subscription HMAC signature verified');
+      console.log('Subscription details:', {
+        id: subscriptionId,
+        state: subscriptionData.state,
+        trigger_type: triggerType,
+        plan_id: subscriptionData.plan_id,
+        next_billing: subscriptionData.next_billing
+      });
+
+      // Find user by Paymob subscription ID
+      const users = await storage.getAllUsers();
+      const user = users.find(u => u.paymobSubscriptionId === subscriptionId);
+
+      if (!user) {
+        console.error(`❌ No user found with subscription ID ${subscriptionId}`);
+        // Still return 200 to acknowledge receipt
+        return res.status(200).json({ message: 'User not found but webhook acknowledged' });
+      }
+
+      console.log(`Found user ${user.id} (${user.email}) for subscription ${subscriptionId}`);
+
+      // Update user subscription status based on trigger type
+      let newStatus = user.subscriptionStatus;
+      let updateData: any = {};
+
+      switch (triggerType) {
+        case 'active':
+        case 'resumed':
+          newStatus = 'active';
+          updateData = {
+            subscriptionStatus: 'active',
+            subscriptionPausedAt: null
+          };
+          console.log(`✅ Subscription ${subscriptionId} activated/resumed`);
+          break;
+
+        case 'suspended':
+          newStatus = 'paused';
+          updateData = {
+            subscriptionStatus: 'paused',
+            subscriptionPausedAt: new Date()
+          };
+          console.log(`⏸️ Subscription ${subscriptionId} suspended`);
+          break;
+
+        case 'canceled':
+        case 'cancelled':
+          newStatus = 'cancelled';
+          updateData = {
+            subscriptionStatus: 'cancelled',
+            subscriptionCancelledAt: new Date()
+          };
+          console.log(`🛑 Subscription ${subscriptionId} cancelled`);
+          break;
+
+        default:
+          console.log(`ℹ️ Unhandled trigger type: ${triggerType}`);
+      }
+
+      // Update user subscription status
+      if (Object.keys(updateData).length > 0) {
+        await storage.updateUser(user.id, updateData);
+        console.log(`✅ User ${user.id} subscription status updated to: ${newStatus}`);
+      }
+
+      // Always respond 200 OK to Paymob
+      res.status(200).json({ message: 'Subscription webhook processed' });
+    } catch (error) {
+      console.error('Error processing Paymob subscription webhook:', error);
+      // Still return 200 to prevent Paymob from retrying
+      res.status(200).json({ message: 'Subscription webhook received' });
     }
   });
 

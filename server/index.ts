@@ -281,11 +281,14 @@ async function initializeServer() {
 
     await startServer(port);
 
+    // NOTE: Billing scheduler is now deprecated as Paymob handles subscription billing
+    // via their native subscription API. This code is kept for reference/migration purposes.
+    // 
     // Initialize billing scheduler for subscription payments
-    const { BillingScheduler } = await import('./billing');
-    const billingScheduler = new BillingScheduler(storage as DatabaseStorage);
-    billingScheduler.start();
-    log('Billing scheduler initialized successfully');
+    // const { BillingScheduler } = await import('./billing');
+    // const billingScheduler = new BillingScheduler(storage as DatabaseStorage);
+    // billingScheduler.start();
+    // log('Billing scheduler initialized successfully');
 
     // Graceful shutdown handlers
     const gracefulShutdown = (signal: string) => {

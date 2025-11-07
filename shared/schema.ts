@@ -11,13 +11,15 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   phone: text("phone"),
   address: text("address"),
-  subscriptionStatus: text("subscription_status").default("active"), // "active", "cancelled"
+  subscriptionStatus: text("subscription_status").default("active"), // "active", "cancelled", "paused", "suspended"
   subscriptionPausedAt: timestamp("subscription_paused_at"),
   subscriptionCancelledAt: timestamp("subscription_cancelled_at"),
   subscriptionStartedAt: timestamp("subscription_started_at"),
   hasUsedTrialBox: boolean("has_used_trial_box").default(false), // Track if user has used trial box
   userType: text("user_type").default("trial"), // "trial", "subscription"
   isSubscriber: boolean("is_subscriber").default(false), // Whether user is a subscriber
+  paymobSubscriptionId: integer("paymob_subscription_id"), // Paymob subscription ID
+  paymobPlanId: integer("paymob_plan_id"), // Paymob subscription plan ID
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -35,6 +37,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
   hasUsedTrialBox: true,
   userType: true,
   isSubscriber: true,
+  paymobSubscriptionId: true,
+  paymobPlanId: true,
 });
 
 // Admin Model (completely separate from users)

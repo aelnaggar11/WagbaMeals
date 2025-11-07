@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import axios from 'axios';
 
 const PAYMOB_API_URL = 'https://accept.paymob.com/v1';
+const PAYMOB_SUBSCRIPTION_API_URL = 'https://accept.paymob.com/api';
 
 interface BillingData {
   apartment?: string;
@@ -308,6 +309,202 @@ export class PaymobService {
    */
   getPublicKey(): string {
     return this.publicKey;
+  }
+
+  /**
+   * Create a subscription plan with Paymob
+   */
+  async createSubscriptionPlan(planData: {
+    frequency: number; // in days (e.g., 7 for weekly)
+    name: string;
+    amount_cents: number;
+    webhook_url?: string;
+  }): Promise<any> {
+    try {
+      const response = await axios.post(
+        `${PAYMOB_SUBSCRIPTION_API_URL}/acceptance/subscription-plans`,
+        {
+          frequency: planData.frequency,
+          name: planData.name,
+          amount_cents: planData.amount_cents,
+          use_transaction_amount: true,
+          is_active: true,
+          integration: parseInt(this.integrationId),
+          webhook_url: planData.webhook_url || '',
+          reminder_days: null,
+          retrial_days: null,
+          plan_type: 'rent',
+          number_of_deductions: null,
+          fee: null
+        },
+        {
+          headers: {
+            'Authorization': `Token ${this.secretKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('✅ Paymob subscription plan created:', response.data.id);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Failed to create subscription plan:', error.response?.data || error.message);
+      throw new Error(`Failed to create subscription plan: ${error.response?.data?.message || error.message}`);
+    }
+  }
+
+  /**
+   * Create a subscription (attach customer to plan)
+   * This uses the payment intention API with card token from initial payment
+   */
+  async createSubscription(subscriptionData: {
+    plan_id: number;
+    card_token: string;
+    billing_data: BillingData;
+    customer: {
+      first_name: string;
+      last_name: string;
+      email: string;
+      phone_number: string;
+    };
+    starts_at?: string; // YYYY-MM-DD format
+  }): Promise<any> {
+    try {
+      const response = await axios.post(
+        `${PAYMOB_API_URL}/intention/`,
+        {
+          amount: 0, // Amount will come from plan
+          currency: 'EGP',
+          payment_methods: [parseInt(this.integrationId)],
+          items: [],
+          billing_data: subscriptionData.billing_data,
+          customer: subscriptionData.customer,
+          card_token: subscriptionData.card_token,
+          subscription_plan_id: subscriptionData.plan_id,
+          starts_at: subscriptionData.starts_at || new Date().toISOString().split('T')[0]
+        },
+        {
+          headers: {
+            'Authorization': `Token ${this.secretKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('✅ Paymob subscription created:', response.data.id);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Failed to create subscription:', error.response?.data || error.message);
+      throw new Error(`Failed to create subscription: ${error.response?.data?.message || error.message}`);
+    }
+  }
+
+  /**
+   * Suspend a subscription
+   */
+  async suspendSubscription(subscriptionId: number): Promise<any> {
+    try {
+      const response = await axios.post(
+        `${PAYMOB_SUBSCRIPTION_API_URL}/acceptance/subscriptions/${subscriptionId}/suspend`,
+        {},
+        {
+          headers: {
+            'Authorization': `Token ${this.secretKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('✅ Subscription suspended:', subscriptionId);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Failed to suspend subscription:', error.response?.data || error.message);
+      throw new Error(`Failed to suspend subscription: ${error.response?.data?.message || error.message}`);
+    }
+  }
+
+  /**
+   * Resume a subscription
+   */
+  async resumeSubscription(subscriptionId: number): Promise<any> {
+    try {
+      const response = await axios.post(
+        `${PAYMOB_SUBSCRIPTION_API_URL}/acceptance/subscriptions/${subscriptionId}/resume`,
+        {},
+        {
+          headers: {
+            'Authorization': `Token ${this.secretKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('✅ Subscription resumed:', subscriptionId);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Failed to resume subscription:', error.response?.data || error.message);
+      throw new Error(`Failed to resume subscription: ${error.response?.data?.message || error.message}`);
+    }
+  }
+
+  /**
+   * Cancel a subscription
+   */
+  async cancelSubscription(subscriptionId: number): Promise<any> {
+    try {
+      const response = await axios.post(
+        `${PAYMOB_SUBSCRIPTION_API_URL}/acceptance/subscriptions/${subscriptionId}/cancel`,
+        {},
+        {
+          headers: {
+            'Authorization': `Token ${this.secretKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('✅ Subscription cancelled:', subscriptionId);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Failed to cancel subscription:', error.response?.data || error.message);
+      throw new Error(`Failed to cancel subscription: ${error.response?.data?.message || error.message}`);
+    }
+  }
+
+  /**
+   * Verify HMAC signature from Paymob subscription webhook
+   * HMAC format: "{trigger_type}for{subscription_id}"
+   * Example: "suspendedfor1264"
+   */
+  verifySubscriptionHmac(subscriptionId: number, triggerType: string, receivedHmac: string): boolean {
+    try {
+      const concatenatedString = `${triggerType}for${subscriptionId}`;
+      
+      console.log('=== SUBSCRIPTION HMAC VERIFICATION ===');
+      console.log('Subscription ID:', subscriptionId);
+      console.log('Trigger Type:', triggerType);
+      console.log('Concatenated string:', concatenatedString);
+
+      const calculatedHmac = crypto
+        .createHmac('sha512', this.hmacSecret)
+        .update(concatenatedString)
+        .digest('hex');
+
+      const isValid = calculatedHmac === receivedHmac;
+      
+      if (!isValid) {
+        console.error('❌ Subscription HMAC verification failed');
+        console.log('Calculated HMAC:', calculatedHmac);
+        console.log('Received HMAC:', receivedHmac);
+      } else {
+        console.log('✅ Subscription HMAC verification successful');
+      }
+
+      return isValid;
+    } catch (error) {
+      console.error('❌ Subscription HMAC verification error:', error);
+      return false;
+    }
   }
 }
 
