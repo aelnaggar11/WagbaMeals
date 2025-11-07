@@ -1,0 +1,982 @@
+9:36:53 PM [express] POST /api/auth/logout 200 in 153ms :: {"message":"Logged out successfully"}
+=== AUTH CHECK === {
+  path: '/api/user/upcoming-meals',
+  method: 'GET',
+  sessionId: 'Al6JDjGmfFCCUgY-YkeMU_M9vwuaxtA1',
+  userId: undefined,
+  sessionExists: true,
+  cookieHeader: true,
+  hasCookie: true,
+  tokenCookie: false,
+  authHeader: false
+}
+✗ Session auth failed: No userId in session
+✗ Token auth failed: No token provided
+=== AUTH FAILED === {
+  reason: 'NO_SESSION',
+  hasSessionCookie: true,
+  hasTokenCookie: false,
+  hasAuthHeader: false
+}
+9:36:54 PM [express] GET /api/user/upcoming-meals 401 in 74ms :: {"message":"Unauthorized","debug":{…
+9:36:54 PM [express] GET /api/admin/auth/me 401 in 85ms :: {"message":"Unauthorized - Admin access r…
+9:36:54 PM [express] GET /api/landing/hero 304 in 169ms :: {"id":1,"title":"Refined recipes.","subti…
+9:36:54 PM [express] GET /api/landing/carousel-meals 304 in 207ms :: []
+9:36:54 PM [express] GET /api/auth/me 401 in 78ms
+9:36:57 PM [express] GET /api/pricing 304 in 228ms :: {"pricingConfigs":[{"id":14,"configType":"deli…
+9:36:57 PM [express] GET /api/landing/hero 200 in 148ms :: {"id":1,"title":"Refined recipes.","subti…
+9:36:57 PM [express] GET /api/landing/carousel-meals 200 in 151ms :: []
+9:36:57 PM [express] GET /api/landing/faqs 200 in 206ms :: [{"id":12,"question":"How does the Wagba …
+9:36:57 PM [express] GET /api/auth/me 401 in 76ms
+9:36:57 PM [express] GET /api/admin/auth/me 401 in 74ms :: {"message":"Unauthorized - Admin access r…
+9:36:57 PM [express] GET /api/weeks 200 in 353ms :: {"weeks":[{"id":1,"identifier":"current","label"…
+9:37:01 PM [express] GET /api/neighborhoods 304 in 156ms :: {"neighborhoods":[{"id":2,"name":"Maadi"…
+9:37:09 PM [express] GET /api/pricing 304 in 78ms :: {"pricingConfigs":[{"id":14,"configType":"deliv…
+9:37:09 PM [express] GET /api/auth/me 401 in 1ms
+9:37:09 PM [express] GET /api/landing/carousel-meals 304 in 71ms :: []
+9:37:09 PM [express] GET /api/landing/hero 304 in 76ms :: {"id":1,"title":"Refined recipes.","subtit…
+9:37:09 PM [express] GET /api/admin/auth/me 401 in 0ms :: {"message":"Unauthorized - Admin access re…
+9:37:09 PM [express] GET /api/landing/faqs 304 in 161ms :: [{"id":12,"question":"How does the Wagba …
+9:37:09 PM [express] GET /api/weeks 304 in 292ms :: {"weeks":[{"id":1,"identifier":"current","label"…
+9:37:17 PM [express] POST /api/auth/logout 200 in 148ms :: {"message":"Logged out successfully"}
+9:37:17 PM [express] GET /api/neighborhoods 304 in 153ms :: {"neighborhoods":[{"id":2,"name":"Maadi"…
+9:37:18 PM [express] POST /api/pre-onboarding/validate 200 in 462ms :: {"success":true,"message":"We…
+9:37:20 PM [express] GET /api/admin/auth/me 401 in 77ms :: {"message":"Unauthorized - Admin access r…
+9:37:20 PM [express] GET /api/auth/me 401 in 76ms
+9:37:20 PM [express] GET /api/weeks 304 in 366ms :: {"weeks":[{"id":1,"identifier":"current","label"…
+=== AUTH CHECK === {
+  path: '/api/orders/1',
+  method: 'GET',
+  sessionId: 'jmjPtvdSJ4roQkksXJG70QTnWfKPiAPp',
+  userId: undefined,
+  sessionExists: true,
+  cookieHeader: true,
+  hasCookie: true,
+  tokenCookie: false,
+  authHeader: false
+}
+✗ Session auth failed: No userId in session
+✗ Token auth failed: No token provided
+=== AUTH FAILED === {
+  reason: 'NO_SESSION',
+  hasSessionCookie: true,
+  hasTokenCookie: false,
+  hasAuthHeader: false
+}
+9:37:24 PM [express] GET /api/orders/1 401 in 75ms :: {"message":"Unauthorized","debug":{"path":"/ap…
+9:37:24 PM [express] GET /api/menu/1 304 in 228ms :: {"meals":[{"id":1,"title":"Rigatoni with Beef S…
+9:37:24 PM [express] GET /api/auth/me 401 in 72ms
+=== AUTH CHECK === {
+  path: '/api/orders/26',
+  method: 'GET',
+  sessionId: '6Z2WB_1Ig6I2dTVbGySu3LFYQOhaRe_l',
+  userId: undefined,
+  sessionExists: true,
+  cookieHeader: true,
+  hasCookie: true,
+  tokenCookie: false,
+  authHeader: false
+}
+✗ Session auth failed: No userId in session
+✗ Token auth failed: No token provided
+=== AUTH FAILED === {
+  reason: 'NO_SESSION',
+  hasSessionCookie: true,
+  hasTokenCookie: false,
+  hasAuthHeader: false
+}
+9:37:24 PM [express] GET /api/orders/26 401 in 75ms :: {"message":"Unauthorized","debug":{"path":"/a…
+9:37:24 PM [express] GET /api/menu/1 304 in 225ms :: {"meals":[{"id":1,"title":"Rigatoni with Beef S…
+9:37:24 PM [express] GET /api/menu/26 200 in 230ms :: {"meals":[{"id":1,"title":"Rigatoni with Beef …
+9:37:25 PM [express] GET /api/weeks 304 in 377ms :: {"weeks":[{"id":1,"identifier":"current","label"…
+9:37:25 PM [express] GET /api/auth/me 401 in 78ms
+9:37:25 PM [express] GET /api/menu/26 304 in 251ms :: {"meals":[{"id":1,"title":"Rigatoni with Beef …
+9:37:31 PM [express] POST /api/temp/meal-selections 200 in 155ms :: {"message":"Meal selections stor…
+9:37:35 PM [express] GET /api/pricing 304 in 236ms :: {"pricingConfigs":[{"id":14,"configType":"deli…
+9:37:35 PM [express] GET /api/admin/auth/me 401 in 145ms :: {"message":"Unauthorized - Admin access …
+9:37:35 PM [express] GET /api/auth/me 401 in 151ms
+9:37:39 PM [express] POST /api/auth/register 201 in 1422ms :: {"id":290,"username":"scscxc_1713","em…
+=== AUTH CHECK === {
+  path: '/api/orders',
+  method: 'POST',
+  sessionId: 'ma3OvaRFquCG_ZapfcrcbCOLn2mJgJ7w',
+  userId: 290,
+  sessionExists: true,
+  cookieHeader: true,
+  hasCookie: true,
+  tokenCookie: true,
+  authHeader: true
+}
+✓ Session auth successful for user: 290
+=== BASE PRICE CALCULATION ===
+Total meal bundles: 12
+Active bundles: 12
+Active bundle prices: [
+  249, 249, 239, 239,
+  219, 219, 199, 199,
+  199, 199, 199, 199
+]
+Max price (base price): 249
+==============================
+=== ORDER PRICING DEBUG ===
+Meal count: 6
+Price per meal (discounted): 239
+Base price per meal: 249
+Large portion additional: 99
+=== FINAL ORDER PRICING ===
+fullPriceSubtotal: 1494
+subtotal (discounted): 1434
+discount: 60
+total: 1434
+============================
+9:37:41 PM [express] POST /api/orders 201 in 1351ms :: {"id":1000,"userId":290,"weekId":26,"status":…
+9:37:42 PM [express] GET /api/auth/me 200 in 224ms :: {"id":290,"username":"scscxc_1713","email":"sc…
+9:37:46 PM [express] GET /api/admin/auth/me 401 in 149ms :: {"message":"Unauthorized - Admin access …
+9:37:46 PM [express] GET /api/auth/me 200 in 217ms :: {"id":290,"username":"scscxc_1713","email":"sc…
+9:37:46 PM [express] GET /api/pricing 304 in 222ms :: {"pricingConfigs":[{"id":14,"configType":"deli…
+=== AUTH CHECK === {
+  path: '/api/orders/pending',
+  method: 'GET',
+  sessionId: 'ma3OvaRFquCG_ZapfcrcbCOLn2mJgJ7w',
+  userId: 290,
+  sessionExists: true,
+  cookieHeader: true,
+  hasCookie: true,
+  tokenCookie: true,
+  authHeader: true
+}
+✓ Session auth successful for user: 290
+=== AUTH CHECK === {
+  path: '/api/user/profile',
+  method: 'GET',
+  sessionId: 'ma3OvaRFquCG_ZapfcrcbCOLn2mJgJ7w',
+  userId: 290,
+  sessionExists: true,
+  cookieHeader: true,
+  hasCookie: true,
+  tokenCookie: true,
+  authHeader: true
+}
+✓ Session auth successful for user: 290
+9:37:47 PM [express] GET /api/user/profile 200 in 222ms :: {"name":"scscxc","email":"scscxc@jhsb.com…
+9:37:47 PM [express] GET /api/pricing 304 in 225ms :: {"pricingConfigs":[{"id":14,"configType":"deli…
+9:37:47 PM [express] GET /api/neighborhoods 304 in 228ms :: {"neighborhoods":[{"id":2,"name":"Maadi"…
+=== BASE PRICE CALCULATION ===
+Total meal bundles: 12
+Active bundles: 12
+Active bundle prices: [
+  249, 249, 239, 239,
+  219, 219, 199, 199,
+  199, 199, 199, 199
+]
+Max price (base price): 249
+==============================
+9:37:47 PM [express] GET /api/orders/pending 200 in 650ms :: {"id":1000,"userId":290,"weekId":26,"st…
+=== AUTH CHECK === {
+  path: '/api/orders/checkout',
+  method: 'POST',
+  sessionId: 'ma3OvaRFquCG_ZapfcrcbCOLn2mJgJ7w',
+  userId: 290,
+  sessionExists: true,
+  cookieHeader: true,
+  hasCookie: true,
+  tokenCookie: true,
+  authHeader: false
+}
+✓ Session auth successful for user: 290
+=== CHECKOUT REQUEST RECEIVED ===
+Request body: [Object: null prototype] {
+  orderId: '1000',
+  paymentMethod: 'card',
+  orderType: 'subscription',
+  address: '{"name":"Ahmed Elnaggar","street":"17 Stories Mews","apartment":"","building":"","area":"Maadi","landmark":"","phone":"+201234567890"}',
+  deliveryNotes: ''
+}
+File uploaded: NO
+Payment method from request: card
+Order type from request: subscription
+================================
+=== EXTRACTED VALUES ===
+Order ID: 1000
+Payment Method: card
+Order Type: subscription
+Address: {
+  name: 'Ahmed Elnaggar',
+  street: '17 Stories Mews',
+  apartment: '',
+  building: '',
+  area: 'Maadi',
+  landmark: '',
+  phone: '+201234567890'
+}
+========================
+=== BASE PRICE CALCULATION ===
+Total meal bundles: 12
+Active bundles: 12
+Active bundle prices: [
+  249, 249, 239, 239,
+  219, 219, 199, 199,
+  199, 199, 199, 199
+]
+Max price (base price): 249
+==============================
+=== PRICING RECALCULATION ===
+Old pricing - Subtotal: 1494 Discount: 60 Total: 1434
+New pricing - Subtotal: 1494 Discount: 60 Total: 1434
+============================
+=== PAYMENT METHOD DEBUG ===
+Raw payment method from request: card
+Destructured payment method: card
+Payment method in update data: card
+Is payment method truthy? true
+Payment method type: string
+============================
+=== BASE PRICE CALCULATION ===
+Total meal bundles: 12
+Active bundles: 12
+Active bundle prices: [
+  249, 249, 239, 239,
+  219, 219, 199, 199,
+  199, 199, 199, 199
+]
+Max price (base price): 249
+==============================
+=== RECALCULATED PRICING ===
+Recalculated subtotal (base price): 1494
+Recalculated total (discounted): 1434
+Recalculated volume discount: 60
+============================
+=== FIRST-ORDER SUBSCRIPTION DISCOUNT ===
+Applying 10% discount to subscription order
+Subtotal (base price): 1494
+Volume discount: 60
+Total (after volume discount): 1434
+First-order discount amount (10% of total): 143
+New total discount: 203
+New total: 1291
+==========================================
+=== ORDER UPDATE DATA ===
+Order ID to update: 1000
+Order update data: {
+  status: 'selected',
+  deliveryAddress: '{"name":"Ahmed Elnaggar","street":"17 Stories Mews","apartment":"","building":"","area":"Maadi","landmark":"","phone":"+201234567890"}',
+  deliveryNotes: '',
+  paymentMethod: 'card',
+  orderType: 'subscription',
+  subtotal: 1494,
+  discount: 203,
+  total: 1291
+}
+=========================
+=== ORDER UPDATED ===
+Updated order payment method: card
+Updated order payment status: pending
+====================
+Updated user address with delivery notes: {"name":"Ahmed Elnaggar","street":"17 Stories Mews","apartment":"","building":"","area":"Maadi","landmark":"","phone":"+201234567890","deliveryNotes":""}
+=== SENDING WELCOME EMAIL ===
+First order detected for user: scscxc@jhsb.com
+Delivery date: Saturday, November 15, 2025
+Meal count: 6
+Portion size: Standard
+Welcome email sent successfully to: scscxc@jhsb.com
+Template parameters: {
+  CUSTOMER_NAME: 'scscxc',
+  MEAL_COUNT: '6',
+  PORTION_SIZE: 'Standard',
+  FIRST_DELIVERY_DATE: 'Saturday, November 15, 2025',
+  ORDER_TOTAL: '1291'
+}
+Brevo response: {
+  response: IncomingMessage {
+    _events: {
+      close: undefined,
+      error: undefined,
+      data: undefined,
+      end: undefined,
+      readable: undefined
+    },
+    _readableState: ReadableState {
+      highWaterMark: 16384,
+      buffer: [Array],
+      bufferIndex: 0,
+      length: 63,
+      pipes: [],
+      awaitDrainWriters: null,
+      [Symbol(kState)]: 1331980
+    },
+    _maxListeners: undefined,
+    socket: {
+      remoteAddress: '',
+      remoteFamily: '',
+      remotePort: 0,
+      localAddress: '',
+      localPort: 0,
+      bytesRead: 0,
+      bytesWritten: 0,
+      connecting: false,
+      destroyed: false,
+      readable: true,
+      writable: false,
+      allowHalfOpen: false,
+      timeout: 0,
+      setKeepAlive: [Function: setKeepAlive],
+      setNoDelay: [Function: setNoDelay],
+      setTimeout: [Function: setTimeout],
+      unref: [Function: unref],
+      ref: [Function: ref],
+      cork: [Function: cork],
+      uncork: [Function: uncork],
+      destroy: [Function: destroy],
+      pause: [Function: pause],
+      resume: [Function: resume],
+      write: [Function: write],
+      end: [Function: end],
+      on: [Function: on],
+      once: [Function: once],
+      emit: [Function: emit],
+      addListener: [Function: addListener],
+      removeListener: [Function: removeListener],
+      removeAllListeners: [Function: removeAllListeners],
+      setMaxListeners: [Function: setMaxListeners],
+      getMaxListeners: [Function: getMaxListeners],
+      listeners: [Function: listeners],
+      rawListeners: [Function: rawListeners],
+      listenerCount: [Function: listenerCount],
+      prependListener: [Function: prependListener],
+      prependOnceListener: [Function: prependOnceListener],
+      eventNames: [Function: eventNames]
+    },
+    httpVersionMajor: null,
+    httpVersionMinor: null,
+    httpVersion: null,
+    complete: false,
+    rawHeaders: [],
+    rawTrailers: [],
+    joinDuplicateHeaders: false,
+    aborted: false,
+    upgrade: null,
+    url: '',
+    method: null,
+    statusCode: 201,
+    statusMessage: 'Created',
+    client: {
+      remoteAddress: '',
+      remoteFamily: '',
+      remotePort: 0,
+      localAddress: '',
+      localPort: 0,
+      bytesRead: 0,
+      bytesWritten: 0,
+      connecting: false,
+      destroyed: false,
+      readable: true,
+      writable: false,
+      allowHalfOpen: false,
+      timeout: 0,
+      setKeepAlive: [Function: setKeepAlive],
+      setNoDelay: [Function: setNoDelay],
+      setTimeout: [Function: setTimeout],
+      unref: [Function: unref],
+      ref: [Function: ref],
+      cork: [Function: cork],
+      uncork: [Function: uncork],
+      destroy: [Function: destroy],
+      pause: [Function: pause],
+      resume: [Function: resume],
+      write: [Function: write],
+      end: [Function: end],
+      on: [Function: on],
+      once: [Function: once],
+      emit: [Function: emit],
+      addListener: [Function: addListener],
+      removeListener: [Function: removeListener],
+      removeAllListeners: [Function: removeAllListeners],
+      setMaxListeners: [Function: setMaxListeners],
+      getMaxListeners: [Function: getMaxListeners],
+      listeners: [Function: listeners],
+      rawListeners: [Function: rawListeners],
+      listenerCount: [Function: listenerCount],
+      prependListener: [Function: prependListener],
+      prependOnceListener: [Function: prependOnceListener],
+      eventNames: [Function: eventNames]
+    },
+    _consuming: false,
+    _dumped: false,
+    [Symbol(shapeMode)]: true,
+    [Symbol(kCapture)]: false,
+    [Symbol(kHeaders)]: Object [AxiosHeaders] {
+      date: 'Fri, 07 Nov 2025 21:37:56 GMT',
+      'content-type': 'application/json',
+      'content-length': '64',
+      connection: 'keep-alive',
+      'cf-ray': '99aff9848ab099bd-CDG',
+      'x-envoy-upstream-service-time': '64',
+      'access-control-allow-credentials': 'true',
+      'sib-request-id': 'fd58396e-c252-9350-9c06-540d55c28f82',
+      'access-control-allow-origin': '*',
+      'access-control-allow-headers': '*',
+      'access-control-allow-methods': 'PUT, POST, GET, DELETE, PATCH, OPTIONS',
+      'x-sib-ratelimit-limit': '1000',
+      'x-sib-ratelimit-remaining': '999',
+      'x-sib-ratelimit-reset': '1',
+      'cf-cache-status': 'DYNAMIC',
+      server: 'cloudflare'
+    },
+    [Symbol(kHeadersCount)]: 0,
+    [Symbol(kTrailers)]: null,
+    [Symbol(kTrailersCount)]: 0
+  },
+  body: CreateSmtpEmail {
+    messageId: '<202511072137.92418222250@smtp-relay.mailin.fr>',
+    messageIds: undefined
+  }
+}
+Welcome email sent successfully to: scscxc@jhsb.com
+9:37:56 PM [express] POST /api/orders/checkout 200 in 1722ms :: {"id":1000,"userId":290,"weekId":26,…
+=== AUTH CHECK === {
+  path: '/api/payments/paymob/create-intention',
+  method: 'POST',
+  sessionId: 'ma3OvaRFquCG_ZapfcrcbCOLn2mJgJ7w',
+  userId: 290,
+  sessionExists: true,
+  cookieHeader: true,
+  hasCookie: true,
+  tokenCookie: true,
+  authHeader: false
+}
+✓ Session auth successful for user: 290
+=== BASE PRICE CALCULATION ===
+Total meal bundles: 12
+Active bundles: 12
+Active bundle prices: [
+  249, 249, 239, 239,
+  219, 219, 199, 199,
+  199, 199, 199, 199
+]
+Max price (base price): 249
+==============================
+=== PAYMENT FIRST-ORDER DISCOUNT ===
+Subtotal (base): 1494
+Volume discount: 60
+Total after volume discount: 1434
+First-order discount (10%): 143
+Final total: 1291
+====================================
+=== PAYMENT INTENTION PRICING ===
+Old order total: 1291
+Recalculated total: 1291
+================================
+=== PAYMOB PAYMENT AMOUNT ===
+Order total: 1291
+Delivery fee: 100
+Total amount to charge: 1391
+============================
+=== SUBSCRIPTION TOKENIZATION ===
+Order type: subscription
+Enable tokenization: true
+================================
+✅ Paymob payment intention created: pi_test_de50be4a42244d4badce4d2b4f68e19d (with tokenization)
+9:37:57 PM [express] POST /api/payments/paymob/create-intention 200 in 1582ms :: {"client_secret":"e…
+Database connection removed from pool
+Database connection removed from pool
+Database connection removed from pool
+Database connection removed from pool
+Database connection removed from pool
+9:38:33 PM [express] GET /api/admin/auth/me 401 in 0ms :: {"message":"Unauthorized - Admin access re…
+9:38:34 PM [express] GET /api/auth/me 401 in 0ms
+New database connection established
+New database connection established
+New database connection established
+New database connection established
+9:38:34 PM [express] GET /api/landing/carousel-meals 304 in 334ms :: []
+9:38:34 PM [express] GET /api/landing/hero 304 in 343ms :: {"id":1,"title":"Refined recipes.","subti…
+9:38:34 PM [express] GET /api/landing/faqs 304 in 404ms :: [{"id":12,"question":"How does the Wagba …
+9:38:34 PM [express] GET /api/weeks 304 in 537ms :: {"weeks":[{"id":1,"identifier":"current","label"…
+=== PAYMOB WEBHOOK RECEIVED ===
+Full webhook body: {
+  "type": "TOKEN",
+  "obj": {
+    "id": 12085072,
+    "token": "3f198dd35ca744c543bfd8649f86cc8d586aab520b5c10bd45d9a995",
+    "masked_pan": "xxxx-xxxx-xxxx-8769",
+    "merchant_id": 1087279,
+    "card_subtype": "Visa",
+    "created_at": "2025-11-07T23:38:34.430958",
+    "email": "scscxc@jhsb.com",
+    "order_id": "413958309",
+    "user_added": false,
+    "next_payment_intention": "pi_test_de50be4a42244d4badce4d2b4f68e19d"
+  }
+}
+HMAC from query: 43c63af6a13c8da4996c75dda18578ea881e177d57cc29dd94da7d1649c86f92539d381b377682f2190fb7f1c6aa8155f9b66bce46d295e8a1bc4845d74e7cc8
+Webhook type: TOKEN
+=== TOKEN WEBHOOK DETECTED ===
+=== TOKEN HMAC VERIFICATION ===
+Token webhook data: {
+  id: 12085072,
+  token: '3f198dd35c...',
+  masked_pan: 'xxxx-xxxx-xxxx-8769',
+  merchant_id: 1087279,
+  card_subtype: 'Visa',
+  created_at: '2025-11-07T23:38:34.430958',
+  email: 'scscxc@jhsb.com',
+  order_id: '413958309'
+}
+Concatenated string for TOKEN HMAC (first 80 chars): Visa2025-11-07T23:38:34.430958scscxc@jhsb.com12085072xxxx-xxxx-xxxx-876910872794...
+Concatenated string length: 144
+✅ TOKEN HMAC verification successful
+✅ TOKEN HMAC verified successfully
+Token details: {
+  token: '3f198dd35c...',
+  masked_pan: 'xxxx-xxxx-xxxx-8769',
+  card_subtype: 'Visa',
+  order_id: '413958309',
+  email: 'scscxc@jhsb.com'
+}
+=== TOKEN WEBHOOK ORDER LOOKUP ===
+Looking up user by email: scscxc@jhsb.com
+Paymob order ID: 413958309
+✅ Found user 290 (scscxc@jhsb.com)
+✅ Found subscription order 1000 for TOKEN webhook
+Order details: {
+  id: 1000,
+  status: 'selected',
+  paymentStatus: 'pending',
+  paymobOrderId: '413958309'
+}
+✅ Saved Paymob order ID 413958309 to Order 1000
+✅ Payment method created: 7
+=== PREPARING FOR PAYMOB SUBSCRIPTION ===
+Card token saved for user 290
+Subscription will be created when Paymob sends SUBSCRIPTION webhook
+✅ Using Replit domain for webhooks: https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev
+Creating new weekly subscription plan...
+✅ Paymob auth token obtained successfully
+✅ Paymob subscription plan created: 5229
+✅ Created subscription plan: 5229
+✅ Plan ID 5229 stored for user 290
+Awaiting SUBSCRIPTION webhook from Paymob to complete setup
+9:38:35 PM [express] POST /api/payments/paymob/webhook 200 in 1099ms :: {"message":"Token webhook pr…
+9:38:51 PM [express] GET /api/auth/me 401 in 0ms
+9:38:51 PM [express] GET /api/admin/auth/me 401 in 1ms :: {"message":"Unauthorized - Admin access re…
+9:38:51 PM [express] GET /api/landing/carousel-meals 304 in 73ms :: []
+9:38:51 PM [express] GET /api/landing/hero 304 in 74ms :: {"id":1,"title":"Refined recipes.","subtit…
+9:38:51 PM [express] GET /api/landing/faqs 304 in 148ms :: [{"id":12,"question":"How does the Wagba …
+9:38:51 PM [express] GET /api/weeks 304 in 295ms :: {"weeks":[{"id":1,"identifier":"current","label"…
+=== PAYMOB WEBHOOK RECEIVED ===
+Full webhook body: {
+  "type": "TRANSACTION",
+  "obj": {
+    "id": 366692395,
+    "pending": false,
+    "amount_cents": 139100,
+    "success": true,
+    "is_auth": false,
+    "is_capture": false,
+    "is_standalone_payment": true,
+    "is_voided": false,
+    "is_refunded": false,
+    "is_3d_secure": true,
+    "integration_id": 5349136,
+    "profile_id": 1087279,
+    "has_parent_transaction": false,
+    "order": {
+      "id": 413958309,
+      "created_at": "2025-11-07T23:37:57.674856",
+      "delivery_needed": false,
+      "merchant": {
+        "id": 1087279,
+        "created_at": "2025-10-06T23:29:47.399346",
+        "phones": [
+          "+201555740786"
+        ],
+        "company_emails": [
+          "aelnaggar35@gmail.com"
+        ],
+        "company_name": "Wagba",
+        "state": "",
+        "country": "EGY",
+        "city": "Cairo",
+        "postal_code": "",
+        "street": ""
+      },
+      "collector": null,
+      "amount_cents": 139100,
+      "shipping_data": {
+        "id": 200717534,
+        "first_name": "scscxc",
+        "last_name": "Name",
+        "street": "17 Stories Mews",
+        "building": "NA",
+        "floor": "NA",
+        "apartment": "NA",
+        "city": "Cairo",
+        "state": "Maadi",
+        "country": "EG",
+        "email": "scscxc@jhsb.com",
+        "phone_number": "201234567890",
+        "postal_code": "NA",
+        "extra_description": "",
+        "shipping_method": "UNK",
+        "order_id": 413958309,
+        "order": 413958309
+      },
+      "currency": "EGP",
+      "is_payment_locked": false,
+      "is_return": false,
+      "is_cancel": false,
+      "is_returned": false,
+      "is_canceled": false,
+      "merchant_order_id": "1000",
+      "wallet_notification": null,
+      "paid_amount_cents": 139100,
+      "notify_user_with_email": false,
+      "items": [],
+      "order_url": "NA",
+      "commission_fees": 0,
+      "delivery_fees_cents": 0,
+      "delivery_vat_cents": 0,
+      "payment_method": "tbc",
+      "merchant_staff_tag": null,
+      "api_source": "OTHER",
+      "data": {},
+      "payment_status": "PAID",
+      "terminal_version": null
+    },
+    "created_at": "2025-11-07T23:38:30.627756",
+    "transaction_processed_callback_responses": [],
+    "currency": "EGP",
+    "source_data": {
+      "pan": "8769",
+      "type": "card",
+      "tenure": null,
+      "sub_type": "Visa"
+    },
+    "api_source": "IFRAME",
+    "terminal_id": null,
+    "merchant_commission": 0,
+    "accept_fees": 0,
+    "installment": null,
+    "discount_details": [],
+    "is_void": false,
+    "is_refund": false,
+    "data": {
+      "gateway_integration_pk": 5349136,
+      "klass": "MigsPayment",
+      "created_at": "2025-11-07T21:39:04.941653",
+      "amount": 139100,
+      "currency": "EGP",
+      "migs_order": {
+        "acceptPartialAmount": false,
+        "amount": 1391,
+        "authenticationStatus": "AUTHENTICATION_SUCCESSFUL",
+        "chargeback": {
+          "amount": 0,
+          "currency": "EGP"
+        },
+        "creationTime": "2025-11-07T21:38:47.537Z",
+        "currency": "EGP",
+        "description": "PAYMOB Wagba",
+        "id": "413958309",
+        "lastUpdatedTime": "2025-11-07T21:39:04.737Z",
+        "merchantAmount": 1391,
+        "merchantCategoryCode": "7299",
+        "merchantCurrency": "EGP",
+        "reference": "_366692395_413",
+        "status": "CAPTURED",
+        "totalAuthorizedAmount": 1391,
+        "totalCapturedAmount": 1391,
+        "totalRefundedAmount": 0
+      },
+      "merchant": "TESTMERCH_C_25P",
+      "migs_result": "SUCCESS",
+      "migs_transaction": {
+        "acquirer": {
+          "batch": 20251107,
+          "date": "1107",
+          "id": "BMNF_S2I",
+          "merchantId": "MERCH_C_25P",
+          "settlementDate": "2025-11-07",
+          "timeZone": "+0200",
+          "transactionId": "123456789012345"
+        },
+        "amount": 1391,
+        "authenticationStatus": "AUTHENTICATION_SUCCESSFUL",
+        "authorizationCode": "280208",
+        "currency": "EGP",
+        "id": "366692395",
+        "receipt": "531121280208",
+        "reference": "_366692395",
+        "source": "INTERNET",
+        "stan": "280208",
+        "terminal": "BMNF0506",
+        "type": "PAYMENT"
+      },
+      "txn_response_code": "APPROVED",
+      "acq_response_code": "00",
+      "message": "Approved",
+      "merchant_txn_ref": "366692395",
+      "order_info": "413958309",
+      "receipt_no": "531121280208",
+      "transaction_no": "123456789012345",
+      "batch_no": 20251107,
+      "authorize_id": "280208",
+      "card_type": "VISA",
+      "card_num": "498765xxxxxx8769",
+      "secure_hash": "",
+      "avs_result_code": "",
+      "avs_acq_response_code": "00",
+      "captured_amount": 1391,
+      "authorised_amount": 1391,
+      "refunded_amount": 0,
+      "acs_eci": "05"
+    },
+    "is_hidden": false,
+    "payment_key_claims": {
+      "extra": {
+        "merchant_order_id": "1000"
+      },
+      "user_id": 2064083,
+      "currency": "EGP",
+      "order_id": 413958309,
+      "created_by": 2064083,
+      "is_partner": false,
+      "amount_cents": 139100,
+      "billing_data": {
+        "city": "Cairo",
+        "email": "scscxc@jhsb.com",
+        "floor": "NA",
+        "state": "Maadi",
+        "street": "17 Stories Mews",
+        "country": "EG",
+        "building": "NA",
+        "apartment": "NA",
+        "last_name": "Name",
+        "first_name": "scscxc",
+        "postal_code": "NA",
+        "phone_number": "+201234567890",
+        "extra_description": "NA"
+      },
+      "redirect_url": "https://accept.paymob.com/unifiedcheckout/payment-status?payment_token=ZXlKaGJHY2lPaUpJVXpVeE1pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SjFjMlZ5WDJsa0lqb3lNRFkwTURnekxDSmhiVzkxYm5SZlkyVnVkSE1pT2pFek9URXdNQ3dpWTNWeWNtVnVZM2tpT2lKRlIxQWlMQ0pwYm5SbFozSmhkR2x2Ymw5cFpDSTZOVE0wT1RFek5pd2liM0prWlhKZmFXUWlPalF4TXprMU9ETXdPU3dpWW1sc2JHbHVaMTlrWVhSaElqcDdJbVpwY25OMFgyNWhiV1VpT2lKelkzTmplR01pTENKc1lYTjBYMjVoYldVaU9pSk9ZVzFsSWl3aWMzUnlaV1YwSWpvaU1UY2dVM1J2Y21sbGN5Qk5aWGR6SWl3aVluVnBiR1JwYm1jaU9pSk9RU0lzSW1ac2IyOXlJam9pVGtFaUxDSmhjR0Z5ZEcxbGJuUWlPaUpPUVNJc0ltTnBkSGtpT2lKRFlXbHlieUlzSW5OMFlYUmxJam9pVFdGaFpHa2lMQ0pqYjNWdWRISjVJam9pUlVjaUxDSmxiV0ZwYkNJNkluTmpjMk40WTBCcWFITmlMbU52YlNJc0luQm9iMjVsWDI1MWJXSmxjaUk2SWlzeU1ERXlNelExTmpjNE9UQWlMQ0p3YjNOMFlXeGZZMjlrWlNJNklrNUJJaXdpWlhoMGNtRmZaR1Z6WTNKcGNIUnBiMjRpT2lKT1FTSjlMQ0pzYjJOclgyOXlaR1Z5WDNkb1pXNWZjR0ZwWkNJNlptRnNjMlVzSW1WNGRISmhJanA3SW0xbGNtTm9ZVzUwWDI5eVpHVnlYMmxrSWpvaU1UQXdNQ0o5TENKemFXNW5iR1ZmY0dGNWJXVnVkRjloZEhSbGJYQjBJanBtWVd4elpTd2lZM0psWVhSbFpGOWllU0k2TWpBMk5EQTRNeXdpYVhOZmNHRnlkRzVsY2lJNlptRnNjMlVzSW01bGVIUmZjR0Y1YldWdWRGOXBiblJsYm5ScGIyNGlPaUp3YVY5MFpYTjBYMlJsTlRCaVpUUmhOREl5TkRSa05HSmhaR05sTkdReVlqUm1OamhsTVRsa0luMC5QTjZybnFVSWdrb08zbk54bTZzdkN6UllSWWlFc2REa252SU1aLTVFd3BOLVlkbjEwSnpBdm1RSTdlMzJKNHdhbTdCUHNFeTN5MWc4NU16TTE1ZEpKdw==&trx_id=366692395",
+      "integration_id": 5349136,
+      "lock_order_when_paid": false,
+      "next_payment_intention": "pi_test_de50be4a42244d4badce4d2b4f68e19d",
+      "single_payment_attempt": false
+    },
+    "error_occured": false,
+    "is_live": false,
+    "other_endpoint_reference": null,
+    "refunded_amount_cents": 0,
+    "source_id": -1,
+    "is_captured": false,
+    "captured_amount": 0,
+    "merchant_staff_tag": null,
+    "updated_at": "2025-11-07T23:39:04.948952",
+    "is_settled": false,
+    "bill_balanced": false,
+    "is_bill": false,
+    "owner": 2064083,
+    "parent_transaction": null
+  },
+  "accept_fees": 0,
+  "issuer_bank": null,
+  "transaction_processed_callback_responses": ""
+}
+HMAC from query: f44d15ab527a7dac087f0b3d580ae5a6c0d9f459f62837963c53b9b5fb7b0df6853c1f0af20fe7a107f1a3676883fce6234d45532e4e178a6d3e2d45b3f5264e
+Webhook type: TRANSACTION
+=== HMAC VERIFICATION DEBUG ===
+Webhook data fields: {
+  amount_cents: 139100,
+  created_at: '2025-11-07T23:38:30.627756',
+  currency: 'EGP',
+  error_occured: false,
+  has_parent_transaction: false,
+  id: 366692395,
+  integration_id: 5349136,
+  is_3d_secure: true,
+  is_auth: false,
+  is_capture: false,
+  is_refunded: false,
+  is_standalone_payment: true,
+  is_voided: false,
+  order_id: 413958309,
+  owner: 2064083,
+  pending: false,
+  source_data_pan: '8769',
+  source_data_sub_type: 'Visa',
+  source_data_type: 'card',
+  success: true
+}
+Concatenated string for HMAC: 1391002025-11-07T23:38:30.627756EGPfalsefalse3666923955349136truefalsefalsefalsetruefalse4139583092064083false8769Visacardtrue
+Concatenated string length: 126
+✅ HMAC verification successful
+✅ HMAC signature verified
+Transaction details: {
+  id: 366692395,
+  orderId: '1000',
+  amount: 1391,
+  success: true,
+  pending: false,
+  isPaymentMethodUpdate: false,
+  userId: null
+}
+✅ Order 1000 payment status updated to: paid
+⚠️ Subscription order 1000 succeeded but no token received from Paymob
+9:39:05 PM [express] POST /api/payments/paymob/webhook 200 in 152ms :: {"message":"Webhook processed…
+New database connection established
+9:39:19 PM [express] GET /api/pricing 304 in 229ms :: {"pricingConfigs":[{"id":14,"configType":"deli…
+9:39:19 PM [express] GET /api/admin/auth/me 401 in 147ms :: {"message":"Unauthorized - Admin access …
+9:39:19 PM [express] GET /api/auth/me 200 in 217ms :: {"id":290,"username":"scscxc_1713","email":"sc…
+=== AUTH CHECK === {
+  path: '/api/user/profile',
+  method: 'GET',
+  sessionId: 'ma3OvaRFquCG_ZapfcrcbCOLn2mJgJ7w',
+  userId: 290,
+  sessionExists: true,
+  cookieHeader: true,
+  hasCookie: true,
+  tokenCookie: true,
+  authHeader: false
+}
+✓ Session auth successful for user: 290
+9:39:19 PM [express] GET /api/user/profile 200 in 220ms :: {"name":"scscxc","email":"scscxc@jhsb.com…
+9:39:24 PM [express] GET /api/pricing 304 in 221ms :: {"pricingConfigs":[{"id":14,"configType":"deli…
+9:39:24 PM [express] GET /api/admin/auth/me 401 in 150ms :: {"message":"Unauthorized - Admin access …
+9:39:24 PM [express] GET /api/auth/me 200 in 224ms :: {"id":290,"username":"scscxc_1713","email":"sc…
+=== AUTH CHECK === {
+  path: '/api/user/profile',
+  method: 'GET',
+  sessionId: 'ma3OvaRFquCG_ZapfcrcbCOLn2mJgJ7w',
+  userId: 290,
+  sessionExists: true,
+  cookieHeader: true,
+  hasCookie: true,
+  tokenCookie: true,
+  authHeader: false
+}
+✓ Session auth successful for user: 290
+9:39:24 PM [express] GET /api/user/profile 200 in 221ms :: {"name":"scscxc","email":"scscxc@jhsb.com…
+=== AUTH CHECK === {
+  path: '/api/user/subscription/status',
+  method: 'GET',
+  sessionId: 'ma3OvaRFquCG_ZapfcrcbCOLn2mJgJ7w',
+  userId: 290,
+  sessionExists: true,
+  cookieHeader: true,
+  hasCookie: true,
+  tokenCookie: true,
+  authHeader: true
+}
+✓ Session auth successful for user: 290
+=== AUTH CHECK === {
+  path: '/api/orders',
+  method: 'GET',
+  sessionId: 'ma3OvaRFquCG_ZapfcrcbCOLn2mJgJ7w',
+  userId: 290,
+  sessionExists: true,
+  cookieHeader: true,
+  hasCookie: true,
+  tokenCookie: true,
+  authHeader: false
+}
+✓ Session auth successful for user: 290
+=== AUTH CHECK === {
+  path: '/api/payment-methods',
+  method: 'GET',
+  sessionId: 'ma3OvaRFquCG_ZapfcrcbCOLn2mJgJ7w',
+  userId: 290,
+  sessionExists: true,
+  cookieHeader: true,
+  hasCookie: true,
+  tokenCookie: true,
+  authHeader: true
+}
+✓ Session auth successful for user: 290
+=== AUTH CHECK === {
+  path: '/api/user/upcoming-meals',
+  method: 'GET',
+  sessionId: 'ma3OvaRFquCG_ZapfcrcbCOLn2mJgJ7w',
+  userId: 290,
+  sessionExists: true,
+  cookieHeader: true,
+  hasCookie: true,
+  tokenCookie: true,
+  authHeader: true
+}
+✓ Session auth successful for user: 290
+9:39:25 PM [express] GET /api/admin/auth/me 401 in 156ms :: {"message":"Unauthorized - Admin access …
+9:39:25 PM [express] GET /api/user/subscription/status 200 in 221ms :: {"subscriptionStatus":"active…
+9:39:25 PM [express] GET /api/orders 200 in 233ms :: {"orders":[{"id":1000,"userId":290,"weekId":26,…
+9:39:25 PM [express] GET /api/payment-methods 200 in 291ms :: [{"id":7,"userId":290,"paymobCardToken…
+=== AUTH CHECK === {
+  path: '/api/user/profile',
+  method: 'GET',
+  sessionId: 'ma3OvaRFquCG_ZapfcrcbCOLn2mJgJ7w',
+  userId: 290,
+  sessionExists: true,
+  cookieHeader: true,
+  hasCookie: true,
+  tokenCookie: true,
+  authHeader: true
+}
+✓ Session auth successful for user: 290
+9:39:25 PM [express] GET /api/user/profile 304 in 220ms :: {"name":"scscxc","email":"scscxc@jhsb.com…
+9:39:25 PM [express] GET /api/auth/me 304 in 235ms :: {"id":290,"username":"scscxc_1713","email":"sc…
+9:39:25 PM [express] GET /api/weeks 304 in 449ms :: {"weeks":[{"id":1,"identifier":"current","label"…
+=== BASE PRICE CALCULATION ===
+Total meal bundles: 12
+Active bundles: 12
+Active bundle prices: [
+  249, 249, 239, 239,
+  219, 219, 199, 199,
+  199, 199, 199, 199
+]
+Max price (base price): 249
+==============================
+=== BASE PRICE CALCULATION ===
+Total meal bundles: 12
+Active bundles: 12
+Active bundle prices: [
+  249, 249, 239, 239,
+  219, 219, 199, 199,
+  199, 199, 199, 199
+]
+Max price (base price): 249
+==============================
+9:39:27 PM [express] GET /api/user/upcoming-meals 200 in 2850ms :: {"upcomingMeals":[{"orderId":1001…
+9:39:28 PM [express] GET /api/menu/26 304 in 284ms :: {"meals":[{"id":1,"title":"Rigatoni with Beef …
+Database connection removed from pool
+Database connection removed from pool
+Database connection removed from pool
+Database connection removed from pool
+Database connection removed from pool
+9:40:04 PM [express] GET /api/admin/auth/me 401 in 0ms :: {"message":"Unauthorized - Admin access re…
+9:40:04 PM [express] GET /api/auth/me 401 in 1ms
+New database connection established
+New database connection established
+New database connection established
+New database connection established
+9:40:04 PM [express] GET /api/landing/carousel-meals 304 in 302ms :: []
+9:40:04 PM [express] GET /api/landing/hero 304 in 309ms :: {"id":1,"title":"Refined recipes.","subti…
+9:40:04 PM [express] GET /api/landing/faqs 304 in 372ms :: [{"id":12,"question":"How does the Wagba …
+9:40:04 PM [express] GET /api/weeks 304 in 526ms :: {"weeks":[{"id":1,"identifier":"current","label"…
+Database connection removed from pool
+Database connection removed from pool
+Database connection removed from pool
+Database connection removed from pool
+9:42:16 PM [express] GET /api/admin/auth/me 401 in 0ms :: {"message":"Unauthorized - Admin access re…
+9:42:16 PM [express] GET /api/auth/me 401 in 1ms
+New database connection established
+New database connection established
+New database connection established
+New database connection established
+9:42:17 PM [express] GET /api/landing/carousel-meals 304 in 749ms :: []
+9:42:19 PM [express] GET /api/landing/hero 304 in 2330ms :: {"id":1,"title":"Refined recipes.","subt…
+9:42:19 PM [express] GET /api/landing/faqs 304 in 2405ms :: [{"id":12,"question":"How does the Wagba…
+9:42:19 PM [express] GET /api/weeks 304 in 2563ms :: {"weeks":[{"id":1,"identifier":"current","label…
+9:42:25 PM [express] GET /api/admin/auth/me 401 in 1ms :: {"message":"Unauthorized - Admin access re…
+9:42:25 PM [express] GET /api/auth/me 401 in 1ms
+9:42:25 PM [express] GET /api/landing/carousel-meals 304 in 75ms :: []
+9:42:25 PM [express] GET /api/landing/hero 304 in 81ms :: {"id":1,"title":"Refined recipes.","subtit…
+9:42:25 PM [express] GET /api/landing/faqs 304 in 150ms :: [{"id":12,"question":"How does the Wagba …
+9:42:25 PM [express] GET /api/weeks 304 in 301ms :: {"weeks":[{"id":1,"identifier":"current","label"…
