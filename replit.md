@@ -30,6 +30,26 @@ Wagba uses a modern full-stack architecture with distinct frontend and backend c
 -   **Admin Dashboard:** Tools for menu creation, order tracking, customer management, and analytics.
 -   **UI/UX:** Consistent design system with Tailwind CSS and accessible components via Radix UI.
 
+## Paymob Integration Details
+
+**Webhook HMAC Verification:**
+- **TRANSACTION webhooks:** 20 fields in specific order (amount_cents, created_at, currency, error_occured, has_parent_transaction, id, integration_id, is_3d_secure, is_auth, is_capture, is_refunded, is_standalone_payment, is_voided, order.id, owner, pending, source_data.pan, source_data.sub_type, source_data.type, success)
+- **TOKEN webhooks:** 8 fields in ALPHABETICAL order (card_subtype, created_at, email, id, masked_pan, merchant_id, order_id, token) - discovered through testing with actual webhook data
+- **SUBSCRIPTION webhooks:** Format "{trigger_type}for{subscription_id}" (e.g., "suspendedfor1264")
+
+**Subscription Flow:**
+1. Create payment intention with `save_token=true` for subscription orders
+2. TRANSACTION webhook arrives (payment successful, HMAC verified)
+3. TOKEN webhook arrives with card token (HMAC verified using alphabetical field order)
+4. Create payment method from token
+5. Create Paymob subscription using card token
+6. Link subscription ID to user record
+
+**Security:**
+- All webhooks require strict HMAC verification
+- TOKEN webhooks are rejected if HMAC verification fails to prevent card token injection attacks
+- Card tokens are stored securely and used only for authorized subscription creation
+
 ## External Dependencies
 -   **Database:** `@neondatabase/serverless` (PostgreSQL driver), `drizzle-orm`, `drizzle-kit`.
 -   **Authentication/Security:** `express-session`, `connect-pg-simple`, `bcryptjs`.
