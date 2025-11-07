@@ -472,6 +472,61 @@ export class PaymobService {
   }
 
   /**
+   * Verify HMAC signature from Paymob TOKEN webhook
+   * TOKEN webhooks use different fields than transaction webhooks
+   * Based on Paymob's token callback structure
+   */
+  verifyTokenHmac(data: any, receivedHmac: string): boolean {
+    try {
+      console.log('=== TOKEN HMAC VERIFICATION ===');
+      console.log('Token webhook data:', {
+        id: data.id,
+        token: data.token?.substring(0, 10) + '...',
+        masked_pan: data.masked_pan,
+        merchant_id: data.merchant_id,
+        card_subtype: data.card_subtype,
+        created_at: data.created_at,
+        email: data.email,
+        order_id: data.order_id
+      });
+      
+      // Paymob TOKEN webhook HMAC concatenation
+      // Order of fields: created_at, email, id, merchant_id, order_id, token
+      const concatenatedString = [
+        data.created_at,
+        data.email,
+        data.id,
+        data.merchant_id,
+        data.order_id,
+        data.token
+      ].join('');
+
+      console.log('Concatenated string for TOKEN HMAC (first 50 chars):', concatenatedString.substring(0, 50) + '...');
+      console.log('Concatenated string length:', concatenatedString.length);
+
+      const calculatedHmac = crypto
+        .createHmac('sha512', this.hmacSecret)
+        .update(concatenatedString)
+        .digest('hex');
+
+      const isValid = calculatedHmac === receivedHmac;
+      
+      if (!isValid) {
+        console.error('❌ TOKEN HMAC verification failed');
+        console.log('Calculated HMAC:', calculatedHmac);
+        console.log('Received HMAC:', receivedHmac);
+      } else {
+        console.log('✅ TOKEN HMAC verification successful');
+      }
+
+      return isValid;
+    } catch (error) {
+      console.error('❌ TOKEN HMAC verification error:', error);
+      return false;
+    }
+  }
+
+  /**
    * Verify HMAC signature from Paymob subscription webhook
    * HMAC format: "{trigger_type}for{subscription_id}"
    * Example: "suspendedfor1264"

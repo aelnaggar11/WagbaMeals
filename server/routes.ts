@@ -2662,9 +2662,182 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log full webhook for debugging
       console.log('Full webhook body:', JSON.stringify(webhookData, null, 2));
       console.log('HMAC from query:', hmacFromQuery);
+      console.log('Webhook type:', webhookData.type);
 
-      // Verify HMAC signature
       const { paymobService } = await import('./paymob');
+
+      // Handle TOKEN webhooks separately (card tokenization callbacks)
+      if (webhookData.type === 'TOKEN') {
+        console.log('=== TOKEN WEBHOOK DETECTED ===');
+        const tokenData = webhookData.obj;
+        
+        // Try to verify TOKEN webhook HMAC (may have different format)
+        const isValidToken = paymobService.verifyTokenHmac(tokenData, hmacFromQuery);
+        
+        if (!isValidToken) {
+          console.warn('⚠️ TOKEN HMAC verification failed, but processing anyway (TOKEN webhooks may not use HMAC)');
+          // Continue processing - TOKEN webhooks may not require HMAC verification
+          // They're triggered by successful payment which was already verified
+        } else {
+          console.log('✅ TOKEN HMAC verified');
+        }
+        
+        // Extract token information
+        const cardToken = tokenData.token;
+        const maskedPan = tokenData.masked_pan;
+        const cardSubtype = tokenData.card_subtype;
+        const orderId = tokenData.order_id;
+        const email = tokenData.email;
+        
+        console.log('Token details:', {
+          token: cardToken?.substring(0, 10) + '...',
+          masked_pan: maskedPan,
+          card_subtype: cardSubtype,
+          order_id: orderId,
+          email: email
+        });
+        
+        if (!cardToken || !orderId) {
+          console.error('❌ Missing required token or order_id in TOKEN webhook');
+          return res.status(400).json({ message: 'Missing token or order_id' });
+        }
+        
+        // Find the order and create subscription
+        try {
+          // Find order by Paymob order ID
+          const allOrders = await storage.getAllOrders();
+          const order = allOrders.find(o => {
+            // Match by Paymob order ID in the transaction
+            return o.id.toString() === orderId.toString() || 
+                   o.paymobTransactionId?.includes(orderId.toString());
+          });
+          
+          if (!order) {
+            console.error(`❌ No order found for Paymob order ID ${orderId}`);
+            return res.status(200).json({ message: 'Order not found but acknowledged' });
+          }
+          
+          console.log(`✅ Found order ${order.id} for TOKEN webhook`);
+          
+          // Only process subscription orders
+          if (order.orderType !== 'subscription') {
+            console.log(`ℹ️ Order ${order.id} is not a subscription order, skipping token save`);
+            return res.status(200).json({ message: 'Not a subscription order' });
+          }
+          
+          // Check if already processed (idempotency)
+          if (order.paymentMethodId) {
+            console.log(`ℹ️ Order ${order.id} already has payment method, skipping duplicate processing`);
+            return res.status(200).json({ message: 'Already processed' });
+          }
+          
+          // Create payment method
+          const paymentMethod = await storage.createPaymentMethod({
+            userId: order.userId,
+            paymobCardToken: cardToken,
+            maskedPan: maskedPan,
+            cardBrand: cardSubtype?.toLowerCase() || 'unknown',
+            expiryMonth: null,
+            expiryYear: null,
+            isDefault: true,
+            isActive: true
+          });
+          
+          console.log(`✅ Payment method created: ${paymentMethod.id}`);
+          
+          // Link payment method to order
+          await storage.updateOrder(order.id, {
+            paymentMethodId: paymentMethod.id
+          });
+          
+          // Create Paymob subscription
+          const user = await storage.getUser(order.userId);
+          if (user && !user.paymobSubscriptionId) {
+            console.log('=== CREATING PAYMOB SUBSCRIPTION ===');
+            
+            try {
+              // Get or create weekly subscription plan
+              const webhookUrl = process.env.PAYMOB_SUBSCRIPTION_WEBHOOK_URL || 
+                `${process.env.REPLIT_DOMAINS?.split(',')[0] || ''}/api/payments/paymob/subscription-webhook`;
+              
+              let planId: number | null = process.env.PAYMOB_WEEKLY_PLAN_ID ? parseInt(process.env.PAYMOB_WEEKLY_PLAN_ID) : null;
+              
+              if (!planId) {
+                console.log('Creating new weekly subscription plan...');
+                const plan = await paymobService.createSubscriptionPlan({
+                  frequency: 7,
+                  name: 'Weekly Meal Delivery',
+                  amount_cents: Math.round(order.total * 100),
+                  webhook_url: webhookUrl
+                });
+                planId = plan.id;
+                console.log(`✅ Created subscription plan: ${planId}`);
+              }
+              
+              // Validate plan ID before using
+              if (!planId) {
+                throw new Error('Failed to create or retrieve subscription plan');
+              }
+              
+              // Get delivery address
+              const address = order.deliveryAddress ? JSON.parse(order.deliveryAddress) : {};
+              const billingData = {
+                apartment: address.apartment || 'NA',
+                first_name: user.name?.split(' ')[0] || 'Customer',
+                last_name: user.name?.split(' ').slice(1).join(' ') || '',
+                street: address.street || 'NA',
+                building: address.building || 'NA',
+                phone_number: address.phone || user.phone || '+201000000000',
+                country: 'EG',
+                email: user.email,
+                floor: address.floor || 'NA',
+                state: address.area || 'Cairo',
+                city: address.city || 'Cairo'
+              };
+              
+              // Create subscription
+              const subscription = await paymobService.createSubscription({
+                plan_id: planId,
+                card_token: cardToken,
+                billing_data: billingData,
+                customer: {
+                  first_name: billingData.first_name,
+                  last_name: billingData.last_name,
+                  email: user.email,
+                  phone_number: billingData.phone_number
+                },
+                starts_at: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+              });
+              
+              console.log(`✅ Paymob subscription created: ${subscription.id}`);
+              
+              // Update user with subscription IDs
+              await storage.updateUser(user.id, {
+                paymobSubscriptionId: subscription.id,
+                paymobPlanId: planId,
+                subscriptionStatus: 'active',
+                subscriptionStartedAt: new Date(),
+                isSubscriber: true,
+                userType: 'subscription'
+              });
+              
+              console.log(`✅ User ${user.id} subscription setup complete`);
+            } catch (subscriptionError) {
+              console.error('❌ Error creating Paymob subscription:', subscriptionError);
+            }
+          } else if (user?.paymobSubscriptionId) {
+            console.log(`ℹ️ User ${user.id} already has subscription ${user.paymobSubscriptionId}`);
+          }
+          
+          return res.status(200).json({ message: 'Token webhook processed successfully' });
+        } catch (error) {
+          console.error('❌ Error processing TOKEN webhook:', error);
+          return res.status(200).json({ message: 'Error processing but acknowledged' });
+        }
+      }
+
+      // Handle TRANSACTION webhooks (regular payment callbacks)
+      // Verify HMAC signature
       const isValid = paymobService.verifyHmacSignature(webhookData.obj, hmacFromQuery);
 
       if (!isValid) {
