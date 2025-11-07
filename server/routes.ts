@@ -3199,6 +3199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/payments/paymob/sync-subscription', authMiddleware, async (req, res) => {
     try {
       const userId = req.session.userId;
+      
       if (!userId) {
         return res.status(401).json({ message: 'Unauthorized' });
       }
