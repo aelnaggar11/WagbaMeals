@@ -367,8 +367,9 @@ const AuthPage = () => {
           console.log('Auth prefetch failed, proceeding anyway:', error);
         }
         
-        // Redirect immediately using replace to prevent history issues
-        if (returnTo) {
+        // Redirect logic: honor returnTo only if it's not /meal-plans or if there's genuine onboarding context
+        // New users from pre-onboarding modal should go to /account, not /meal-plans
+        if (returnTo && returnTo !== '/meal-plans') {
           window.location.replace(returnTo);
         } else {
           window.location.replace('/account');

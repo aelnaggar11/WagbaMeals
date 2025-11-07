@@ -488,8 +488,21 @@ export class PaymobService {
         }
       );
 
-      console.log('✅ Paymob subscription created:', response.data.id);
-      return response.data;
+      // Extract subscription ID from response
+      // Paymob returns subscription data with the actual subscription ID (integer)
+      const subscriptionId = response.data.subscription_data?.id;
+      if (!subscriptionId || typeof subscriptionId !== 'number') {
+        console.error('❌ Invalid or missing subscription ID in response');
+        throw new Error('Paymob API did not return a valid subscription ID');
+      }
+      
+      console.log('✅ Paymob subscription created with ID:', subscriptionId);
+      
+      // Return enhanced response with extracted subscription ID
+      return {
+        ...response.data,
+        subscriptionId: subscriptionId
+      };
     } catch (error: any) {
       console.error('❌ Failed to create subscription:', error.response?.data || error.message);
       throw new Error(`Failed to create subscription: ${error.response?.data?.message || error.message}`);

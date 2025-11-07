@@ -2848,12 +2848,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 starts_at: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
               });
               
-              console.log(`✅ Paymob subscription created: ${subscription.id}`);
+              console.log(`✅ Paymob subscription created: ${subscription.subscriptionId}`);
+              console.log(`Plan ID: ${planId}, Subscription ID: ${subscription.subscriptionId}`);
               
-              // Update user with subscription IDs
+              // Update user with subscription IDs (both should be integers)
               await storage.updateUser(user.id, {
-                paymobSubscriptionId: subscription.id.toString(),
-                paymobPlanId: planId.toString(),
+                paymobSubscriptionId: subscription.subscriptionId,
+                paymobPlanId: planId,
                 subscriptionStatus: 'active',
                 subscriptionStartedAt: new Date(),
                 isSubscriber: true,
@@ -3065,12 +3066,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       starts_at: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // Start next week
                     });
                     
-                    console.log(`✅ Paymob subscription created: ${subscription.id}`);
+                    console.log(`✅ Paymob subscription created: ${subscription.subscriptionId}`);
+                    console.log(`Plan ID: ${planId}, Subscription ID: ${subscription.subscriptionId}`);
                     
-                    // Update user with subscription IDs
+                    // Update user with subscription IDs (both should be integers)
                     await storage.updateUser(user.id, {
-                      paymobSubscriptionId: subscription.id.toString(),
-                      paymobPlanId: planId.toString(),
+                      paymobSubscriptionId: subscription.subscriptionId,
+                      paymobPlanId: planId,
                       subscriptionStatus: 'active',
                       subscriptionStartedAt: new Date(),
                       isSubscriber: true,
