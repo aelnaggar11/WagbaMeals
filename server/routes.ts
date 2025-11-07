@@ -3195,6 +3195,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Manual sync endpoint to retrieve subscription ID from Paymob (recovery if webhook fails)
+  app.post('/api/payments/paymob/sync-subscription', authMiddleware, async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      console.log('=== MANUAL SUBSCRIPTION SYNC ===');
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Check if user already has a subscription ID
+      if (user.paymobSubscriptionId) {
+        return res.json({
+          message: 'User already has a subscription ID',
+          subscriptionId: user.paymobSubscriptionId,
+          planId: user.paymobPlanId
+        });
+      }
+
+      // Check if user has a plan ID (subscription was initiated but webhook failed)
+      if (!user.paymobPlanId) {
+        return res.status(400).json({
+          message: 'No subscription plan found for this user. Please complete a subscription payment first.'
+        });
+      }
+
+      console.log(`User ${userId} has plan ${user.paymobPlanId} but no subscription ID`);
+      console.log(`Attempting to retrieve subscription from Paymob...`);
+
+      const { paymobService } = await import('./paymob');
+      
+      // Query Paymob for subscriptions by email
+      const subscriptions = await paymobService.listSubscriptions(user.paymobPlanId, user.email);
+      
+      if (!subscriptions || subscriptions.length === 0) {
+        return res.status(404).json({
+          message: 'No subscription found in Paymob. The SUBSCRIPTION webhook may not have arrived yet.',
+          planId: user.paymobPlanId,
+          email: user.email
+        });
+      }
+
+      // Take the most recent subscription
+      const subscription = subscriptions[0];
+      const subscriptionId = subscription.id;
+
+      console.log(`✅ Found subscription ${subscriptionId} for user ${userId}`);
+
+      // Update user with subscription ID
+      await storage.updateUser(userId, {
+        paymobSubscriptionId: subscriptionId,
+        subscriptionStartedAt: new Date(),
+        subscriptionStatus: subscription.state || 'active',
+        isSubscriber: true
+      });
+
+      console.log(`✅ Subscription ${subscriptionId} synced to user ${userId}`);
+
+      res.json({
+        message: 'Subscription synced successfully',
+        subscriptionId: subscriptionId,
+        planId: user.paymobPlanId,
+        status: subscription.state
+      });
+    } catch (error: any) {
+      console.error('❌ Error syncing subscription:', error);
+      res.status(500).json({
+        message: 'Failed to sync subscription',
+        error: error.message
+      });
+    }
+  });
+
   app.post('/api/orders/checkout', authMiddleware, upload.single('paymentConfirmationImage'), async (req, res) => {
     try {
       console.log('=== CHECKOUT REQUEST RECEIVED ===');

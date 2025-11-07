@@ -18,7 +18,7 @@ export const users = pgTable("users", {
   hasUsedTrialBox: boolean("has_used_trial_box").default(false), // Track if user has used trial box
   userType: text("user_type").default("trial"), // "trial", "subscription"
   isSubscriber: boolean("is_subscriber").default(false), // Whether user is a subscriber
-  paymobSubscriptionId: integer("paymob_subscription_id"), // Paymob subscription ID (integer from API)
+  paymobSubscriptionId: text("paymob_subscription_id"), // Paymob subscription ID (string format: "pi_test_XXXX")
   paymobPlanId: integer("paymob_plan_id"), // Paymob subscription plan ID (integer)
   createdAt: timestamp("created_at").defaultNow(),
 });

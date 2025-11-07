@@ -50,8 +50,9 @@ Wagba uses a modern full-stack architecture with distinct frontend and backend c
 **Key Implementation Details:**
 - **Payment intention API does NOT return subscription ID** - it returns `object: "paymentintention"` with status "intended"
 - **Subscription creation is ASYNCHRONOUS** - Paymob creates subscriptions after payment success and delivers subscription ID via webhook
-- **SUBSCRIPTION webhook contains:** `subscription_data.id` (integer), `client_info.email`, `plan_id`, `state`, `trigger_type`
-- **Database fields:** `paymobSubscriptionId` (integer), `paymobPlanId` (integer)
+- **SUBSCRIPTION webhook contains:** `subscription_data.id` (STRING format: "pi_test_XXXX"), `client_info.email`, `plan_id` (integer), `state`, `trigger_type`
+- **Database fields:** `paymobSubscriptionId` (TEXT - string format "pi_test_XXXX"), `paymobPlanId` (INTEGER)
+- **CRITICAL:** Subscription IDs are strings like "pi_test_de50be4a42244d4badce4d2b4f68e19d", NOT integers
 - **User lookup strategy:** Find by subscription ID (existing subscriptions) OR by email (new subscriptions from client_info)
 
 **Webhook Ordering Solution:**

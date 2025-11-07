@@ -726,6 +726,71 @@ export class PaymobService {
       return false;
     }
   }
+
+  /**
+   * List subscriptions from Paymob (manual sync if webhook fails)
+   * @param planId - Optional plan ID to filter subscriptions
+   * @param email - Optional customer email to filter subscriptions
+   */
+  async listSubscriptions(planId?: number, email?: string): Promise<any[]> {
+    try {
+      const token = await this.getAuthToken();
+      
+      const params: any = {};
+      if (planId) params.plan_id = planId;
+      if (email) params.customer_email = email;
+      
+      console.log('=== LISTING PAYMOB SUBSCRIPTIONS ===');
+      console.log('Plan ID:', planId || 'all');
+      console.log('Email:', email || 'all');
+      
+      const response = await axios.get(
+        `${PAYMOB_SUBSCRIPTION_API_URL}/acceptance/subscriptions`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          params
+        }
+      );
+      
+      console.log(`✅ Found ${response.data.length || 0} subscriptions`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Failed to list subscriptions:', error.response?.data || error.message);
+      throw new Error(`Failed to list subscriptions: ${error.response?.data?.message || error.message}`);
+    }
+  }
+
+  /**
+   * Get a specific subscription by ID
+   * @param subscriptionId - The subscription ID (string format: "pi_test_XXXX")
+   */
+  async getSubscription(subscriptionId: string): Promise<any> {
+    try {
+      const token = await this.getAuthToken();
+      
+      console.log('=== FETCHING PAYMOB SUBSCRIPTION ===');
+      console.log('Subscription ID:', subscriptionId);
+      
+      const response = await axios.get(
+        `${PAYMOB_SUBSCRIPTION_API_URL}/acceptance/subscriptions/${subscriptionId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      console.log(`✅ Subscription ${subscriptionId} retrieved successfully`);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Failed to get subscription:', error.response?.data || error.message);
+      throw new Error(`Failed to get subscription: ${error.response?.data?.message || error.message}`);
+    }
+  }
 }
 
 // Export singleton instance
