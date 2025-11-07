@@ -4,6 +4,50 @@ import axios from 'axios';
 const PAYMOB_API_URL = 'https://accept.paymob.com/v1';
 const PAYMOB_SUBSCRIPTION_API_URL = 'https://accept.paymob.com/api';
 
+/**
+ * Resolve the webhook base URL for Paymob subscription webhooks
+ * Validates and constructs a proper HTTPS URL from environment variables
+ */
+function resolveWebhookBaseUrl(): string {
+  // Prefer explicit webhook URL from environment
+  if (process.env.PAYMOB_SUBSCRIPTION_WEBHOOK_URL) {
+    try {
+      const url = new URL(process.env.PAYMOB_SUBSCRIPTION_WEBHOOK_URL);
+      if (url.protocol === 'https:' || (process.env.NODE_ENV === 'development' && url.protocol === 'http:')) {
+        return process.env.PAYMOB_SUBSCRIPTION_WEBHOOK_URL;
+      }
+      console.warn('⚠️ PAYMOB_SUBSCRIPTION_WEBHOOK_URL must use HTTPS protocol (or HTTP in development)');
+    } catch (error) {
+      console.warn('⚠️ PAYMOB_SUBSCRIPTION_WEBHOOK_URL is not a valid URL:', process.env.PAYMOB_SUBSCRIPTION_WEBHOOK_URL);
+    }
+  }
+
+  // Fallback to REPLIT_DOMAINS (add https:// protocol)
+  if (process.env.REPLIT_DOMAINS) {
+    const domain = process.env.REPLIT_DOMAINS.split(',')[0].trim();
+    if (domain) {
+      try {
+        const url = new URL(`https://${domain}`);
+        console.log('✅ Using Replit domain for webhooks:', url.origin);
+        return url.origin;
+      } catch (error) {
+        console.warn('⚠️ REPLIT_DOMAINS contains invalid domain:', domain);
+      }
+    }
+  }
+
+  // Development fallback (localhost)
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('⚠️ No webhook URL configured, using localhost (development only)');
+    return 'http://localhost:5000';
+  }
+
+  // No valid webhook URL available
+  throw new Error(
+    'No valid webhook URL configured. Please set PAYMOB_SUBSCRIPTION_WEBHOOK_URL environment variable with your production HTTPS domain.'
+  );
+}
+
 interface BillingData {
   apartment?: string;
   first_name: string;
@@ -68,6 +112,8 @@ export class PaymobService {
   private publicKey: string;
   private integrationId: string;
   private hmacSecret: string;
+  private authToken: string | null = null;
+  private authTokenExpiry: Date | null = null;
 
   constructor() {
     this.apiKey = process.env.PAYMOB_API_KEY || '';
@@ -77,6 +123,9 @@ export class PaymobService {
     this.hmacSecret = process.env.PAYMOB_HMAC_SECRET || '';
 
     // Validate required credentials
+    if (!this.apiKey) {
+      throw new Error('PAYMOB_API_KEY is required');
+    }
     if (!this.secretKey) {
       throw new Error('PAYMOB_SECRET_KEY is required');
     }
@@ -90,6 +139,44 @@ export class PaymobService {
     // Validate integration ID is a valid number
     if (isNaN(parseInt(this.integrationId))) {
       throw new Error('PAYMOB_INTEGRATION_ID must be a valid number');
+    }
+  }
+
+  /**
+   * Get authentication token for subscription API calls
+   * Tokens are cached and refreshed when expired
+   */
+  private async getAuthToken(): Promise<string> {
+    // Return cached token if still valid
+    if (this.authToken && this.authTokenExpiry && this.authTokenExpiry > new Date()) {
+      return this.authToken;
+    }
+
+    try {
+      const response = await axios.post(
+        `${PAYMOB_SUBSCRIPTION_API_URL}/auth/tokens`,
+        { api_key: this.apiKey },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const token = response.data.token;
+      if (!token) {
+        throw new Error('No token received from Paymob auth endpoint');
+      }
+      
+      this.authToken = token;
+      // Tokens typically expire after 1 hour, refresh after 50 minutes to be safe
+      this.authTokenExpiry = new Date(Date.now() + 50 * 60 * 1000);
+      
+      console.log('✅ Paymob auth token obtained successfully');
+      return token;
+    } catch (error: any) {
+      console.error('❌ Failed to get Paymob auth token:', error.response?.data || error.message);
+      throw new Error(`Failed to authenticate with Paymob: ${error.response?.data?.message || error.message}`);
     }
   }
 
@@ -312,6 +399,14 @@ export class PaymobService {
   }
 
   /**
+   * Get webhook URL for subscription webhooks
+   */
+  getWebhookUrl(path: string = '/api/payments/paymob/subscription-webhook'): string {
+    const baseUrl = resolveWebhookBaseUrl();
+    return `${baseUrl}${path}`;
+  }
+
+  /**
    * Create a subscription plan with Paymob
    */
   async createSubscriptionPlan(planData: {
@@ -321,6 +416,8 @@ export class PaymobService {
     webhook_url?: string;
   }): Promise<any> {
     try {
+      const authToken = await this.getAuthToken();
+      
       const response = await axios.post(
         `${PAYMOB_SUBSCRIPTION_API_URL}/acceptance/subscription-plans`,
         {
@@ -339,7 +436,7 @@ export class PaymobService {
         },
         {
           headers: {
-            'Authorization': `Token ${this.secretKey}`,
+            'Authorization': `Bearer ${authToken}`,
             'Content-Type': 'application/json'
           }
         }
@@ -373,7 +470,7 @@ export class PaymobService {
       const response = await axios.post(
         `${PAYMOB_API_URL}/intention/`,
         {
-          amount: 0, // Amount will come from plan
+          amount: 100, // Minimum amount required by Paymob (1 EGP in cents), actual amount from plan
           currency: 'EGP',
           payment_methods: [parseInt(this.integrationId)],
           items: [],
@@ -402,14 +499,16 @@ export class PaymobService {
   /**
    * Suspend a subscription
    */
-  async suspendSubscription(subscriptionId: number): Promise<any> {
+  async suspendSubscription(subscriptionId: string | number): Promise<any> {
     try {
+      const authToken = await this.getAuthToken();
+      
       const response = await axios.post(
         `${PAYMOB_SUBSCRIPTION_API_URL}/acceptance/subscriptions/${subscriptionId}/suspend`,
         {},
         {
           headers: {
-            'Authorization': `Token ${this.secretKey}`,
+            'Authorization': `Bearer ${authToken}`,
             'Content-Type': 'application/json'
           }
         }
@@ -426,14 +525,16 @@ export class PaymobService {
   /**
    * Resume a subscription
    */
-  async resumeSubscription(subscriptionId: number): Promise<any> {
+  async resumeSubscription(subscriptionId: string | number): Promise<any> {
     try {
+      const authToken = await this.getAuthToken();
+      
       const response = await axios.post(
         `${PAYMOB_SUBSCRIPTION_API_URL}/acceptance/subscriptions/${subscriptionId}/resume`,
         {},
         {
           headers: {
-            'Authorization': `Token ${this.secretKey}`,
+            'Authorization': `Bearer ${authToken}`,
             'Content-Type': 'application/json'
           }
         }
@@ -450,14 +551,16 @@ export class PaymobService {
   /**
    * Cancel a subscription
    */
-  async cancelSubscription(subscriptionId: number): Promise<any> {
+  async cancelSubscription(subscriptionId: string | number): Promise<any> {
     try {
+      const authToken = await this.getAuthToken();
+      
       const response = await axios.post(
         `${PAYMOB_SUBSCRIPTION_API_URL}/acceptance/subscriptions/${subscriptionId}/cancel`,
         {},
         {
           headers: {
-            'Authorization': `Token ${this.secretKey}`,
+            'Authorization': `Bearer ${authToken}`,
             'Content-Type': 'application/json'
           }
         }

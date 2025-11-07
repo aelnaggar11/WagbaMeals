@@ -2793,8 +2793,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             try {
               // Get or create weekly subscription plan
-              const webhookUrl = process.env.PAYMOB_SUBSCRIPTION_WEBHOOK_URL || 
-                `${process.env.REPLIT_DOMAINS?.split(',')[0] || ''}/api/payments/paymob/subscription-webhook`;
+              const webhookUrl = paymobService.getWebhookUrl();
               
               let planId: number | null = process.env.PAYMOB_WEEKLY_PLAN_ID ? parseInt(process.env.PAYMOB_WEEKLY_PLAN_ID) : null;
               
@@ -2817,10 +2816,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               // Get delivery address
               const address = order.deliveryAddress ? JSON.parse(order.deliveryAddress) : {};
+              const nameParts = user.name?.split(' ') || ['Customer'];
+              const firstName = nameParts[0] || 'Customer';
+              const lastName = nameParts.slice(1).join(' ') || 'Name'; // Default to 'Name' if no last name
+              
               const billingData = {
                 apartment: address.apartment || 'NA',
-                first_name: user.name?.split(' ')[0] || 'Customer',
-                last_name: user.name?.split(' ').slice(1).join(' ') || '',
+                first_name: firstName,
+                last_name: lastName,
                 street: address.street || 'NA',
                 building: address.building || 'NA',
                 phone_number: address.phone || user.phone || '+201000000000',
@@ -2849,8 +2852,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               // Update user with subscription IDs
               await storage.updateUser(user.id, {
-                paymobSubscriptionId: subscription.id,
-                paymobPlanId: planId,
+                paymobSubscriptionId: subscription.id.toString(),
+                paymobPlanId: planId.toString(),
                 subscriptionStatus: 'active',
                 subscriptionStartedAt: new Date(),
                 isSubscriber: true,
@@ -3007,8 +3010,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   try {
                     // Get or create weekly subscription plan
                     // Weekly billing at 7-day intervals
-                    const webhookUrl = process.env.PAYMOB_SUBSCRIPTION_WEBHOOK_URL || 
-                      `${process.env.REPLIT_DOMAINS?.split(',')[0] || ''}/api/payments/paymob/subscription-webhook`;
+                    const webhookUrl = paymobService.getWebhookUrl();
                     
                     let planId = process.env.PAYMOB_WEEKLY_PLAN_ID ? parseInt(process.env.PAYMOB_WEEKLY_PLAN_ID) : null;
                     
@@ -3027,10 +3029,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     
                     // Get delivery address from order
                     const address = order.deliveryAddress ? JSON.parse(order.deliveryAddress) : {};
+                    const nameParts = user.name?.split(' ') || ['Customer'];
+                    const firstName = nameParts[0] || 'Customer';
+                    const lastName = nameParts.slice(1).join(' ') || 'Name'; // Default to 'Name' if no last name
+                    
                     const billingData = {
                       apartment: address.apartment || 'NA',
-                      first_name: user.name?.split(' ')[0] || 'Customer',
-                      last_name: user.name?.split(' ').slice(1).join(' ') || '',
+                      first_name: firstName,
+                      last_name: lastName,
                       street: address.street || 'NA',
                       building: address.building || 'NA',
                       phone_number: address.phone || user.phone || '+201000000000',
@@ -3063,8 +3069,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     
                     // Update user with subscription IDs
                     await storage.updateUser(user.id, {
-                      paymobSubscriptionId: subscription.id,
-                      paymobPlanId: planId,
+                      paymobSubscriptionId: subscription.id.toString(),
+                      paymobPlanId: planId.toString(),
                       subscriptionStatus: 'active',
                       subscriptionStartedAt: new Date(),
                       isSubscriber: true,
