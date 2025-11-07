@@ -1068,10 +1068,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'User not found' });
       }
       
+      // If user has plan ID but no subscription ID, they're waiting for Paymob webhook
+      const isPending = user.paymobPlanId && !user.paymobSubscriptionId;
+      
       res.json({
-        subscriptionStatus: user.subscriptionStatus || 'active',
+        subscriptionStatus: isPending ? 'pending_setup' : (user.subscriptionStatus || null),
         subscriptionCancelledAt: user.subscriptionCancelledAt,
         subscriptionPausedAt: user.subscriptionPausedAt,
+        paymobSubscriptionId: user.paymobSubscriptionId,
+        isSetupComplete: !!user.paymobSubscriptionId
       });
     } catch (error) {
       console.error('Error fetching subscription status:', error);
