@@ -32,6 +32,11 @@ Wagba uses a modern full-stack architecture with distinct frontend and backend c
 
 ## Paymob Integration Details
 
+**Integration IDs (CRITICAL):**
+Paymob requires TWO separate integration IDs for subscription functionality:
+- **3DS Integration ID** (`PAYMOB_INTEGRATION_ID`): Used for creating payment intentions and processing customer payments
+- **MOTO Integration ID** (`PAYMOB_MOTO_INTEGRATION_ID`): Used for creating subscription plans and recurring payment charges
+
 **Webhook HMAC Verification:**
 - **TRANSACTION webhooks:** 20 fields in specific order (amount_cents, created_at, currency, error_occured, has_parent_transaction, id, integration_id, is_3d_secure, is_auth, is_capture, is_refunded, is_standalone_payment, is_voided, order.id, owner, pending, source_data.pan, source_data.sub_type, source_data.type, success)
 - **TOKEN webhooks:** 8 fields in ALPHABETICAL order (card_subtype, created_at, email, id, masked_pan, merchant_id, order_id, token) - discovered through testing with actual webhook data

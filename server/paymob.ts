@@ -110,7 +110,8 @@ export class PaymobService {
   private apiKey: string;
   private secretKey: string;
   private publicKey: string;
-  private integrationId: string;
+  private integrationId: string; // 3DS Integration ID - for creating payment intentions/subscriptions
+  private motoIntegrationId: string; // MOTO Integration ID - for creating subscription plans and recurring payments
   private hmacSecret: string;
   private authToken: string | null = null;
   private authTokenExpiry: Date | null = null;
@@ -120,6 +121,7 @@ export class PaymobService {
     this.secretKey = process.env.PAYMOB_SECRET_KEY || '';
     this.publicKey = process.env.PAYMOB_PUBLIC_KEY || '';
     this.integrationId = process.env.PAYMOB_INTEGRATION_ID || '';
+    this.motoIntegrationId = process.env.PAYMOB_MOTO_INTEGRATION_ID || '';
     this.hmacSecret = process.env.PAYMOB_HMAC_SECRET || '';
 
     // Validate required credentials
@@ -130,15 +132,21 @@ export class PaymobService {
       throw new Error('PAYMOB_SECRET_KEY is required');
     }
     if (!this.integrationId) {
-      throw new Error('PAYMOB_INTEGRATION_ID is required');
+      throw new Error('PAYMOB_INTEGRATION_ID (3DS) is required');
+    }
+    if (!this.motoIntegrationId) {
+      throw new Error('PAYMOB_MOTO_INTEGRATION_ID is required for subscription plans');
     }
     if (!this.hmacSecret) {
       throw new Error('PAYMOB_HMAC_SECRET is required');
     }
     
-    // Validate integration ID is a valid number
+    // Validate both integration IDs are valid numbers
     if (isNaN(parseInt(this.integrationId))) {
       throw new Error('PAYMOB_INTEGRATION_ID must be a valid number');
+    }
+    if (isNaN(parseInt(this.motoIntegrationId))) {
+      throw new Error('PAYMOB_MOTO_INTEGRATION_ID must be a valid number');
     }
   }
 
@@ -408,6 +416,8 @@ export class PaymobService {
 
   /**
    * Create a subscription plan with Paymob
+   * IMPORTANT: Uses MOTO Integration ID as per Paymob documentation
+   * The MOTO ID is required for creating subscription plans and recurring payments
    */
   async createSubscriptionPlan(planData: {
     frequency: number; // in days (e.g., 7 for weekly)
@@ -418,6 +428,8 @@ export class PaymobService {
     try {
       const authToken = await this.getAuthToken();
       
+      console.log('Creating subscription plan with MOTO integration ID:', this.motoIntegrationId);
+      
       const response = await axios.post(
         `${PAYMOB_SUBSCRIPTION_API_URL}/acceptance/subscription-plans`,
         {
@@ -426,7 +438,7 @@ export class PaymobService {
           amount_cents: planData.amount_cents,
           use_transaction_amount: true,
           is_active: true,
-          integration: parseInt(this.integrationId),
+          integration: parseInt(this.motoIntegrationId), // FIXED: Use MOTO integration ID for plans
           webhook_url: planData.webhook_url || '',
           reminder_days: null,
           retrial_days: null,
@@ -442,7 +454,7 @@ export class PaymobService {
         }
       );
 
-      console.log('✅ Paymob subscription plan created:', response.data.id);
+      console.log('✅ Paymob subscription plan created with MOTO ID:', response.data.id);
       return response.data;
     } catch (error: any) {
       console.error('❌ Failed to create subscription plan:', error.response?.data || error.message);
