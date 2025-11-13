@@ -1071,8 +1071,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If user has plan ID but no subscription ID, they're waiting for Paymob webhook
       const isPending = user.paymobPlanId && !user.paymobSubscriptionId;
       
+      // Add cache-control headers to prevent stale data
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       res.json({
-        subscriptionStatus: isPending ? 'pending_setup' : (user.subscriptionStatus || null),
+        subscriptionStatus: isPending ? 'pending' : (user.subscriptionStatus || null),
         subscriptionCancelledAt: user.subscriptionCancelledAt,
         subscriptionPausedAt: user.subscriptionPausedAt,
         paymobSubscriptionId: user.paymobSubscriptionId,
