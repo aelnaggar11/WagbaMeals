@@ -1,0 +1,65 @@
+Dear Paymob Support Team,
+
+I'm implementing recurring weekly subscriptions for our meal delivery platform (Wagba) using Paymob's subscription APIs. We have a critical issue with SUBSCRIPTION webhook delivery that is blocking our production deployment.
+
+Test Payment Details:
+
+    Date/Time: November 13, 2025 at 02:07 AM UTC
+    Plan ID: 5308
+    Payment Intention ID: pi_test_cff3207a9bf64294be79d63cbee6108b
+    Customer Email: eqdasd@fsfsd.com
+    Amount Charged: 1,891 EGP
+    Payment Status: ✅ Successful
+    Subscription Start Date: IMMEDIATE (not specified in API call)
+
+Webhooks Received:
+
+    ✅ TRANSACTION webhook - Received within 5 seconds
+    ✅ TOKEN webhook - Received within 5 seconds
+    ❌ SUBSCRIPTION webhook - NOT RECEIVED (now 2+ minutes and counting)
+
+Webhook Configuration:
+
+    URL: https://1fe45167-ba13-4493-a596-501333f52ce8-00-14e50y8pkand2.worf.replit.dev/api/payments/paymob/subscription-webhook
+    Integration IDs: Using both 3DS (5349136) and MOTO integration IDs as documented
+    HMAC Verification: Enabled and working correctly for TRANSACTION and TOKEN webhooks
+
+What We've Tested:
+
+    Initial Test (Plan 5305): Subscription created with starts_at = 7 days in the future
+        Result: SUBSCRIPTION webhook never arrived (waited 90+ minutes)
+    Second Test (Plan 5308): Subscription created WITHOUT starts_at parameter (immediate start)
+        Result: SUBSCRIPTION webhook still not arriving (2+ minutes and counting)
+
+Critical Questions:
+
+    Are SUBSCRIPTION webhooks functional in test mode? Our TRANSACTION and TOKEN webhooks work perfectly, but we've never received a single SUBSCRIPTION webhook across multiple test payments.
+
+    Can you manually trigger the SUBSCRIPTION webhook for Plan ID 5308? This would help us verify our webhook handler is configured correctly.
+
+    What is the expected delivery time for SUBSCRIPTION webhooks? Should they arrive immediately like TRANSACTION/TOKEN webhooks, or is there a delay?
+
+    Is there a different webhook endpoint or configuration required specifically for subscription webhooks?
+
+Business Impact:
+
+Our application is stuck showing "Pending Activation" to customers despite successful payment and subscription creation. We cannot deploy to production without confirmation that SUBSCRIPTION webhooks are reliably delivered.
+
+Current Database State:
+
+subscription_status: 'pending'
+paymob_plan_id: 5308
+paymob_subscription_id: NULL (awaiting webhook)
+is_subscriber: false (will be set to true by webhook)
+
+We need urgent assistance to determine if this is:
+
+    A configuration issue on our end
+    Expected behavior in test mode only
+    A bug in Paymob's webhook system
+
+Please advise on next steps. We're ready to provide any additional logs or information you need.
+
+Thank you for your urgent attention to this matter.
+
+Best regards,
