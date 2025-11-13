@@ -150,6 +150,18 @@ const AccountPage = () => {
     enabled: !!currentUser,
     refetchOnWindowFocus: true,
   });
+  
+  // Auto-poll subscription status when pending
+  useEffect(() => {
+    if (subscriptionStatus?.subscriptionStatus === 'pending') {
+      const pollInterval = setInterval(() => {
+        console.log('Polling subscription status...');
+        refetchSubscriptionStatus();
+      }, 3000); // Poll every 3 seconds
+      
+      return () => clearInterval(pollInterval);
+    }
+  }, [subscriptionStatus?.subscriptionStatus, refetchSubscriptionStatus]);
 
   const { data: paymentMethods, isLoading: isLoadingPaymentMethods, refetch: refetchPaymentMethods } = useQuery<any[]>({
     queryKey: ['/api/payment-methods'],
@@ -1483,9 +1495,16 @@ const AccountPage = () => {
                           {profile?.userType === 'trial' 
                             ? 'Trial User - No Active Subscription' 
                             : subscriptionStatus?.subscriptionStatus === 'cancelled' 
-                            ? 'Cancelled' 
+                            ? 'Cancelled'
+                            : subscriptionStatus?.subscriptionStatus === 'pending'
+                            ? 'Pending Activation' 
                             : 'Active'}
                         </p>
+                        {subscriptionStatus?.subscriptionStatus === 'pending' && (
+                          <p className="text-xs text-blue-600 mt-1">
+                            Your payment was successful. Subscription is being activated...
+                          </p>
+                        )}
                       </div>
                       <div className="flex gap-2">
                         {profile?.userType === 'trial' ? (
@@ -1494,6 +1513,13 @@ const AccountPage = () => {
                             className="bg-blue-600 hover:bg-blue-700"
                           >
                             Start Subscription
+                          </Button>
+                        ) : subscriptionStatus?.subscriptionStatus === 'pending' ? (
+                          <Button
+                            disabled
+                            className="bg-gray-400 cursor-not-allowed"
+                          >
+                            Activating...
                           </Button>
                         ) : subscriptionStatus?.subscriptionStatus === 'cancelled' ? (
                           <Button

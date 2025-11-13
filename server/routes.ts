@@ -2800,9 +2800,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Create subscription (with proper idempotency and retry handling)
           if (user && order.orderType === 'subscription') {
-            // IDEMPOTENCY CHECK: Skip if user already has an active subscription
-            if (user.paymobSubscriptionId) {
-              console.log(`ℹ️ User ${user.id} already has subscription ${user.paymobSubscriptionId}, skipping creation`);
+            // IDEMPOTENCY CHECK: Skip if subscription is already created or in progress
+            const alreadyProcessed = (
+              // Case 1: Subscription fully activated
+              (user.paymobPlanId && user.paymobSubscriptionId) ||
+              // Case 2: Subscription creation in progress (plan exists, status pending)
+              (user.paymobPlanId && user.subscriptionStatus === 'pending')
+            );
+            
+            if (alreadyProcessed) {
+              console.log(`ℹ️ User ${user.id} subscription already processed: plan=${user.paymobPlanId}, subscription=${user.paymobSubscriptionId}, status=${user.subscriptionStatus}`);
               // Don't return early - continue to success response at end
             } else {
             
@@ -2815,7 +2822,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Get or create weekly subscription plan
               const webhookUrl = paymobService.getWebhookUrl();
               
-              let planId: number | null = process.env.PAYMOB_WEEKLY_PLAN_ID ? parseInt(process.env.PAYMOB_WEEKLY_PLAN_ID) : null;
+              // Check if user already has a plan ID from previous attempt
+              let planId: number | null = user.paymobPlanId || (process.env.PAYMOB_WEEKLY_PLAN_ID ? parseInt(process.env.PAYMOB_WEEKLY_PLAN_ID) : null);
               
               if (!planId) {
                 console.log('Creating new weekly subscription plan...');
@@ -2827,11 +2835,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 });
                 planId = plan.id;
                 console.log(`✅ Created subscription plan: ${planId}`);
+              } else {
+                console.log(`ℹ️ Using existing plan ID: ${planId}`);
               }
               
               // Ensure we have a plan ID before proceeding
               if (!planId) {
                 throw new Error('Failed to create or retrieve subscription plan');
+              }
+              
+              // CRITICAL: Always save plan ID to enable idempotency checks on retry
+              // This handles both newly created plans and environment-configured plans
+              if (!user.paymobPlanId) {
+                await storage.updateUser(user.id, {
+                  paymobPlanId: planId
+                });
+                console.log(`✅ Plan ID ${planId} saved for user ${user.id}`);
               }
               
               console.log(`Plan ID: ${planId}`);
