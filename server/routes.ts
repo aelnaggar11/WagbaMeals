@@ -2881,6 +2881,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               };
               
               // Create Paymob subscription (asynchronous - subscription ID will come via webhook)
+              // NOTE: No starts_at specified = subscription starts immediately (for testing)
+              // In production, add: starts_at: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
               const subscription = await paymobService.createSubscription({
                 plan_id: planId,
                 card_token: cardToken,
@@ -2890,8 +2892,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   last_name: billingData.last_name,
                   email: user.email,
                   phone_number: billingData.phone_number
-                },
-                starts_at: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // Start next week
+                }
               });
               
               console.log(`✅ Paymob subscription payment intention created`);
