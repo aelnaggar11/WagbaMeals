@@ -2735,7 +2735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               o.userId === user.id && 
               o.orderType === 'subscription' &&
               (o.paymentStatus === 'pending' || o.paymentStatus === 'paid') &&
-              !o.paymentMethodId // Not already processed
+              !o.subscriptionCreatedAt // Subscription not yet created (handles webhook race condition)
             )
             .sort((a, b) => b.id - a.id); // Most recent first
           
@@ -2904,7 +2904,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 userType: 'subscriber'
               });
               
+              // Mark subscription creation complete on order (prevents duplicate creation on webhook retry)
+              await storage.updateOrder(order.id, {
+                subscriptionCreatedAt: new Date()
+              });
+              
               console.log(`✅ User ${user.id} subscription setup in progress`);
+              console.log(`✅ Order ${order.id} marked as subscription created`);
               console.log(`Subscription status: pending (awaiting SUBSCRIPTION webhook)`);
             } catch (error: any) {
               console.error('❌ CRITICAL: Failed to create Paymob subscription:', error);

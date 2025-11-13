@@ -190,6 +190,7 @@ export const orders = pgTable("orders", {
   subscriptionBillingError: text("subscription_billing_error"), // Error message if billing failed
   subscriptionBillingRetryCount: integer("subscription_billing_retry_count").default(0), // Number of billing retry attempts
   paymentMethodId: integer("payment_method_id"), // Reference to payment_methods table for subscriptions
+  subscriptionCreatedAt: timestamp("subscription_created_at"), // Tracks when subscription was created at Paymob (separate from payment processing)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -216,6 +217,7 @@ export const insertOrderSchema = createInsertSchema(orders).pick({
   subscriptionBillingError: true,
   subscriptionBillingRetryCount: true,
   paymentMethodId: true,
+  subscriptionCreatedAt: true,
 });
 
 // OrderItem Model
