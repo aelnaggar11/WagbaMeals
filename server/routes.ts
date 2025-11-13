@@ -2767,36 +2767,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return res.status(200).json({ message: 'Not a subscription order' });
           }
           
-          // Check if already processed (idempotency)
+          // Create or retrieve payment method (idempotent)
+          let paymentMethod;
           if (order.paymentMethodId) {
-            console.log(`ℹ️ Order ${order.id} already has payment method, skipping duplicate processing`);
-            return res.status(200).json({ message: 'Already processed' });
+            console.log(`ℹ️ Order ${order.id} already has payment method ${order.paymentMethodId}`);
+            const existingMethods = await storage.getPaymentMethodsByUser(order.userId);
+            paymentMethod = existingMethods.find(m => m.id === order.paymentMethodId);
+            if (!paymentMethod) {
+              console.error(`❌ Payment method ${order.paymentMethodId} not found`);
+              return res.status(500).json({ message: 'Payment method not found' });
+            }
+          } else {
+            // Create new payment method
+            paymentMethod = await storage.createPaymentMethod({
+              userId: order.userId,
+              paymobCardToken: cardToken,
+              maskedPan: maskedPan,
+              cardBrand: cardSubtype?.toLowerCase() || 'unknown',
+              expiryMonth: null,
+              expiryYear: null,
+              isDefault: true,
+              isActive: true
+            });
+            
+            console.log(`✅ Payment method created: ${paymentMethod.id}`);
+            
+            // Link payment method to order
+            await storage.updateOrder(order.id, {
+              paymentMethodId: paymentMethod.id
+            });
           }
           
-          // Create payment method
-          const paymentMethod = await storage.createPaymentMethod({
-            userId: order.userId,
-            paymobCardToken: cardToken,
-            maskedPan: maskedPan,
-            cardBrand: cardSubtype?.toLowerCase() || 'unknown',
-            expiryMonth: null,
-            expiryYear: null,
-            isDefault: true,
-            isActive: true
-          });
-          
-          console.log(`✅ Payment method created: ${paymentMethod.id}`);
-          
-          // Link payment method to order
-          await storage.updateOrder(order.id, {
-            paymentMethodId: paymentMethod.id
-          });
-          
-          // Store plan ID for subscription flow (subscription will be created via webhook)
-          if (user && !user.paymobSubscriptionId && order.orderType === 'subscription') {
-            console.log('=== PREPARING FOR PAYMOB SUBSCRIPTION ===');
-            console.log(`Card token saved for user ${user.id}`);
-            console.log('Subscription will be created when Paymob sends SUBSCRIPTION webhook');
+          // Create subscription (with proper idempotency and retry handling)
+          if (user && order.orderType === 'subscription') {
+            // IDEMPOTENCY CHECK: Skip if user already has an active subscription
+            if (user.paymobSubscriptionId) {
+              console.log(`ℹ️ User ${user.id} already has subscription ${user.paymobSubscriptionId}, skipping creation`);
+              // Don't return early - continue to success response at end
+            } else {
+            
+            console.log('=== CREATING PAYMOB SUBSCRIPTION ===');
+            console.log('User ID:', user.id);
+            console.log('User Email:', user.email);
+            console.log('Card Token:', cardToken?.substring(0, 10) + '...');
             
             try {
               // Get or create weekly subscription plan
@@ -2816,19 +2829,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log(`✅ Created subscription plan: ${planId}`);
               }
               
-              // Store plan ID on user for when subscription webhook arrives
-              await storage.updateUser(user.id, {
-                paymobPlanId: planId
+              // Ensure we have a plan ID before proceeding
+              if (!planId) {
+                throw new Error('Failed to create or retrieve subscription plan');
+              }
+              
+              console.log(`Plan ID: ${planId}`);
+              
+              // Get delivery address from order
+              const address = order.deliveryAddress ? JSON.parse(order.deliveryAddress) : {};
+              const nameParts = user.name?.split(' ') || ['Customer'];
+              const firstName = nameParts[0] || 'Customer';
+              const lastName = nameParts.slice(1).join(' ') || 'Name';
+              
+              const billingData = {
+                apartment: address.apartment || 'NA',
+                first_name: firstName,
+                last_name: lastName,
+                street: address.street || 'NA',
+                building: address.building || 'NA',
+                phone_number: address.phone || user.phone || '+201000000000',
+                country: 'EG',
+                email: user.email,
+                floor: address.floor || 'NA',
+                state: address.area || 'Cairo',
+                city: address.city || 'Cairo'
+              };
+              
+              // Create Paymob subscription
+              const subscription = await paymobService.createSubscription({
+                plan_id: planId,
+                card_token: cardToken,
+                billing_data: billingData,
+                customer: {
+                  first_name: billingData.first_name,
+                  last_name: billingData.last_name,
+                  email: user.email,
+                  phone_number: billingData.phone_number
+                },
+                starts_at: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // Start next week
               });
               
-              console.log(`✅ Plan ID ${planId} stored for user ${user.id}`);
-              console.log(`Awaiting SUBSCRIPTION webhook from Paymob to complete setup`);
-            } catch (planError) {
-              console.error('❌ Error creating subscription plan:', planError);
+              console.log(`✅ Paymob subscription created: ${subscription.subscriptionId}`);
+              console.log(`Plan ID: ${planId}, Subscription ID: ${subscription.subscriptionId}`);
+              
+              // Update user with subscription IDs (atomic operation - all or nothing)
+              await storage.updateUser(user.id, {
+                paymobSubscriptionId: subscription.subscriptionId.toString(),
+                paymobPlanId: planId,
+                subscriptionStatus: 'active',
+                subscriptionStartedAt: new Date(),
+                isSubscriber: true,
+                userType: 'subscriber'
+              });
+              
+              console.log(`✅ User ${user.id} subscription setup complete`);
+              console.log(`Subscription status: active`);
+            } catch (error: any) {
+              console.error('❌ CRITICAL: Failed to create Paymob subscription:', error);
+              console.error('Error details:', error.message);
+              // FAIL THE WEBHOOK: Return 500 to trigger Paymob retry
+              // This ensures subscription creation is retried instead of being lost
+              return res.status(500).json({ 
+                message: 'Failed to create subscription - will retry',
+                error: error.message 
+              });
             }
-          } else if (user?.paymobSubscriptionId) {
-            console.log(`ℹ️ User ${user.id} already has subscription ${user.paymobSubscriptionId}`);
-          }
+            } // Close else block
+          } // Close if (user && order.orderType === 'subscription')
           
           return res.status(200).json({ message: 'Token webhook processed successfully' });
         } catch (error) {
@@ -2923,139 +2991,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           console.log(`✅ Order ${orderId} payment status updated to: ${success ? 'paid' : 'failed'}`);
           
-          // Handle subscription orders: save card token and create Paymob subscription
-          if (success && order.orderType === 'subscription' && transaction.token) {
-            console.log('=== SUBSCRIPTION CARD TOKEN RECEIVED ===');
-            console.log('Order type:', order.orderType);
-            console.log('Token object present:', !!transaction.token);
-            
-            try {
-              const cardToken = transaction.token.card_token;
-              const maskedPan = transaction.token.masked_pan || '';
-              const cardSubtype = transaction.token.card_subtype || '';
-              
-              console.log('Card token:', cardToken?.substring(0, 10) + '...');
-              console.log('Masked PAN:', maskedPan);
-              console.log('Card subtype:', cardSubtype);
-              
-              // Check if this order already has a payment method (idempotency for webhook retries)
-              if (order.paymentMethodId) {
-                console.log(`ℹ️ Order ${orderId} already has payment method ${order.paymentMethodId}, skipping token save`);
-              } else {
-                // Create payment method
-                const paymentMethod = await storage.createPaymentMethod({
-                  userId: order.userId,
-                  paymobCardToken: cardToken,
-                  maskedPan: maskedPan,
-                  cardBrand: cardSubtype.toLowerCase(),
-                  expiryMonth: null, // Paymob doesn't provide expiry in token
-                  expiryYear: null,
-                  isDefault: true, // First card is always default
-                  isActive: true
-                });
-                
-                // Link payment method to order
-                await storage.updateOrder(order.id, {
-                  paymentMethodId: paymentMethod.id
-                });
-                
-                console.log(`✅ Card token saved for subscription order ${orderId}`);
-                console.log(`Payment method ID: ${paymentMethod.id}`);
-                
-                // Create Paymob subscription for this user
-                const user = await storage.getUser(order.userId);
-                if (user && !user.paymobSubscriptionId) {
-                  console.log('=== CREATING PAYMOB SUBSCRIPTION ===');
-                  console.log('User ID:', user.id);
-                  console.log('User Email:', user.email);
-                  
-                  try {
-                    // Get or create weekly subscription plan
-                    // Weekly billing at 7-day intervals
-                    const webhookUrl = paymobService.getWebhookUrl();
-                    
-                    let planId = process.env.PAYMOB_WEEKLY_PLAN_ID ? parseInt(process.env.PAYMOB_WEEKLY_PLAN_ID) : null;
-                    
-                    // If no plan ID configured, create a new plan
-                    if (!planId) {
-                      console.log('No plan ID configured, creating new weekly subscription plan...');
-                      const plan = await paymobService.createSubscriptionPlan({
-                        frequency: 7, // Weekly (7 days)
-                        name: 'Weekly Meal Delivery',
-                        amount_cents: Math.round(order.total * 100), // Use order total as initial amount
-                        webhook_url: webhookUrl
-                      });
-                      planId = plan.id;
-                      console.log(`✅ Created subscription plan: ${planId}`);
-                    }
-                    
-                    // Get delivery address from order
-                    const address = order.deliveryAddress ? JSON.parse(order.deliveryAddress) : {};
-                    const nameParts = user.name?.split(' ') || ['Customer'];
-                    const firstName = nameParts[0] || 'Customer';
-                    const lastName = nameParts.slice(1).join(' ') || 'Name'; // Default to 'Name' if no last name
-                    
-                    const billingData = {
-                      apartment: address.apartment || 'NA',
-                      first_name: firstName,
-                      last_name: lastName,
-                      street: address.street || 'NA',
-                      building: address.building || 'NA',
-                      phone_number: address.phone || user.phone || '+201000000000',
-                      country: 'EG',
-                      email: user.email,
-                      floor: address.floor || 'NA',
-                      state: address.area || 'Cairo',
-                      city: address.city || 'Cairo'
-                    };
-                    
-                    // Create Paymob subscription (only if we have a plan ID)
-                    if (!planId) {
-                      throw new Error('Failed to create or retrieve subscription plan');
-                    }
-                    
-                    const subscription = await paymobService.createSubscription({
-                      plan_id: planId,
-                      card_token: cardToken,
-                      billing_data: billingData,
-                      customer: {
-                        first_name: billingData.first_name,
-                        last_name: billingData.last_name,
-                        email: user.email,
-                        phone_number: billingData.phone_number
-                      },
-                      starts_at: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // Start next week
-                    });
-                    
-                    console.log(`✅ Paymob subscription created: ${subscription.subscriptionId}`);
-                    console.log(`Plan ID: ${planId}, Subscription ID: ${subscription.subscriptionId}`);
-                    
-                    // Update user with subscription IDs (both should be integers)
-                    await storage.updateUser(user.id, {
-                      paymobSubscriptionId: subscription.subscriptionId,
-                      paymobPlanId: planId,
-                      subscriptionStatus: 'active',
-                      subscriptionStartedAt: new Date(),
-                      isSubscriber: true,
-                      userType: 'subscription'
-                    });
-                    
-                    console.log(`✅ User ${user.id} subscription setup complete`);
-                  } catch (subscriptionError) {
-                    console.error('❌ Error creating Paymob subscription:', subscriptionError);
-                    // Don't fail the webhook - subscription can be created later
-                  }
-                } else if (user?.paymobSubscriptionId) {
-                  console.log(`ℹ️ User ${user.id} already has Paymob subscription ${user.paymobSubscriptionId}`);
-                }
-              }
-            } catch (tokenError) {
-              console.error('❌ Error processing subscription:', tokenError);
-              // Don't fail the webhook if token save fails
-            }
-          } else if (success && order.orderType === 'subscription' && !transaction.token) {
-            // Log missing token for subscription order
-            console.error(`⚠️ Subscription order ${orderId} succeeded but no token received from Paymob`);
+          // Note: Subscription card tokenization and subscription creation is handled by the TOKEN webhook
+          // The TRANSACTION webhook only updates the order payment status
+          if (success && order.orderType === 'subscription') {
+            console.log(`ℹ️ Subscription order ${orderId} payment confirmed - subscription created via TOKEN webhook`);
           }
         }
       }
