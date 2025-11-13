@@ -77,6 +77,8 @@ interface PaymentIntentionData {
     [key: string]: any;
   };
   save_token?: boolean; // Enable card tokenization for subscriptions
+  subscription_plan_id?: number; // Subscription plan ID for automatic subscription creation
+  subscription_start_date?: string; // Optional start date (YYYY-MM-DD format)
 }
 
 interface SavedCardPaymentData {
@@ -209,6 +211,20 @@ export class PaymobService {
         payload.save_token_to_be_used = true;
       }
 
+      // Include subscription plan ID for automatic subscription creation
+      if (data.subscription_plan_id) {
+        payload.subscription_plan_id = data.subscription_plan_id.toString();
+        console.log('📋 Including subscription_plan_id in payment intention:', data.subscription_plan_id);
+        
+        // Optional: Include subscription start date
+        if (data.subscription_start_date) {
+          payload.subscription_start_date = data.subscription_start_date;
+          console.log('📅 Subscription will start on:', data.subscription_start_date);
+        } else {
+          console.log('📅 Subscription will start immediately after payment');
+        }
+      }
+
       const response = await axios.post(
         `${PAYMOB_API_URL}/intention/`,
         payload,
@@ -220,7 +236,12 @@ export class PaymobService {
         }
       );
 
-      console.log('✅ Paymob payment intention created:', response.data.id, data.save_token ? '(with tokenization)' : '');
+      if (data.subscription_plan_id) {
+        console.log('✅ Paymob payment intention created with subscription:', response.data.id);
+        console.log('⏳ Subscription will be created automatically after payment success');
+      } else {
+        console.log('✅ Paymob payment intention created:', response.data.id, data.save_token ? '(with tokenization)' : '');
+      }
       return response.data;
     } catch (error: any) {
       console.error('❌ Paymob payment intention error:', error.response?.data || error.message);

@@ -2630,10 +2630,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Enable card tokenization for subscription orders
       const isSubscription = order.orderType === 'subscription';
-      console.log('=== SUBSCRIPTION TOKENIZATION ===');
+      console.log('=== SUBSCRIPTION SETUP ===');
       console.log('Order type:', order.orderType);
       console.log('Enable tokenization:', isSubscription);
-      console.log('================================');
+      
+      // Create subscription plan BEFORE payment intention for subscription orders
+      let subscriptionPlanId: number | undefined = undefined;
+      if (isSubscription) {
+        console.log('🔄 Creating subscription plan before payment intention...');
+        
+        // Get the webhook URL for subscription notifications
+        const webhookBaseUrl = process.env.REPLIT_DOMAINS 
+          ? `https://${process.env.REPLIT_DOMAINS.split(',')[0].trim()}`
+          : 'http://localhost:5000';
+        
+        const subscriptionPlan = await paymobService.createSubscriptionPlan({
+          name: `Weekly Meal Plan - Order ${orderId}`,
+          amount_cents: Math.round(totalAmount * 100), // Amount in cents
+          frequency: 7, // Weekly billing
+          integration: parseInt(process.env.PAYMOB_MOTO_INTEGRATION_ID || '0'),
+          webhook_url: `${webhookBaseUrl}/api/payments/paymob/subscription-webhook`,
+          reminder_days: 1,
+          retrial_days: 3,
+          plan_type: 'rent',
+          number_of_deductions: null, // Unlimited
+          fee: null
+        });
+        
+        subscriptionPlanId = subscriptionPlan.id;
+        console.log('✅ Subscription plan created:', subscriptionPlanId);
+        
+        // Save plan ID to user for future reference
+        await storage.updateUser(user.id, {
+          paymobPlanId: subscriptionPlanId
+        });
+        console.log('✅ Plan ID saved to user:', user.id);
+      }
+      
+      console.log('=========================');
       
       const intention = await paymobService.createPaymentIntention({
         amount: Math.round(totalAmount * 100), // Convert to cents, includes delivery fee
@@ -2648,7 +2682,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         extras: {
           merchant_order_id: orderId.toString()
         },
-        save_token: isSubscription // Enable tokenization for subscriptions
+        save_token: isSubscription, // Enable tokenization for subscriptions
+        subscription_plan_id: subscriptionPlanId // Include plan ID for auto-subscription creation
       });
 
       res.json({
@@ -2803,133 +2838,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
           
-          // Create subscription (with proper idempotency and retry handling)
-          if (user && order.orderType === 'subscription') {
-            // IDEMPOTENCY CHECK: Skip if subscription is already created or in progress
-            const alreadyProcessed = (
-              // Case 1: Subscription fully activated
-              (user.paymobPlanId && user.paymobSubscriptionId) ||
-              // Case 2: Subscription creation in progress (plan exists, status pending)
-              (user.paymobPlanId && user.subscriptionStatus === 'pending')
-            );
-            
-            if (alreadyProcessed) {
-              console.log(`ℹ️ User ${user.id} subscription already processed: plan=${user.paymobPlanId}, subscription=${user.paymobSubscriptionId}, status=${user.subscriptionStatus}`);
-              // Don't return early - continue to success response at end
-            } else {
-            
-            console.log('=== CREATING PAYMOB SUBSCRIPTION ===');
-            console.log('User ID:', user.id);
-            console.log('User Email:', user.email);
-            console.log('Card Token:', cardToken?.substring(0, 10) + '...');
-            
-            try {
-              // Get or create weekly subscription plan
-              const webhookUrl = paymobService.getWebhookUrl();
-              
-              // Check if user already has a plan ID from previous attempt
-              let planId: number | null = user.paymobPlanId || (process.env.PAYMOB_WEEKLY_PLAN_ID ? parseInt(process.env.PAYMOB_WEEKLY_PLAN_ID) : null);
-              
-              if (!planId) {
-                console.log('Creating new weekly subscription plan...');
-                const plan = await paymobService.createSubscriptionPlan({
-                  frequency: 7,
-                  name: 'Weekly Meal Delivery',
-                  amount_cents: Math.round(order.total * 100),
-                  webhook_url: webhookUrl
-                });
-                planId = plan.id;
-                console.log(`✅ Created subscription plan: ${planId}`);
-              } else {
-                console.log(`ℹ️ Using existing plan ID: ${planId}`);
-              }
-              
-              // Ensure we have a plan ID before proceeding
-              if (!planId) {
-                throw new Error('Failed to create or retrieve subscription plan');
-              }
-              
-              // CRITICAL: Always save plan ID to enable idempotency checks on retry
-              // This handles both newly created plans and environment-configured plans
-              if (!user.paymobPlanId) {
-                await storage.updateUser(user.id, {
-                  paymobPlanId: planId
-                });
-                console.log(`✅ Plan ID ${planId} saved for user ${user.id}`);
-              }
-              
-              console.log(`Plan ID: ${planId}`);
-              
-              // Get delivery address from order
-              const address = order.deliveryAddress ? JSON.parse(order.deliveryAddress) : {};
-              const nameParts = user.name?.split(' ') || ['Customer'];
-              const firstName = nameParts[0] || 'Customer';
-              const lastName = nameParts.slice(1).join(' ') || 'Name';
-              
-              const billingData = {
-                apartment: address.apartment || 'NA',
-                first_name: firstName,
-                last_name: lastName,
-                street: address.street || 'NA',
-                building: address.building || 'NA',
-                phone_number: address.phone || user.phone || '+201000000000',
-                country: 'EG',
-                email: user.email,
-                floor: address.floor || 'NA',
-                state: address.area || 'Cairo',
-                city: address.city || 'Cairo'
-              };
-              
-              // Create Paymob subscription (asynchronous - subscription ID will come via webhook)
-              // NOTE: No starts_at specified = subscription starts immediately (for testing)
-              // In production, add: starts_at: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-              const subscription = await paymobService.createSubscription({
-                plan_id: planId,
-                card_token: cardToken,
-                billing_data: billingData,
-                customer: {
-                  first_name: billingData.first_name,
-                  last_name: billingData.last_name,
-                  email: user.email,
-                  phone_number: billingData.phone_number
-                }
-              });
-              
-              console.log(`✅ Paymob subscription payment intention created`);
-              console.log(`Payment intention ID: ${subscription.id}`);
-              console.log(`Plan ID: ${planId}`);
-              console.log(`⏳ Subscription ID will arrive via SUBSCRIPTION webhook`);
-              
-              // Store plan metadata and set status to 'pending'
-              // The SUBSCRIPTION webhook will update with the actual subscription ID and activate
-              await storage.updateUser(user.id, {
-                paymobPlanId: planId,
-                subscriptionStatus: 'pending', // Will be activated by SUBSCRIPTION webhook
-                subscriptionStartedAt: new Date(),
-                isSubscriber: false, // Will be set to true by SUBSCRIPTION webhook
-                userType: 'subscriber'
-              });
-              
-              // Mark subscription creation complete on order (prevents duplicate creation on webhook retry)
-              await storage.updateOrder(order.id, {
-                subscriptionCreatedAt: new Date()
-              });
-              
-              console.log(`✅ User ${user.id} subscription setup in progress`);
-              console.log(`✅ Order ${order.id} marked as subscription created`);
-              console.log(`Subscription status: pending (awaiting SUBSCRIPTION webhook)`);
-            } catch (error: any) {
-              console.error('❌ CRITICAL: Failed to create Paymob subscription:', error);
-              console.error('Error details:', error.message);
-              // FAIL THE WEBHOOK: Return 500 to trigger Paymob retry
-              // This ensures subscription creation is retried instead of being lost
-              return res.status(500).json({ 
-                message: 'Failed to create subscription - will retry',
-                error: error.message 
-              });
-            }
-            } // Close else block
-          } // Close if (user && order.orderType === 'subscription')
+          // NOTE: Subscription creation is now handled automatically by Paymob
+          // When subscription_plan_id is included in the initial payment intention,
+          // Paymob automatically creates the subscription after the first successful payment.
+          // The subscription ID will be delivered via SUBSCRIPTION webhook (handled separately).
+          
+          console.log(`ℹ️ TOKEN webhook processed for order ${order.id}`);
+          console.log(`⏳ If this is a subscription order, Paymob will create the subscription automatically`);
+          console.log(`⏳ Subscription ID will arrive via SUBSCRIPTION webhook`);
           
           return res.status(200).json({ message: 'Token webhook processed successfully' });
         } catch (error) {
