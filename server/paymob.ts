@@ -508,41 +508,28 @@ export class PaymobService {
       console.log('=== PAYMOB SUBSCRIPTION API RESPONSE ===');
       console.log('Response status:', response.status);
       console.log('Response data keys:', Object.keys(response.data));
-      console.log('Full response data:', JSON.stringify(response.data, null, 2));
-
-      // Extract subscription ID from response
-      // Try multiple possible locations where the subscription ID might be
-      let subscriptionId: number | null = null;
-
-      // Try response.data.subscription_data.id (webhook format)
-      if (response.data.subscription_data?.id && typeof response.data.subscription_data.id === 'number') {
-        subscriptionId = response.data.subscription_data.id;
-        console.log('✅ Found subscription ID in subscription_data.id:', subscriptionId);
-      }
-      // Try response.data.id (direct format)
-      else if (response.data.id && typeof response.data.id === 'number') {
-        subscriptionId = response.data.id;
-        console.log('✅ Found subscription ID in root id:', subscriptionId);
-      }
-      // Try response.data.subscription.id
-      else if (response.data.subscription?.id && typeof response.data.subscription.id === 'number') {
-        subscriptionId = response.data.subscription.id;
-        console.log('✅ Found subscription ID in subscription.id:', subscriptionId);
-      }
-
-      if (!subscriptionId) {
-        console.error('❌ Could not find valid subscription ID in response');
-        console.error('Response structure:', JSON.stringify(response.data, null, 2));
-        throw new Error('Paymob API did not return a valid subscription ID in expected locations');
+      
+      // IMPORTANT: Paymob returns a payment intention object, NOT a subscription object
+      // The actual subscription ID will arrive later via SUBSCRIPTION webhook
+      // See: replit.md for full documentation on asynchronous subscription flow
+      
+      if (response.data.object === 'paymentintention') {
+        console.log('✅ Payment intention created for subscription');
+        console.log('Payment intention ID:', response.data.id);
+        console.log('Status:', response.data.status);
+        console.log('⏳ Subscription ID will arrive via SUBSCRIPTION webhook');
+      } else {
+        console.warn('⚠️ Unexpected response object type:', response.data.object);
       }
       
-      console.log('✅ Paymob subscription created with ID:', subscriptionId);
       console.log('=====================================');
       
-      // Return enhanced response with extracted subscription ID
+      // Return the payment intention response
+      // The subscription ID will be provided later via webhook
       return {
         ...response.data,
-        subscriptionId: subscriptionId
+        subscriptionId: null, // Will be populated by SUBSCRIPTION webhook
+        isPending: true // Indicates subscription is being created asynchronously
       };
     } catch (error: any) {
       console.error('❌ Failed to create subscription');

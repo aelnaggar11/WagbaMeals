@@ -2856,7 +2856,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 city: address.city || 'Cairo'
               };
               
-              // Create Paymob subscription
+              // Create Paymob subscription (asynchronous - subscription ID will come via webhook)
               const subscription = await paymobService.createSubscription({
                 plan_id: planId,
                 card_token: cardToken,
@@ -2870,21 +2870,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 starts_at: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // Start next week
               });
               
-              console.log(`✅ Paymob subscription created: ${subscription.subscriptionId}`);
-              console.log(`Plan ID: ${planId}, Subscription ID: ${subscription.subscriptionId}`);
+              console.log(`✅ Paymob subscription payment intention created`);
+              console.log(`Payment intention ID: ${subscription.id}`);
+              console.log(`Plan ID: ${planId}`);
+              console.log(`⏳ Subscription ID will arrive via SUBSCRIPTION webhook`);
               
-              // Update user with subscription IDs (atomic operation - all or nothing)
+              // Store plan metadata and set status to 'pending'
+              // The SUBSCRIPTION webhook will update with the actual subscription ID and activate
               await storage.updateUser(user.id, {
-                paymobSubscriptionId: subscription.subscriptionId.toString(),
                 paymobPlanId: planId,
-                subscriptionStatus: 'active',
+                subscriptionStatus: 'pending', // Will be activated by SUBSCRIPTION webhook
                 subscriptionStartedAt: new Date(),
-                isSubscriber: true,
+                isSubscriber: false, // Will be set to true by SUBSCRIPTION webhook
                 userType: 'subscriber'
               });
               
-              console.log(`✅ User ${user.id} subscription setup complete`);
-              console.log(`Subscription status: active`);
+              console.log(`✅ User ${user.id} subscription setup in progress`);
+              console.log(`Subscription status: pending (awaiting SUBSCRIPTION webhook)`);
             } catch (error: any) {
               console.error('❌ CRITICAL: Failed to create Paymob subscription:', error);
               console.error('Error details:', error.message);
