@@ -42,15 +42,22 @@ Paymob requires TWO separate integration IDs for subscription functionality:
 - **TOKEN webhooks:** 8 fields in ALPHABETICAL order (card_subtype, created_at, email, id, masked_pan, merchant_id, order_id, token) - discovered through testing with actual webhook data
 - **SUBSCRIPTION webhooks:** Format "{trigger_type}for{subscription_id}" (e.g., "suspendedfor1264")
 
-**Subscription Flow (Asynchronous via Webhooks):**
-1. Create payment intention with `save_token=true` for subscription orders
-2. Payment webhooks arrive (order may vary - TOKEN often arrives BEFORE TRANSACTION)
-3. TRANSACTION webhook: Payment confirmed, HMAC verified
-4. TOKEN webhook: Card token received, HMAC verified using alphabetical field order
-5. Create payment method from token and store plan ID on user record
-6. SUBSCRIPTION webhook: Paymob sends webhook with subscription ID after creating subscription
-7. Find user by email from `client_info.email` in webhook payload
-8. Link subscription ID to user record (first time) or update subscription status (subsequent webhooks)
+**Subscription Flow (Automated via Paymob - Refactored November 2025):**
+1. **Subscription plan created BEFORE checkout:** Create plan with MOTO integration ID during checkout
+2. **Payment intention created WITH subscription_plan_id:** Include plan ID in initial payment intention
+3. **Customer completes payment:** 3DS authentication via Paymob iframe
+4. **TRANSACTION webhook:** Payment confirmed, HMAC verified, order status updated to 'paid'
+5. **TOKEN webhook:** Card token received and saved to payment_methods table
+6. **Paymob auto-creates subscription:** After successful payment, Paymob automatically creates subscription
+7. **SUBSCRIPTION webhook:** Paymob sends webhook with subscription ID (trigger_type: "Subscription Created")
+8. **Subscription activated:** Find user by email, link subscription ID, set status to 'active'
+
+**Key Changes from Previous Implementation:**
+- Subscription plan now created BEFORE payment (not after)
+- Payment intention includes `subscription_plan_id` parameter
+- Removed duplicate subscription creation logic from TOKEN webhook
+- Paymob handles subscription creation automatically (asynchronous)
+- SUBSCRIPTION webhook handler now processes "Subscription Created" trigger type
 
 **Key Implementation Details:**
 - **Payment intention API does NOT return subscription ID** - it returns `object: "paymentintention"` with status "intended"

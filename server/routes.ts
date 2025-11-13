@@ -2648,13 +2648,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: `Weekly Meal Plan - Order ${orderId}`,
           amount_cents: Math.round(totalAmount * 100), // Amount in cents
           frequency: 7, // Weekly billing
-          integration: parseInt(process.env.PAYMOB_MOTO_INTEGRATION_ID || '0'),
-          webhook_url: `${webhookBaseUrl}/api/payments/paymob/subscription-webhook`,
-          reminder_days: 1,
-          retrial_days: 3,
-          plan_type: 'rent',
-          number_of_deductions: null, // Unlimited
-          fee: null
+          webhook_url: `${webhookBaseUrl}/api/payments/paymob/subscription-webhook`
         });
         
         subscriptionPlanId = subscriptionPlan.id;
