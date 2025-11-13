@@ -482,21 +482,28 @@ export class PaymobService {
       console.log('=== CREATING PAYMOB SUBSCRIPTION ===');
       console.log('Plan ID:', subscriptionData.plan_id);
       console.log('Customer email:', subscriptionData.customer.email);
-      console.log('Starts at:', subscriptionData.starts_at || new Date().toISOString().split('T')[0]);
+      console.log('Starts at:', subscriptionData.starts_at || 'IMMEDIATE (not specified)');
+
+      // Build the payload - only include starts_at if explicitly provided
+      const payload: any = {
+        amount: 100, // Minimum amount required by Paymob (1 EGP in cents), actual amount from plan
+        currency: 'EGP',
+        payment_methods: [parseInt(this.integrationId)],
+        items: [],
+        billing_data: subscriptionData.billing_data,
+        customer: subscriptionData.customer,
+        card_token: subscriptionData.card_token,
+        subscription_plan_id: subscriptionData.plan_id
+      };
+
+      // Only include starts_at if explicitly provided (undefined = start immediately)
+      if (subscriptionData.starts_at) {
+        payload.starts_at = subscriptionData.starts_at;
+      }
 
       const response = await axios.post(
         `${PAYMOB_API_URL}/intention/`,
-        {
-          amount: 100, // Minimum amount required by Paymob (1 EGP in cents), actual amount from plan
-          currency: 'EGP',
-          payment_methods: [parseInt(this.integrationId)],
-          items: [],
-          billing_data: subscriptionData.billing_data,
-          customer: subscriptionData.customer,
-          card_token: subscriptionData.card_token,
-          subscription_plan_id: subscriptionData.plan_id,
-          starts_at: subscriptionData.starts_at || new Date().toISOString().split('T')[0]
-        },
+        payload,
         {
           headers: {
             'Authorization': `Token ${this.secretKey}`,
