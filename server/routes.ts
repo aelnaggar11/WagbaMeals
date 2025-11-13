@@ -3035,14 +3035,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let updateData: any = {};
 
       switch (triggerType) {
+        case 'Subscription Created':
         case 'active':
         case 'resumed':
           newStatus = 'active';
           updateData = {
             subscriptionStatus: 'active',
-            subscriptionPausedAt: null
+            subscriptionPausedAt: null,
+            isSubscriber: true
           };
-          console.log(`✅ Subscription ${subscriptionId} activated/resumed`);
+          console.log(`✅ Subscription ${subscriptionId} activated/created`);
           break;
 
         case 'suspended':
