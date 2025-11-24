@@ -197,8 +197,7 @@ const Home = () => {
                       className="w-full h-32 object-cover"
                     />
                     <div className="p-3">
-                      <h3 className="font-bold text-sm mb-1">{meal.name}</h3>
-                      <p className="text-xs text-gray-600">{meal.description}</p>
+                      <h3 className="font-bold text-sm">{meal.name}</h3>
                     </div>
                   </div>
                 ))}
@@ -211,8 +210,7 @@ const Home = () => {
                       className="w-full h-32 object-cover"
                     />
                     <div className="p-3">
-                      <h3 className="font-bold text-sm mb-1">{meal.name}</h3>
-                      <p className="text-xs text-gray-600">{meal.description}</p>
+                      <h3 className="font-bold text-sm">{meal.name}</h3>
                     </div>
                   </div>
                 ))}
