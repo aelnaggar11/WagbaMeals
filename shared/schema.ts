@@ -473,6 +473,7 @@ export const landingHero = pgTable("landing_hero", {
 
 export const landingCarouselMeals = pgTable("landing_carousel_meals", {
   id: serial("id").primaryKey(),
+  mealId: integer("meal_id"),
   name: text("name").notNull(),
   description: text("description"),
   imageUrl: text("image_url"),
@@ -503,6 +504,7 @@ export const insertLandingHeroSchema = createInsertSchema(landingHero).pick({
 });
 
 export const insertLandingCarouselMealSchema = createInsertSchema(landingCarouselMeals).pick({
+  mealId: true,
   name: true,
   description: true,
   imageUrl: true,

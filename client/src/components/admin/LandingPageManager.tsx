@@ -12,10 +12,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Trash2, Edit, Plus, Move, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ImageUploader } from "./ImageUploader";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Meal } from "@shared/schema";
 
 // Schemas for form validation
 const heroSchema = z.object({
@@ -26,6 +28,7 @@ const heroSchema = z.object({
 });
 
 const carouselMealSchema = z.object({
+  mealId: z.number().optional(),
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
   imageUrl: z.string().url().optional().or(z.literal("")),
@@ -59,6 +62,10 @@ export function LandingPageManager() {
 
   const { data: faqs = [] } = useQuery<any[]>({
     queryKey: ['/api/admin/landing/faqs'],
+  });
+
+  const { data: allMeals = [] } = useQuery<Meal[]>({
+    queryKey: ['/api/meals'],
   });
 
   // Hero Section Component
@@ -365,14 +372,54 @@ export function LandingPageManager() {
               </h4>
               <Form {...carouselForm}>
                 <form onSubmit={carouselForm.handleSubmit(handleCarouselSubmit)} className="space-y-4">
+                  {!editingMeal && (
+                    <FormField
+                      control={carouselForm.control}
+                      name="mealId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Select Meal from Database</FormLabel>
+                          <Select 
+                            onValueChange={(value) => {
+                              const mealId = parseInt(value);
+                              field.onChange(mealId);
+                              
+                              const selectedMeal = allMeals.find(m => m.id === mealId);
+                              if (selectedMeal) {
+                                carouselForm.setValue("name", selectedMeal.title);
+                                carouselForm.setValue("description", selectedMeal.description);
+                                carouselForm.setValue("imageUrl", selectedMeal.imageUrl);
+                              }
+                            }}
+                            value={field.value?.toString() || ""}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Choose a meal..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {allMeals.map((meal) => (
+                                <SelectItem key={meal.id} value={meal.id.toString()}>
+                                  {meal.title}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                  
                   <FormField
                     control={carouselForm.control}
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Name</FormLabel>
+                        <FormLabel>Name {editingMeal && "(Read-only)"}</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Meal name" />
+                          <Input {...field} placeholder="Meal name" disabled={!!editingMeal} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -384,9 +431,9 @@ export function LandingPageManager() {
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Description</FormLabel>
+                        <FormLabel>Description {editingMeal && "(Read-only)"}</FormLabel>
                         <FormControl>
-                          <Textarea {...field} placeholder="Meal description" />
+                          <Textarea {...field} placeholder="Meal description" disabled={!!editingMeal} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
