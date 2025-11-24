@@ -420,42 +420,6 @@ export function LandingPageManager() {
                   
                   <FormField
                     control={carouselForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name {editingMeal && "(Read-only)"}</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Meal name" disabled={!!editingMeal} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={carouselForm.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description {editingMeal && "(Read-only)"}</FormLabel>
-                        <FormControl>
-                          <Textarea {...field} placeholder="Meal description" disabled={!!editingMeal} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div>
-                    <ImageUploader
-                      label="Meal Image"
-                      currentImageUrl={carouselForm.watch("imageUrl")}
-                      onImageUploaded={(url) => carouselForm.setValue("imageUrl", url)}
-                    />
-                  </div>
-                  
-                  <FormField
-                    control={carouselForm.control}
                     name="displayOrder"
                     render={({ field }) => (
                       <FormItem>
