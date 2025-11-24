@@ -64,9 +64,11 @@ export function LandingPageManager() {
     queryKey: ['/api/admin/landing/faqs'],
   });
 
-  const { data: allMeals = [] } = useQuery<Meal[]>({
+  const { data: mealsResponse } = useQuery<{ meals: Meal[] }>({
     queryKey: ['/api/meals'],
   });
+  
+  const allMeals = Array.isArray(mealsResponse?.meals) ? mealsResponse.meals : [];
 
   // Hero Section Component
   const HeroSection = () => {
@@ -399,11 +401,15 @@ export function LandingPageManager() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {allMeals.map((meal) => (
-                                <SelectItem key={meal.id} value={meal.id.toString()}>
-                                  {meal.title}
-                                </SelectItem>
-                              ))}
+                              {Array.isArray(allMeals) && allMeals.length > 0 ? (
+                                allMeals.map((meal) => (
+                                  <SelectItem key={meal.id} value={meal.id.toString()}>
+                                    {meal.title}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <div className="p-2 text-sm text-gray-500">No meals available</div>
+                              )}
                             </SelectContent>
                           </Select>
                           <FormMessage />
