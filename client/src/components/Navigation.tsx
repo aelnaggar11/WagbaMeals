@@ -8,6 +8,7 @@ import { User, Admin } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import PreOnboardingModal from "@/components/PreOnboardingModal";
+import loginButtonImage from "@assets/login button_1764013193537.png";
 
 const Navigation = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -106,30 +107,7 @@ const Navigation = () => {
     <header 
       className="sticky top-0 z-50 shadow-md relative"
       style={{ 
-        backgroundColor: '#A80906',
-        backgroundImage: `
-          radial-gradient(circle 60px at 0px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
-          radial-gradient(circle 60px at 80px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
-          radial-gradient(circle 60px at 160px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
-          radial-gradient(circle 60px at 240px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
-          radial-gradient(circle 60px at 320px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
-          radial-gradient(circle 60px at 400px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
-          radial-gradient(circle 60px at 480px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
-          radial-gradient(circle 60px at 560px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
-          radial-gradient(circle 60px at 640px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
-          radial-gradient(circle 60px at 720px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
-          radial-gradient(circle 60px at 800px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
-          radial-gradient(circle 60px at 880px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
-          radial-gradient(circle 60px at 960px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
-          radial-gradient(circle 60px at 1040px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
-          radial-gradient(circle 60px at 1120px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
-          radial-gradient(circle 60px at 1200px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
-          radial-gradient(circle 60px at 1280px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
-          radial-gradient(circle 60px at 1360px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
-          radial-gradient(circle 60px at 1440px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%),
-          radial-gradient(circle 60px at 1520px 32px, rgba(169, 69, 69, 0.6) 0%, rgba(169, 69, 69, 0.6) 100%)
-        `,
-        backgroundRepeat: 'repeat-x'
+        backgroundColor: '#a80906'
       }}
     >
       <div className="container mx-auto px-4 py-3 flex justify-between items-center relative z-10">
@@ -172,12 +150,17 @@ const Navigation = () => {
             </>
           ) : (
             <>
-              <NavLink
-                href="/auth?tab=login&skip_progress=true"
-                className="text-white hover:text-gray-200 font-medium"
-              >
-                Login
-              </NavLink>
+              <Link href="/auth?tab=login&skip_progress=true">
+                <img 
+                  src={loginButtonImage} 
+                  alt="Login" 
+                  width="48"
+                  height="48"
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                  data-testid="button-login"
+                  style={{ width: '48px', height: '48px' }}
+                />
+              </Link>
               <Button 
                 variant="default" 
                 className="bg-white text-primary hover:bg-gray-100"
