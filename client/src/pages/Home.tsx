@@ -79,10 +79,10 @@ const Home = () => {
             <img 
               src={loginButtonImage}
               alt="Login"
-              width="48"
-              height="48"
+              width="96"
+              height="96"
               className="cursor-pointer hover:opacity-80 transition-opacity"
-              style={{ width: '48px', height: '48px' }}
+              style={{ width: '96px', height: '96px' }}
               onClick={() => navigate('/auth?tab=login&skip_progress=true')}
             />
           </div>

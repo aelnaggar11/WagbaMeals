@@ -154,11 +154,11 @@ const Navigation = () => {
                 <img 
                   src={loginButtonImage} 
                   alt="Login" 
-                  width="48"
-                  height="48"
+                  width="96"
+                  height="96"
                   className="cursor-pointer hover:opacity-80 transition-opacity"
                   data-testid="button-login"
-                  style={{ width: '48px', height: '48px' }}
+                  style={{ width: '96px', height: '96px' }}
                 />
               </Link>
               <Button 
