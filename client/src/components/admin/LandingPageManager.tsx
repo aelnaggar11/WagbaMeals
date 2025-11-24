@@ -29,9 +29,9 @@ const heroSchema = z.object({
 
 const carouselMealSchema = z.object({
   mealId: z.number().optional(),
-  name: z.string().min(1, "Name is required"),
+  name: z.string().optional(),
   description: z.string().optional(),
-  imageUrl: z.string().url().optional().or(z.literal("")),
+  imageUrl: z.string().optional(),
   displayOrder: z.number().default(0),
   isActive: z.boolean().default(true),
 });
@@ -294,6 +294,26 @@ export function LandingPageManager() {
     });
 
     const handleCarouselSubmit = (data: CarouselMealFormData) => {
+      // Check if we're adding and already have 10 meals
+      if (!editingMeal && carouselMeals.length >= 10) {
+        toast({
+          title: "Limit Reached",
+          description: "You can only add a maximum of 10 meals to the carousel",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate that either mealId is selected or name is provided
+      if (!editingMeal && !data.mealId && !data.name) {
+        toast({
+          title: "Error",
+          description: "Please select a meal from the database",
+          variant: "destructive",
+        });
+        return;
+      }
+
       carouselMutation.mutate({
         data,
         id: editingMeal?.id,
@@ -311,11 +331,22 @@ export function LandingPageManager() {
           <CardTitle className="flex items-center justify-between">
             Menu Carousel
             <Button
-              onClick={() => setShowAddForm(true)}
+              onClick={() => {
+                setShowAddForm(true);
+                carouselForm.reset({
+                  mealId: undefined,
+                  name: "",
+                  description: "",
+                  imageUrl: "",
+                  displayOrder: carouselMeals.length,
+                  isActive: true,
+                });
+              }}
               size="sm"
+              disabled={carouselMeals.length >= 10}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Add Meal
+              Add Meal {carouselMeals.length >= 10 && "(Max 10)"}
             </Button>
           </CardTitle>
           <CardDescription>
