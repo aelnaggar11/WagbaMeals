@@ -44,7 +44,7 @@ export function ImageUploader({ currentImageUrl, onImageUploaded, label }: Image
 
     try {
       // Get upload URL
-      const uploadResponse = await fetch('/api/objects/upload', {
+      const uploadResponse = await fetch('/api/admin/upload-image', {
         method: 'POST',
         credentials: 'include',
       });
