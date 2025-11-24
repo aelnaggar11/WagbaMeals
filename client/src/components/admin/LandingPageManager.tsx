@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
 import { z } from "zod";
 import { Trash2, Edit, Plus, Move, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -84,6 +85,17 @@ export function LandingPageManager() {
       },
     });
 
+    useEffect(() => {
+      if (hero) {
+        heroForm.reset({
+          backgroundImageUrl: hero.backgroundImageUrl || "",
+          ctaText: hero.ctaText || "Get Started",
+          ctaUrl: hero.ctaUrl || "/",
+          isActive: hero.isActive !== false,
+        });
+      }
+    }, [hero, heroForm]);
+
     const heroMutation = useMutation({
       mutationFn: async (data: HeroFormData) => {
         if (hero?.id) {
@@ -158,13 +170,21 @@ export function LandingPageManager() {
                   </div>
                 </div>
                 
-                <div>
-                  <ImageUploader
-                    label="Background Image"
-                    currentImageUrl={heroForm.watch("backgroundImageUrl")}
-                    onImageUploaded={(url) => heroForm.setValue("backgroundImageUrl", url)}
-                  />
-                </div>
+                <FormField
+                  control={heroForm.control}
+                  name="backgroundImageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <ImageUploader
+                        label="Background Image"
+                        currentImageUrl={field.value}
+                        onImageUploaded={(url) => {
+                          field.onChange(url);
+                        }}
+                      />
+                    </FormItem>
+                  )}
+                />
                 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
