@@ -355,11 +355,12 @@ export function LandingPageManager() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {carouselMeals.map((meal: any) => (
+            {carouselMeals
+              .sort((a: any, b: any) => a.displayOrder - b.displayOrder)
+              .map((meal: any) => (
               <div key={meal.id} className="flex items-center justify-between p-4 border rounded">
                 <div>
                   <h4 className="font-medium">{meal.name}</h4>
-                  <p className="text-sm text-gray-600">{meal.description}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -433,7 +434,9 @@ export function LandingPageManager() {
                             </FormControl>
                             <SelectContent>
                               {Array.isArray(allMeals) && allMeals.length > 0 ? (
-                                allMeals.map((meal) => (
+                                allMeals
+                                  .filter((meal) => !carouselMeals.some((cm: any) => cm.mealId === meal.id))
+                                  .map((meal) => (
                                   <SelectItem key={meal.id} value={meal.id.toString()}>
                                     {meal.title}
                                   </SelectItem>
