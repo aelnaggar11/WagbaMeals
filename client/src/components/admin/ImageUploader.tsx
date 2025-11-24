@@ -68,8 +68,21 @@ export function ImageUploader({ currentImageUrl, onImageUploaded, label }: Image
         throw new Error('Failed to upload image');
       }
 
-      // The uploaded image URL
-      const imageUrl = uploadURL.split('?')[0]; // Remove query parameters
+      // Confirm upload and get serving URL
+      const confirmResponse = await fetch('/api/admin/confirm-upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ uploadURL }),
+      });
+
+      if (!confirmResponse.ok) {
+        throw new Error('Failed to confirm upload');
+      }
+
+      const { imageUrl } = await confirmResponse.json();
       
       // Create a local preview URL
       const localPreviewUrl = URL.createObjectURL(file);
