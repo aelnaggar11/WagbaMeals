@@ -100,13 +100,10 @@ const Home = () => {
               />
               <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center px-6">
                 <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-2">
-                  Refined recipes.
-                </h1>
-                <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-2">
-                  Real ingredients.
+                  Chef Crafted Meals,
                 </h1>
                 <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
-                  Ready in minutes.
+                  without the hassle
                 </h1>
               </div>
             </div>
