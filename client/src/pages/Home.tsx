@@ -17,18 +17,50 @@ const Home = () => {
   const [, navigate] = useLocation();
   const [showPreOnboardingModal, setShowPreOnboardingModal] = useState(false);
   const [expandedFaqs, setExpandedFaqs] = useState<number[]>([]);
-  const [animatedWord, setAnimatedWord] = useState("hassle");
+  const [displayedText, setDisplayedText] = useState("");
   
-  const words = ["hassle", "shopping", "cooking", "cleaning", "mess"];
+  const words = ["Hassle", "Shopping", "Cooking", "Cleaning", "Mess"];
   
   useEffect(() => {
-    let currentIndex = 0;
-    const interval = setInterval(() => {
-      currentIndex = (currentIndex + 1) % words.length;
-      setAnimatedWord(words[currentIndex]);
-    }, 800); // 0.8 seconds per word
+    let currentWordIndex = 0;
+    let currentCharIndex = 0;
+    let isTyping = true;
+    let timeoutId: NodeJS.Timeout;
     
-    return () => clearInterval(interval);
+    const updateText = () => {
+      const currentWord = words[currentWordIndex];
+      
+      if (isTyping) {
+        // Typing phase
+        if (currentCharIndex < currentWord.length) {
+          setDisplayedText(currentWord.slice(0, currentCharIndex + 1));
+          currentCharIndex++;
+          timeoutId = setTimeout(updateText, 80); // Type speed
+        } else {
+          // Pause before deleting
+          isTyping = false;
+          currentCharIndex = currentWord.length;
+          timeoutId = setTimeout(updateText, 500); // Pause time
+        }
+      } else {
+        // Deleting phase
+        if (currentCharIndex > 0) {
+          currentCharIndex--;
+          setDisplayedText(currentWord.slice(0, currentCharIndex));
+          timeoutId = setTimeout(updateText, 80); // Delete speed
+        } else {
+          // Move to next word
+          currentWordIndex = (currentWordIndex + 1) % words.length;
+          isTyping = true;
+          currentCharIndex = 0;
+          timeoutId = setTimeout(updateText, 300); // Pause between words
+        }
+      }
+    };
+    
+    timeoutId = setTimeout(updateText, 0);
+    
+    return () => clearTimeout(timeoutId);
   }, []);
 
   // Get current available week for the menu link
@@ -113,7 +145,7 @@ const Home = () => {
               />
               <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center px-6">
                 <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-2">Chef-Crafted Meals</h1>
-                <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">Without the <span className="inline-block min-w-[180px] text-left">{animatedWord}</span></h1>
+                <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">Without the <span className="inline-block min-w-[200px] text-left">{displayedText}</span></h1>
               </div>
             </div>
           </div>
