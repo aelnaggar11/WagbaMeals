@@ -2644,10 +2644,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ? `https://${process.env.REPLIT_DOMAINS.split(',')[0].trim()}`
           : 'http://localhost:5000';
         
+        // TESTING MODE: Using 1-day frequency for faster testing
+        // TODO: Change back to 7 for weekly billing in production
         const subscriptionPlan = await paymobService.createSubscriptionPlan({
           name: `Weekly Meal Plan - Order ${orderId}`,
           amount_cents: Math.round(totalAmount * 100), // Amount in cents
-          frequency: 7, // Weekly billing
+          frequency: 1, // 1 day for testing (change to 7 for weekly in production)
           webhook_url: `${webhookBaseUrl}/api/payments/paymob/subscription-webhook`
         });
         
