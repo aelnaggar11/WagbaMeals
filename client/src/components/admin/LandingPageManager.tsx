@@ -11,7 +11,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { z } from "zod";
-import { Trash2, Edit, Plus, Move, Upload } from "lucide-react";
+import { Trash2, Edit, Plus, Move, Upload, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -608,6 +608,37 @@ export function LandingPageManager() {
       },
     });
 
+    const toggleVisibilityMutation = useMutation({
+      mutationFn: (faq: any) => 
+        fetch(`/api/admin/landing/faqs/${faq.id}`, {
+          method: 'PATCH',
+          headers: { 
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            question: faq.question,
+            answer: faq.answer,
+            displayOrder: faq.displayOrder,
+            isActive: !faq.isActive,
+          }),
+        }).then(res => res.json()),
+      onSuccess: (data, faq) => {
+        toast({
+          title: "Success",
+          description: `FAQ ${!faq.isActive ? "shown" : "hidden"} on landing page`,
+        });
+        queryClient.refetchQueries({ queryKey: ['/api/admin/landing/faqs'] });
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to toggle FAQ visibility",
+          variant: "destructive",
+        });
+      },
+    });
+
     const handleFaqSubmit = (data: FaqFormData) => {
       faqMutation.mutate({
         data,
@@ -648,8 +679,18 @@ export function LandingPageManager() {
                       onClick={() => startEdit(faq)}
                       size="sm"
                       variant="outline"
+                      title="Edit FAQ"
                     >
                       <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      onClick={() => toggleVisibilityMutation.mutate(faq)}
+                      size="sm"
+                      variant="outline"
+                      title={faq.isActive ? "Hide from landing page" : "Show on landing page"}
+                      disabled={toggleVisibilityMutation.isPending}
+                    >
+                      {faq.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
