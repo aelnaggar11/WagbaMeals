@@ -4371,7 +4371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================
   app.post('/api/qa/paymob-subscription-test', async (req, res) => {
     const { paymobService } = await import('./paymob');
-    const testResults = {
+    const testResults: any = {
       startTime: new Date().toISOString(),
       status: 'RUNNING',
       steps: [] as any[],
