@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Button as MovingBorderButton } from "@/components/ui/moving-border";
@@ -18,6 +18,10 @@ const Home = () => {
   const [showPreOnboardingModal, setShowPreOnboardingModal] = useState(false);
   const [expandedFaqs, setExpandedFaqs] = useState<number[]>([]);
   const [displayedText, setDisplayedText] = useState("");
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
   
   const words = ["Hassle", "Shopping", "Cooking", "Cleaning", "Mess"];
   
@@ -98,6 +102,29 @@ const Home = () => {
         ? prev.filter(id => id !== faqId)
         : [...prev, faqId]
     );
+  };
+
+  // Carousel drag handlers
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!carouselRef.current) return;
+    
+    setIsDragging(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    setDragStart(clientX - carouselRef.current.offsetLeft);
+    setScrollLeft(carouselRef.current.scrollLeft);
+  };
+
+  const handleDragMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDragging || !carouselRef.current) return;
+    
+    e.preventDefault();
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const walk = (clientX - carouselRef.current.offsetLeft) - dragStart;
+    carouselRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
   };
 
   return (
@@ -221,32 +248,64 @@ const Home = () => {
               </h2>
             </div>
 
-            {/* Carousel Container */}
-            <div className="relative overflow-hidden">
-              <div className="flex gap-2 sm:gap-3 md:gap-4 animate-scroll">
+            {/* Carousel Container with Drag Support */}
+            <div 
+              ref={carouselRef}
+              className="relative overflow-x-auto overflow-y-hidden cursor-grab active:cursor-grabbing"
+              onMouseDown={(e) => handleDragStart(e)}
+              onMouseMove={(e) => handleDragMove(e)}
+              onMouseUp={() => handleDragEnd()}
+              onMouseLeave={() => handleDragEnd()}
+              onTouchStart={(e) => handleDragStart(e)}
+              onTouchMove={(e) => handleDragMove(e)}
+              onTouchEnd={() => handleDragEnd()}
+              style={{
+                scrollBehavior: isDragging ? 'auto' : 'smooth',
+                msOverflowStyle: 'none',
+                scrollbarWidth: 'none'
+              }}
+            >
+              <div className="flex gap-2 sm:gap-3 md:gap-4" style={{
+                transform: isDragging ? 'none' : undefined,
+                transition: isDragging ? 'none' : 'transform 0.3s ease-out'
+              }}>
                 {/* Display meals from database */}
                 {carouselMeals.filter(meal => meal.isActive).map((meal, index) => (
-                  <div key={meal.id} className="bg-white rounded-lg overflow-hidden shadow-sm flex-shrink-0 w-40 sm:w-48 md:w-56 lg:w-64">
-                    <img 
-                      src={meal.imageUrl}
-                      alt={meal.name}
-                      className="w-full h-24 sm:h-28 md:h-32 object-cover"
-                    />
+                  <div 
+                    key={meal.id} 
+                    className="bg-white rounded-lg overflow-hidden shadow-sm flex-shrink-0 w-40 sm:w-48 md:w-56 lg:w-64"
+                    style={{ aspectRatio: '1/1.15' }}
+                  >
+                    <div className="w-full h-40 sm:h-48 md:h-56 lg:h-64">
+                      <img 
+                        src={meal.imageUrl}
+                        alt={meal.name}
+                        className="w-full h-full object-cover"
+                        draggable={false}
+                      />
+                    </div>
                     <div className="p-2 sm:p-3">
-                      <h3 className="font-bold text-xs sm:text-sm">{meal.name}</h3>
+                      <h3 className="font-bold text-xs sm:text-sm line-clamp-1">{meal.name}</h3>
                     </div>
                   </div>
                 ))}
                 {/* Duplicate items for seamless loop */}
                 {carouselMeals.filter(meal => meal.isActive).slice(0, 3).map((meal, index) => (
-                  <div key={`duplicate-${meal.id}`} className="bg-white rounded-lg overflow-hidden shadow-sm flex-shrink-0 w-40 sm:w-48 md:w-56 lg:w-64">
-                    <img 
-                      src={meal.imageUrl}
-                      alt={meal.name}
-                      className="w-full h-24 sm:h-28 md:h-32 object-cover"
-                    />
+                  <div 
+                    key={`duplicate-${meal.id}`} 
+                    className="bg-white rounded-lg overflow-hidden shadow-sm flex-shrink-0 w-40 sm:w-48 md:w-56 lg:w-64"
+                    style={{ aspectRatio: '1/1.15' }}
+                  >
+                    <div className="w-full h-40 sm:h-48 md:h-56 lg:h-64">
+                      <img 
+                        src={meal.imageUrl}
+                        alt={meal.name}
+                        className="w-full h-full object-cover"
+                        draggable={false}
+                      />
+                    </div>
                     <div className="p-2 sm:p-3">
-                      <h3 className="font-bold text-xs sm:text-sm">{meal.name}</h3>
+                      <h3 className="font-bold text-xs sm:text-sm line-clamp-1">{meal.name}</h3>
                     </div>
                   </div>
                 ))}

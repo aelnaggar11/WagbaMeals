@@ -114,3 +114,8 @@
     font-family: 'Poppins', sans-serif;
   }
 }
+
+/* Hide scrollbars while preserving scrollability */
+::-webkit-scrollbar {
+  display: none;
+}
