@@ -134,11 +134,11 @@ const Home = () => {
         <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
           {/* Hero Image and Text */}
           <div className="mb-6 sm:mb-7 md:mb-8 lg:mb-10">
-            <div className="relative bg-gray-100 rounded-xl sm:rounded-2xl overflow-hidden h-[66vh] sm:aspect-video">
+            <div className="relative bg-gray-100 rounded-xl sm:rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9' }}>
               <img 
                 src={heroData?.backgroundImageUrl || heroImage}
                 alt="Healthy prepared meal" 
-                className="w-full h-full object-cover object-right sm:object-center"
+                className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center px-3 sm:px-4 md:px-6 lg:px-8">
                 <h1 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-1 sm:mb-2">Chef-Crafted Meals</h1>
