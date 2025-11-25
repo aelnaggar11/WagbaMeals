@@ -99,9 +99,7 @@ const Home = () => {
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center px-6">
-                <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-2">
-                  Chef Crafted Meals,
-                </h1>
+                <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-2">Chef-Crafted Meals</h1>
                 <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
                   without the hassle
                 </h1>
@@ -319,7 +317,6 @@ const Home = () => {
 
         </div>
       </section>
-
       {/* Floating Get Started Button */}
       <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
         <MovingBorderButton
@@ -332,7 +329,6 @@ const Home = () => {
           {heroData?.ctaText || "Get Started"}
         </MovingBorderButton>
       </div>
-
       {/* Pre-onboarding Modal */}
       <PreOnboardingModal
         isOpen={showPreOnboardingModal}
