@@ -85,8 +85,9 @@ export function LandingPageManager() {
       },
     });
 
+    // Only reset form when entering edit mode (when hero data loads)
     useEffect(() => {
-      if (hero) {
+      if (hero && !isEditing) {
         heroForm.reset({
           backgroundImageUrl: hero.backgroundImageUrl || "",
           ctaText: hero.ctaText || "Get Started",
@@ -94,7 +95,7 @@ export function LandingPageManager() {
           isActive: hero.isActive !== false,
         });
       }
-    }, [hero, heroForm]);
+    }, [hero]);
 
     const heroMutation = useMutation({
       mutationFn: async (data: HeroFormData) => {
