@@ -4042,7 +4042,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // FAQs
   app.get('/api/admin/landing/faqs', adminMiddleware, async (req, res) => {
     try {
-      const faqs = await storage.getLandingFaqs();
+      const faqs = await storage.getAllLandingFaqs();
       res.json(faqs);
     } catch (error) {
       console.error('Error fetching FAQs:', error);

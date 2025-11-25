@@ -1107,6 +1107,13 @@ export class DatabaseStorage implements IStorage {
       .orderBy(landingFaqs.displayOrder);
   }
 
+  async getAllLandingFaqs(): Promise<LandingFaq[]> {
+    return await db
+      .select()
+      .from(landingFaqs)
+      .orderBy(landingFaqs.displayOrder);
+  }
+
   async createLandingFaq(faq: InsertLandingFaq): Promise<LandingFaq> {
     const [newFaq] = await db
       .insert(landingFaqs)
