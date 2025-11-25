@@ -181,6 +181,13 @@ export function LandingPageManager() {
                         currentImageUrl={field.value}
                         onImageUploaded={(url) => {
                           field.onChange(url);
+                          // Auto-save when image is uploaded
+                          heroMutation.mutate({
+                            backgroundImageUrl: url,
+                            ctaText: heroForm.getValues("ctaText"),
+                            ctaUrl: heroForm.getValues("ctaUrl"),
+                            isActive: heroForm.getValues("isActive"),
+                          });
                         }}
                       />
                     </FormItem>
