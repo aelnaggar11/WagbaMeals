@@ -5,6 +5,7 @@ import { Button as MovingBorderButton } from "@/components/ui/moving-border";
 import PreOnboardingModal from "@/components/PreOnboardingModal";
 import { useQuery } from "@tanstack/react-query";
 import { Week } from "@shared/schema";
+import { Instagram } from "lucide-react";
 import logoImage from "@assets/Logo tm.png";
 import loginButtonImage from "@assets/login button_1764013193537.png";
 import quoteBgPatternImage from "@assets/Quote BG Pattern_1753819991596.png";
@@ -217,70 +218,6 @@ const Home = () => {
             </div>
           </div>
 
-          {/* How It Works Section */}
-          <div className="rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 mb-6 sm:mb-8 text-white" style={{ backgroundColor: '#A80906' }}>
-            <div className="text-center mb-4 sm:mb-6">
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold flex items-center justify-center gap-2">
-                <span className="text-yellow-300">✦</span>
-                How It Works
-                <span className="text-yellow-300">✦</span>
-              </h2>
-            </div>
-
-            <div className="space-y-4 sm:space-y-5 md:space-y-6 md:max-w-lg md:mx-auto">
-              <div className="flex gap-3 sm:gap-4">
-                <div className="text-4xl sm:text-5xl font-bold opacity-90 flex-shrink-0">01</div>
-                <div className="min-w-0">
-                  <h3 className="text-base sm:text-lg md:text-xl font-bold mb-1 sm:mb-2">Select your favorites</h3>
-                  <p className="text-xs sm:text-sm md:text-base text-red-100">
-                    Choose meals that match your <em>mood</em> or <em>diet</em>.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-3 sm:gap-4">
-                <div className="text-4xl sm:text-5xl font-bold opacity-90 flex-shrink-0">02</div>
-                <div className="min-w-0">
-                  <h3 className="text-base sm:text-lg md:text-xl font-bold mb-1 sm:mb-2">We get cookin'</h3>
-                  <p className="text-xs sm:text-sm md:text-base text-red-100">
-                    Our kitchen prepares everything fresh, <em>just for you</em>.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-3 sm:gap-4">
-                <div className="text-4xl sm:text-5xl font-bold opacity-90 flex-shrink-0">03</div>
-                <div className="min-w-0">
-                  <h3 className="text-base sm:text-lg md:text-xl font-bold mb-1 sm:mb-2">Delivered fresh</h3>
-                  <p className="text-xs sm:text-sm md:text-base text-red-100">
-                    Your meals arrive fresh and chilled — ready to heat and eat.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Quote Section */}
-          <div 
-            className="rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 lg:p-10 mb-6 sm:mb-8 relative overflow-hidden"
-            style={{
-              backgroundImage: `url(${quoteBgPatternImage})`,
-              backgroundSize: 'cover',
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'center',
-              minHeight: '180px'
-            }}
-          >
-            <div className="relative z-10 flex flex-col justify-center h-full">
-              <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-red-800 mb-4 sm:mb-6 leading-tight">
-                Make it look simple-<br/>the very complicated thing.
-              </h2>
-              <p className="text-red-700 font-bold text-right text-sm sm:text-base md:text-lg">
-                MASSIMO BOTTURA
-              </p>
-            </div>
-          </div>
-
           {/* Menu Section */}
           <div className="mb-6 sm:mb-8">
             <div className="text-center mb-4 sm:mb-6">
@@ -356,6 +293,70 @@ const Home = () => {
             </div>
           </div>
 
+          {/* How It Works Section */}
+          <div className="rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 mb-6 sm:mb-8 text-white" style={{ backgroundColor: '#A80906' }}>
+            <div className="text-center mb-4 sm:mb-6">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold flex items-center justify-center gap-2">
+                <span className="text-yellow-300">✦</span>
+                How It Works
+                <span className="text-yellow-300">✦</span>
+              </h2>
+            </div>
+
+            <div className="space-y-4 sm:space-y-5 md:space-y-6 md:max-w-lg md:mx-auto">
+              <div className="flex gap-3 sm:gap-4">
+                <div className="text-4xl sm:text-5xl font-bold opacity-90 flex-shrink-0">01</div>
+                <div className="min-w-0">
+                  <h3 className="text-base sm:text-lg md:text-xl font-bold mb-1 sm:mb-2">Select your favorites</h3>
+                  <p className="text-xs sm:text-sm md:text-base text-red-100">
+                    Choose meals that match your <em>mood</em> or <em>diet</em>.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 sm:gap-4">
+                <div className="text-4xl sm:text-5xl font-bold opacity-90 flex-shrink-0">02</div>
+                <div className="min-w-0">
+                  <h3 className="text-base sm:text-lg md:text-xl font-bold mb-1 sm:mb-2">We get cookin'</h3>
+                  <p className="text-xs sm:text-sm md:text-base text-red-100">
+                    Our kitchen prepares everything fresh, <em>just for you</em>.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 sm:gap-4">
+                <div className="text-4xl sm:text-5xl font-bold opacity-90 flex-shrink-0">03</div>
+                <div className="min-w-0">
+                  <h3 className="text-base sm:text-lg md:text-xl font-bold mb-1 sm:mb-2">Delivered fresh</h3>
+                  <p className="text-xs sm:text-sm md:text-base text-red-100">
+                    Your meals arrive fresh and chilled — ready to heat and eat.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quote Section */}
+          <div 
+            className="rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 lg:p-10 mb-6 sm:mb-8 relative overflow-hidden"
+            style={{
+              backgroundImage: `url(${quoteBgPatternImage})`,
+              backgroundSize: 'cover',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center',
+              minHeight: '180px'
+            }}
+          >
+            <div className="relative z-10 flex flex-col justify-center h-full">
+              <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-red-800 mb-4 sm:mb-6 leading-tight">
+                Make it look simple-<br/>the very complicated thing.
+              </h2>
+              <p className="text-red-700 font-bold text-right text-sm sm:text-base md:text-lg">
+                MASSIMO BOTTURA
+              </p>
+            </div>
+          </div>
+
           {/* Why It Works Section */}
           <div className="rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 mb-6 sm:mb-8 text-white" style={{ backgroundColor: '#A80906' }}>
             <div className="text-center mb-4 sm:mb-6">
@@ -404,8 +405,6 @@ const Home = () => {
               </div>
             </div>
           </div>
-
-
 
           {/* FAQ Section */}
           <div className="mb-8 sm:mb-10 md:mb-12">
@@ -456,6 +455,22 @@ const Home = () => {
             </div>
           </div>
 
+          {/* Footer Section */}
+          <footer className="mt-12 sm:mt-16 md:mt-20 pt-8 sm:pt-10 md:pt-12 border-t border-gray-200">
+            <div className="flex flex-col items-center justify-center">
+              <p className="text-gray-600 text-sm sm:text-base mb-6 sm:mb-8">Follow us on social media</p>
+              <a 
+                href="https://instagram.com/wagba"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-600 hover:text-red-600 transition-colors duration-200"
+                aria-label="Follow us on Instagram"
+              >
+                <Instagram className="w-8 h-8 sm:w-10 sm:h-10" />
+              </a>
+              <p className="text-gray-500 text-xs sm:text-sm mt-8 sm:mt-10">© 2024 Wagba. All rights reserved.</p>
+            </div>
+          </footer>
 
         </div>
       </section>
