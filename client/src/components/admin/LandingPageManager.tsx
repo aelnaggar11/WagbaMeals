@@ -37,7 +37,13 @@ const carouselMealSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
+const faqCategorySchema = z.object({
+  name: z.string().min(1, "Category name is required"),
+  displayOrder: z.number().default(0),
+});
+
 const faqSchema = z.object({
+  categoryId: z.number().nullable().optional(),
   question: z.string().min(1, "Question is required"),
   answer: z.string().min(1, "Answer is required"),
   displayOrder: z.number().default(0),
@@ -46,6 +52,7 @@ const faqSchema = z.object({
 
 type HeroFormData = z.infer<typeof heroSchema>;
 type CarouselMealFormData = z.infer<typeof carouselMealSchema>;
+type FaqCategoryFormData = z.infer<typeof faqCategorySchema>;
 type FaqFormData = z.infer<typeof faqSchema>;
 
 export function LandingPageManager() {
@@ -59,6 +66,10 @@ export function LandingPageManager() {
 
   const { data: carouselMeals = [] } = useQuery<any[]>({
     queryKey: ['/api/admin/landing/carousel-meals'],
+  });
+
+  const { data: faqCategories = [] } = useQuery<any[]>({
+    queryKey: ['/api/admin/landing/faq-categories'],
   });
 
   const { data: faqs = [] } = useQuery<any[]>({
@@ -530,6 +541,216 @@ export function LandingPageManager() {
     );
   };
 
+  // FAQ Categories Component
+  const FaqCategoriesSection = () => {
+    const [editingCategory, setEditingCategory] = useState<any>(null);
+    const [showAddForm, setShowAddForm] = useState(false);
+    
+    const categoryForm = useForm<FaqCategoryFormData>({
+      resolver: zodResolver(faqCategorySchema),
+      defaultValues: {
+        name: "",
+        displayOrder: 0,
+      },
+    });
+
+    const categoryMutation = useMutation({
+      mutationFn: async ({ data, id }: { data: FaqCategoryFormData; id?: number }) => {
+        if (id) {
+          return await fetch(`/api/admin/landing/faq-categories/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(data),
+          }).then(res => res.json());
+        } else {
+          return await fetch('/api/admin/landing/faq-categories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(data),
+          }).then(res => res.json());
+        }
+      },
+      onSuccess: () => {
+        toast({
+          title: "Success",
+          description: "Category updated successfully",
+        });
+        queryClient.refetchQueries({ queryKey: ['/api/admin/landing/faq-categories'] });
+        setEditingCategory(null);
+        setShowAddForm(false);
+        categoryForm.reset();
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to update category",
+          variant: "destructive",
+        });
+      },
+    });
+
+    const deleteCategoryMutation = useMutation({
+      mutationFn: (id: number) => 
+        fetch(`/api/admin/landing/faq-categories/${id}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        }).then(res => res.json()),
+      onSuccess: () => {
+        toast({
+          title: "Success",
+          description: "Category deleted successfully",
+        });
+        queryClient.refetchQueries({ queryKey: ['/api/admin/landing/faq-categories', '/api/admin/landing/faqs'] });
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to delete category",
+          variant: "destructive",
+        });
+      },
+    });
+
+    const handleCategorySubmit = (data: FaqCategoryFormData) => {
+      categoryMutation.mutate({
+        data,
+        id: editingCategory?.id,
+      });
+    };
+
+    const startEdit = (category: any) => {
+      setEditingCategory(category);
+      categoryForm.reset(category);
+    };
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            FAQ Categories
+            <Button
+              onClick={() => setShowAddForm(true)}
+              size="sm"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Category
+            </Button>
+          </CardTitle>
+          <CardDescription>
+            Manage FAQ categories
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {faqCategories.map((category: any) => (
+              <div key={category.id} className="p-4 border rounded flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium">{category.name}</h4>
+                  <p className="text-sm text-gray-500">Order: {category.displayOrder}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => startEdit(category)}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Category</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{category.name}"? All FAQs in this category will also be deleted. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => deleteCategoryMutation.mutate(category.id)}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Add/Edit Form */}
+          {(showAddForm || editingCategory) && (
+            <div className="mt-6 p-4 border rounded">
+              <h4 className="font-medium mb-4">
+                {editingCategory ? "Edit Category" : "Add New Category"}
+              </h4>
+              <Form {...categoryForm}>
+                <form onSubmit={categoryForm.handleSubmit(handleCategorySubmit)} className="space-y-4">
+                  <FormField
+                    control={categoryForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Category Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Enter category name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={categoryForm.control}
+                    name="displayOrder"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Display Order</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            type="number"
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex gap-2">
+                    <Button type="submit" disabled={categoryMutation.isPending}>
+                      {categoryMutation.isPending ? "Saving..." : editingCategory ? "Update Category" : "Add Category"}
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={() => {
+                        setEditingCategory(null);
+                        setShowAddForm(false);
+                        categoryForm.reset();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
   // FAQs Component
   const FaqsSection = () => {
     const [editingFaq, setEditingFaq] = useState<any>(null);
@@ -538,6 +759,7 @@ export function LandingPageManager() {
     const faqForm = useForm<FaqFormData>({
       resolver: zodResolver(faqSchema),
       defaultValues: {
+        categoryId: undefined,
         question: "",
         answer: "",
         displayOrder: 0,
@@ -691,6 +913,35 @@ export function LandingPageManager() {
                 <form onSubmit={faqForm.handleSubmit(handleFaqSubmit)} className="space-y-4">
                   <FormField
                     control={faqForm.control}
+                    name="categoryId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Category (Optional)</FormLabel>
+                        <Select 
+                          onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
+                          value={field.value?.toString() || ""}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a category..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="">No Category</SelectItem>
+                            {faqCategories.map((cat: any) => (
+                              <SelectItem key={cat.id} value={cat.id.toString()}>
+                                {cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={faqForm.control}
                     name="question"
                     render={({ field }) => (
                       <FormItem>
@@ -770,6 +1021,7 @@ export function LandingPageManager() {
       <div className="space-y-6">
         <HeroSection />
         <CarouselMealsSection />
+        <FaqCategoriesSection />
         <FaqsSection />
       </div>
     </div>
