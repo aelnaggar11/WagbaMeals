@@ -15,6 +15,7 @@ import UsersManagement from "@/components/admin/UsersManagement";
 import PricingManager from "@/components/admin/PricingManager";
 import AdminsManager from "@/components/admin/AdminsManager";
 import { LandingPageManager } from "@/components/admin/LandingPageManager";
+import { PaymobQATesting } from "@/components/admin/PaymobQATesting";
 
 const Dashboard = () => {
   const [, navigate] = useLocation();
@@ -78,7 +79,7 @@ const Dashboard = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-8 mb-8 bg-gray-200 rounded-lg p-1">
+          <TabsList className="grid w-full grid-cols-9 mb-8 bg-gray-200 rounded-lg p-1">
             <TabsTrigger 
               value="weekly-menus" 
               className="data-[state=active]:bg-white data-[state=active]:text-primary text-gray-600"
@@ -126,6 +127,12 @@ const Dashboard = () => {
               className="data-[state=active]:bg-white data-[state=active]:text-primary text-gray-600"
             >
               Landing Page
+            </TabsTrigger>
+            <TabsTrigger 
+              value="qa-testing" 
+              className="data-[state=active]:bg-white data-[state=active]:text-primary text-gray-600"
+            >
+              QA Testing
             </TabsTrigger>
           </TabsList>
 
@@ -186,6 +193,10 @@ const Dashboard = () => {
 
           <TabsContent value="landing-page" className="mt-0">
             <LandingPageManager />
+          </TabsContent>
+
+          <TabsContent value="qa-testing" className="mt-0">
+            <PaymobQATesting />
           </TabsContent>
 
           <TabsContent value="invitation-codes" className="mt-0">
