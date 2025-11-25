@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { and, eq, inArray, or, sql, desc } from "drizzle-orm";
 import * as schema from "@shared/schema";
-import { users, admins, meals, weeks, weekMeals, orders, orderItems, userWeekStatuses, neighborhoods, invitationCodes, waitlist, pricingConfigs, passwordResetTokens, landingHero, landingCarouselMeals, landingFaqs } from "@shared/schema";
+import { users, admins, meals, weeks, weekMeals, orders, orderItems, userWeekStatuses, neighborhoods, invitationCodes, waitlist, pricingConfigs, passwordResetTokens, landingHero, landingCarouselMeals, landingFaqCategories, landingFaqs } from "@shared/schema";
 import type { 
   User, InsertUser, 
   Admin, InsertAdmin,
@@ -18,6 +18,7 @@ import type {
   PasswordResetToken, InsertPasswordResetToken,
   LandingHero, InsertLandingHero,
   LandingCarouselMeal, InsertLandingCarouselMeal,
+  LandingFaqCategory, InsertLandingFaqCategory,
   LandingFaq, InsertLandingFaq,
   IStorage 
 } from "@shared/schema";
@@ -1097,6 +1098,46 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(landingCarouselMeals)
       .where(eq(landingCarouselMeals.id, id));
+  }
+
+  async getLandingFaqCategories(): Promise<LandingFaqCategory[]> {
+    return await db
+      .select()
+      .from(landingFaqCategories)
+      .orderBy(landingFaqCategories.displayOrder);
+  }
+
+  async createLandingFaqCategory(category: InsertLandingFaqCategory): Promise<LandingFaqCategory> {
+    const [newCategory] = await db
+      .insert(landingFaqCategories)
+      .values(category)
+      .returning();
+    return newCategory;
+  }
+
+  async updateLandingFaqCategory(id: number, category: Partial<LandingFaqCategory>): Promise<LandingFaqCategory> {
+    const [updatedCategory] = await db
+      .update(landingFaqCategories)
+      .set({ ...category, updatedAt: new Date() })
+      .where(eq(landingFaqCategories.id, id))
+      .returning();
+    
+    if (!updatedCategory) {
+      throw new Error(`Landing FAQ category not found: ${id}`);
+    }
+    return updatedCategory;
+  }
+
+  async deleteLandingFaqCategory(id: number): Promise<void> {
+    // Delete all FAQs in this category first
+    await db
+      .delete(landingFaqs)
+      .where(eq(landingFaqs.categoryId, id));
+    
+    // Then delete the category
+    await db
+      .delete(landingFaqCategories)
+      .where(eq(landingFaqCategories.id, id));
   }
 
   async getLandingFaqs(): Promise<LandingFaq[]> {
