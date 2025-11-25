@@ -19,7 +19,6 @@ const Home = () => {
   const [, navigate] = useLocation();
   const [showPreOnboardingModal, setShowPreOnboardingModal] = useState(false);
   const [expandedFaqs, setExpandedFaqs] = useState<number[]>([]);
-  const [expandedCategories, setExpandedCategories] = useState<number[]>([]);
   const [displayedText, setDisplayedText] = useState("");
   const carouselRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -86,10 +85,6 @@ const Home = () => {
     queryKey: ['/api/landing/carousel-meals'],
   });
 
-  const { data: faqCategories = [] } = useQuery<any[]>({
-    queryKey: ['/api/landing/faq-categories'],
-  });
-
   const { data: faqs = [] } = useQuery<any[]>({
     queryKey: ['/api/landing/faqs'],
   });
@@ -112,23 +107,6 @@ const Home = () => {
         : [...prev, faqId]
     );
   };
-
-  const toggleCategory = (categoryId: number) => {
-    setExpandedCategories(prev => 
-      prev.includes(categoryId) 
-        ? prev.filter(id => id !== categoryId)
-        : [...prev, categoryId]
-    );
-  };
-
-  // Group FAQs by category
-  const groupedFaqs = faqCategories.map(category => ({
-    category,
-    faqs: faqs.filter(faq => faq.categoryId === category.id && faq.isActive)
-  })).filter(group => group.faqs.length > 0);
-
-  // FAQs without category
-  const uncategorizedFaqs = faqs.filter(faq => !faq.categoryId && faq.isActive);
 
   // Auto-scroll carousel effect with infinite loop
   useEffect(() => {
@@ -449,20 +427,18 @@ const Home = () => {
               </div>
 
               <div className="space-y-2 sm:space-y-3">
-                {/* Categorized FAQs */}
-                {groupedFaqs.map((group) => {
-                  const isCategoryExpanded = expandedCategories.includes(group.category.id);
+                {faqs.filter(faq => faq.isActive).sort((a, b) => a.displayOrder - b.displayOrder).map((faq) => {
+                  const isExpanded = expandedFaqs.includes(faq.id);
                   return (
-                    <div key={group.category.id}>
-                      {/* Category Header */}
+                    <div key={faq.id} className="bg-white rounded-lg overflow-hidden">
                       <div 
-                        className="bg-gray-50 rounded-lg p-3 sm:p-4 flex justify-between items-center cursor-pointer hover:bg-gray-100 transition-colors"
-                        onClick={() => toggleCategory(group.category.id)}
+                        className="p-3 sm:p-4 flex justify-between items-start sm:items-center cursor-pointer hover:bg-gray-50 gap-2"
+                        onClick={() => toggleFaq(faq.id)}
                       >
-                        <span className="text-sm sm:text-base font-bold text-gray-800">{group.category.name}</span>
+                        <span className="text-xs sm:text-sm text-gray-700 font-bold line-clamp-2">{faq.question}</span>
                         <svg 
-                          className={`w-5 h-5 text-gray-600 transform transition-transform flex-shrink-0 ${
-                            isCategoryExpanded ? 'rotate-180' : ''
+                          className={`w-4 h-4 text-gray-400 transform transition-transform flex-shrink-0 mt-1 sm:mt-0 ${
+                            isExpanded ? 'rotate-180' : ''
                           }`} 
                           fill="none" 
                           stroke="currentColor" 
@@ -471,79 +447,14 @@ const Home = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                       </div>
-                      
-                      {/* FAQs in Category */}
-                      {isCategoryExpanded && (
-                        <div className="space-y-2 mt-2">
-                          {group.faqs.sort((a, b) => a.displayOrder - b.displayOrder).map((faq) => {
-                            const isExpanded = expandedFaqs.includes(faq.id);
-                            return (
-                              <div key={faq.id} className="bg-white rounded-lg overflow-hidden ml-2 sm:ml-3">
-                                <div 
-                                  className="p-3 sm:p-4 flex justify-between items-start sm:items-center cursor-pointer hover:bg-gray-50 gap-2"
-                                  onClick={() => toggleFaq(faq.id)}
-                                >
-                                  <span className="text-xs sm:text-sm text-gray-700 line-clamp-2">{faq.question}</span>
-                                  <svg 
-                                    className={`w-4 h-4 text-gray-400 transform transition-transform flex-shrink-0 mt-1 sm:mt-0 ${
-                                      isExpanded ? 'rotate-180' : ''
-                                    }`} 
-                                    fill="none" 
-                                    stroke="currentColor" 
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                  </svg>
-                                </div>
-                                {isExpanded && (
-                                  <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t border-gray-100">
-                                    <p className="text-xs sm:text-sm text-gray-600 pt-2 sm:pt-3 italic">{faq.answer}</p>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
+                      {isExpanded && (
+                        <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t border-gray-100">
+                          <p className="text-xs sm:text-sm text-gray-600 pt-2 sm:pt-3 italic">{faq.answer}</p>
                         </div>
                       )}
                     </div>
                   );
                 })}
-
-                {/* Uncategorized FAQs */}
-                {uncategorizedFaqs.length > 0 && (
-                  <div>
-                    <div className="space-y-2">
-                      {uncategorizedFaqs.sort((a, b) => a.displayOrder - b.displayOrder).map((faq) => {
-                        const isExpanded = expandedFaqs.includes(faq.id);
-                        return (
-                          <div key={faq.id} className="bg-white rounded-lg overflow-hidden">
-                            <div 
-                              className="p-3 sm:p-4 flex justify-between items-start sm:items-center cursor-pointer hover:bg-gray-50 gap-2"
-                              onClick={() => toggleFaq(faq.id)}
-                            >
-                              <span className="text-xs sm:text-sm text-gray-700 font-bold line-clamp-2">{faq.question}</span>
-                              <svg 
-                                className={`w-4 h-4 text-gray-400 transform transition-transform flex-shrink-0 mt-1 sm:mt-0 ${
-                                  isExpanded ? 'rotate-180' : ''
-                                }`} 
-                                fill="none" 
-                                stroke="currentColor" 
-                                viewBox="0 0 24 24"
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                              </svg>
-                            </div>
-                            {isExpanded && (
-                              <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t border-gray-100">
-                                <p className="text-xs sm:text-sm text-gray-600 pt-2 sm:pt-3 italic">{faq.answer}</p>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>

@@ -453,11 +453,6 @@ export interface IStorage {
   updateLandingCarouselMeal(id: number, meal: Partial<LandingCarouselMeal>): Promise<LandingCarouselMeal>;
   deleteLandingCarouselMeal(id: number): Promise<void>;
   
-  getLandingFaqCategories(): Promise<LandingFaqCategory[]>;
-  createLandingFaqCategory(category: InsertLandingFaqCategory): Promise<LandingFaqCategory>;
-  updateLandingFaqCategory(id: number, category: Partial<LandingFaqCategory>): Promise<LandingFaqCategory>;
-  deleteLandingFaqCategory(id: number): Promise<void>;
-  
   getLandingFaqs(): Promise<LandingFaq[]>;
   createLandingFaq(faq: InsertLandingFaq): Promise<LandingFaq>;
   updateLandingFaq(id: number, faq: Partial<LandingFaq>): Promise<LandingFaq>;
@@ -488,17 +483,8 @@ export const landingCarouselMeals = pgTable("landing_carousel_meals", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const landingFaqCategories = pgTable("landing_faq_categories", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  displayOrder: integer("display_order").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
 export const landingFaqs = pgTable("landing_faqs", {
   id: serial("id").primaryKey(),
-  categoryId: integer("category_id"),
   question: text("question").notNull(),
   answer: text("answer").notNull(),
   displayOrder: integer("display_order").default(0),
@@ -526,13 +512,7 @@ export const insertLandingCarouselMealSchema = createInsertSchema(landingCarouse
   isActive: true,
 });
 
-export const insertLandingFaqCategorySchema = createInsertSchema(landingFaqCategories).pick({
-  name: true,
-  displayOrder: true,
-});
-
 export const insertLandingFaqSchema = createInsertSchema(landingFaqs).pick({
-  categoryId: true,
   question: true,
   answer: true,
   displayOrder: true,
@@ -545,9 +525,6 @@ export type InsertLandingHero = z.infer<typeof insertLandingHeroSchema>;
 
 export type LandingCarouselMeal = typeof landingCarouselMeals.$inferSelect;
 export type InsertLandingCarouselMeal = z.infer<typeof insertLandingCarouselMealSchema>;
-
-export type LandingFaqCategory = typeof landingFaqCategories.$inferSelect;
-export type InsertLandingFaqCategory = z.infer<typeof insertLandingFaqCategorySchema>;
 
 export type LandingFaq = typeof landingFaqs.$inferSelect;
 export type InsertLandingFaq = z.infer<typeof insertLandingFaqSchema>;

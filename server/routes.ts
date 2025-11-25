@@ -4039,51 +4039,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // FAQ Categories
-  app.get('/api/admin/landing/faq-categories', adminMiddleware, async (req, res) => {
-    try {
-      const categories = await storage.getLandingFaqCategories();
-      res.json(categories);
-    } catch (error) {
-      console.error('Error fetching FAQ categories:', error);
-      res.status(500).json({ message: 'Server error' });
-    }
-  });
-
-  app.post('/api/admin/landing/faq-categories', adminMiddleware, async (req, res) => {
-    try {
-      const categoryData = req.body;
-      const category = await storage.createLandingFaqCategory(categoryData);
-      res.status(201).json(category);
-    } catch (error) {
-      console.error('Error creating FAQ category:', error);
-      res.status(500).json({ message: 'Server error' });
-    }
-  });
-
-  app.patch('/api/admin/landing/faq-categories/:id', adminMiddleware, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const categoryData = req.body;
-      const category = await storage.updateLandingFaqCategory(id, categoryData);
-      res.json(category);
-    } catch (error) {
-      console.error('Error updating FAQ category:', error);
-      res.status(500).json({ message: 'Server error' });
-    }
-  });
-
-  app.delete('/api/admin/landing/faq-categories/:id', adminMiddleware, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteLandingFaqCategory(id);
-      res.json({ message: 'FAQ category deleted successfully' });
-    } catch (error) {
-      console.error('Error deleting FAQ category:', error);
-      res.status(500).json({ message: 'Server error' });
-    }
-  });
-
   // FAQs
   app.get('/api/admin/landing/faqs', adminMiddleware, async (req, res) => {
     try {
@@ -4156,16 +4111,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(faqs);
     } catch (error) {
       console.error('Error fetching FAQs:', error);
-      res.status(500).json({ message: 'Server error' });
-    }
-  });
-
-  app.get('/api/landing/faq-categories', async (req, res) => {
-    try {
-      const categories = await storage.getLandingFaqCategories();
-      res.json(categories);
-    } catch (error) {
-      console.error('Error fetching FAQ categories:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });
