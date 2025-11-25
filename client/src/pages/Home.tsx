@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Button as MovingBorderButton } from "@/components/ui/moving-border";
@@ -17,6 +17,19 @@ const Home = () => {
   const [, navigate] = useLocation();
   const [showPreOnboardingModal, setShowPreOnboardingModal] = useState(false);
   const [expandedFaqs, setExpandedFaqs] = useState<number[]>([]);
+  const [animatedWord, setAnimatedWord] = useState("hassle");
+  
+  const words = ["hassle", "shopping", "cooking", "cleaning", "mess"];
+  
+  useEffect(() => {
+    let currentIndex = 0;
+    const interval = setInterval(() => {
+      currentIndex = (currentIndex + 1) % words.length;
+      setAnimatedWord(words[currentIndex]);
+    }, 800); // 0.8 seconds per word
+    
+    return () => clearInterval(interval);
+  }, []);
 
   // Get current available week for the menu link
   const { data: weeksData } = useQuery<{ weeks: Week[] }>({
@@ -100,7 +113,7 @@ const Home = () => {
               />
               <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center px-6">
                 <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-2">Chef-Crafted Meals</h1>
-                <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">Without the Hassle</h1>
+                <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">Without the <span className="inline-block min-w-[180px] text-left">{animatedWord}</span></h1>
               </div>
             </div>
           </div>
