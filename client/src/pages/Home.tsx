@@ -13,6 +13,7 @@ import wiwIcon1 from "@assets/WIW Icon 1_1756464641444.png";
 import wiwIcon2 from "@assets/WIW Icon 2_1756464653354.png";
 import wiwIcon3 from "@assets/WIW Icon 3_1756464677092.png";
 import heroImage from "@assets/Hero wagba 1_1764100012422.png";
+import mobileHeroImage from "@assets/Artboard 1@2x_1764108290060.png";
 
 const Home = () => {
   const [, navigate] = useLocation();
@@ -205,12 +206,15 @@ const Home = () => {
         <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
           {/* Hero Image and Text */}
           <div className="mb-6 sm:mb-7 md:mb-8 lg:mb-10">
-            <div className="relative bg-gray-100 rounded-xl sm:rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9' }}>
-              <img 
-                src={heroData?.backgroundImageUrl || heroImage}
-                alt="Healthy prepared meal" 
-                className="w-full h-full object-cover"
-              />
+            <div className="relative bg-gray-100 rounded-xl sm:rounded-2xl overflow-hidden hero-section" style={{ aspectRatio: '16/9' }}>
+              <picture>
+                <source media="(max-width: 640px)" srcSet={mobileHeroImage} />
+                <img 
+                  src={heroData?.backgroundImageUrl || heroImage}
+                  alt="Healthy prepared meal" 
+                  className="w-full h-full object-cover"
+                />
+              </picture>
               <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center px-3 sm:px-4 md:px-6 lg:px-8">
                 <h1 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-1 sm:mb-2">Chef-Crafted Meals</h1>
                 <h1 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">Without the <span className="inline-block min-w-[120px] sm:min-w-[150px] md:min-w-[200px] lg:min-w-[220px] text-left">{displayedText}</span></h1>

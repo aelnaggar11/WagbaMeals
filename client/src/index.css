@@ -119,3 +119,10 @@
 ::-webkit-scrollbar {
   display: none;
 }
+
+/* Mobile hero section responsive aspect ratio */
+@media (max-width: 640px) {
+  .hero-section {
+    aspect-ratio: 3/4 !important;
+  }
+}
