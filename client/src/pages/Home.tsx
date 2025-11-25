@@ -11,6 +11,7 @@ import quoteBgPatternImage from "@assets/Quote BG Pattern_1753819991596.png";
 import wiwIcon1 from "@assets/WIW Icon 1_1756464641444.png";
 import wiwIcon2 from "@assets/WIW Icon 2_1756464653354.png";
 import wiwIcon3 from "@assets/WIW Icon 3_1756464677092.png";
+import heroImage from "@assets/Hero wagba 1_1764100012422.png";
 
 const Home = () => {
   const [, navigate] = useLocation();
@@ -93,7 +94,7 @@ const Home = () => {
           <div className="mb-8">
             <div className="relative bg-gray-100 rounded-2xl overflow-hidden mb-6" style={{ aspectRatio: '16/9' }}>
               <img 
-                src={heroData?.backgroundImageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"}
+                src={heroData?.backgroundImageUrl || heroImage}
                 alt="Healthy prepared meal" 
                 className="w-full h-full object-cover"
               />
