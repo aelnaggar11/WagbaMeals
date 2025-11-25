@@ -106,7 +106,7 @@ const Home = () => {
     );
   };
 
-  // Auto-scroll carousel effect
+  // Auto-scroll carousel effect with infinite loop
   useEffect(() => {
     if (!isAutoScrolling || !carouselRef.current) return;
 
@@ -115,12 +115,18 @@ const Home = () => {
     const scrollInterval = 50; // milliseconds between scrolls
 
     const autoScroll = setInterval(() => {
-      if (carousel.scrollLeft >= carousel.scrollWidth - carousel.clientWidth) {
-        // Reset to beginning when reaching the end
+      // Calculate the width of one set of meals (original items only)
+      const totalWidth = carousel.scrollWidth;
+      const clientWidth = carousel.clientWidth;
+      const maxScroll = totalWidth - clientWidth;
+      
+      // When reaching about 60% of the scroll, jump back seamlessly
+      // This creates an infinite loop effect
+      if (carousel.scrollLeft >= maxScroll * 0.6) {
         carousel.scrollLeft = 0;
-      } else {
-        carousel.scrollLeft += scrollStep;
       }
+      
+      carousel.scrollLeft += scrollStep;
     }, scrollInterval);
 
     return () => clearInterval(autoScroll);
@@ -326,8 +332,8 @@ const Home = () => {
                     </div>
                   </div>
                 ))}
-                {/* Duplicate items for seamless loop */}
-                {carouselMeals.filter(meal => meal.isActive).slice(0, 3).map((meal, index) => (
+                {/* Duplicate all items for seamless infinite loop */}
+                {carouselMeals.filter(meal => meal.isActive).map((meal, index) => (
                   <div 
                     key={`duplicate-${meal.id}`} 
                     className="bg-white rounded-lg overflow-hidden shadow-sm flex-shrink-0 w-40 sm:w-48 md:w-56 lg:w-64"
