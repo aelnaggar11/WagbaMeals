@@ -178,9 +178,9 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="w-[95vw] sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center">
+          <DialogTitle className="text-center text-lg sm:text-xl">
             {step === "form" && "Join Wagba"}
             {step === "success" && "Welcome to Wagba!"}
             {step === "rejected" && "We're Not There Yet"}
@@ -188,9 +188,9 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
         </DialogHeader>
 
         {step === "form" && (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email" className="text-xs sm:text-sm">Email Address</Label>
               <Input
                 id="email"
                 type="email"
@@ -202,36 +202,36 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
                 }}
                 placeholder="your@email.com"
                 required
-                className={emailError ? "border-red-500" : ""}
+                className={`text-xs sm:text-sm ${emailError ? "border-red-500" : ""}`}
               />
               {emailError && (
-                <p className="text-sm text-red-600 mt-1">{emailError}</p>
+                <p className="text-xs text-red-600 mt-1">{emailError}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="neighborhood">Neighborhood</Label>
+              <Label htmlFor="neighborhood" className="text-xs sm:text-sm">Neighborhood</Label>
               <Select value={neighborhood} onValueChange={setNeighborhood} required>
-                <SelectTrigger>
+                <SelectTrigger className="text-xs sm:text-sm">
                   <SelectValue placeholder="Select your neighborhood" />
                 </SelectTrigger>
                 <SelectContent>
                   {neighborhoods.map((n) => (
-                    <SelectItem key={n.id} value={n.name}>
+                    <SelectItem key={n.id} value={n.name} className="text-xs sm:text-sm">
                       {n.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {neighborhoodError && (
-                <p className="text-sm text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
+                <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
                   {neighborhoodError}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="invitationCode">Invitation Code</Label>
+              <Label htmlFor="invitationCode" className="text-xs sm:text-sm">Invitation Code</Label>
               <Input
                 id="invitationCode"
                 type="text"
@@ -239,21 +239,22 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
                 onChange={(e) => setInvitationCode(e.target.value.toUpperCase())}
                 placeholder="Enter invitation code"
                 required
+                className="text-xs sm:text-sm"
               />
             </div>
 
-            <div className="flex gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+            <div className="flex gap-2 pt-2 sm:pt-4">
+              <Button type="button" variant="outline" onClick={onClose} className="flex-1 text-xs sm:text-sm">
                 Cancel
               </Button>
               <Button 
                 type="submit" 
                 disabled={validateMutation.isPending}
-                className="flex-1"
+                className="flex-1 text-xs sm:text-sm"
               >
                 {validateMutation.isPending ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                     Checking...
                   </>
                 ) : (
@@ -266,29 +267,29 @@ const PreOnboardingModal = ({ isOpen, onClose, onSuccess }: PreOnboardingModalPr
 
         {step === "success" && (
           <div className="text-center space-y-4">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+            <CheckCircle className="h-12 sm:h-16 w-12 sm:w-16 text-green-500 mx-auto" />
             <div>
-              <h3 className="text-lg font-semibold text-green-700">Welcome to Wagba!</h3>
-              <p className="text-gray-600 mt-2">
+              <h3 className="text-base sm:text-lg font-semibold text-green-700">Welcome to Wagba!</h3>
+              <p className="text-xs sm:text-sm text-gray-600 mt-2">
                 Great! You're eligible for Wagba. Redirecting you to meal plans...
               </p>
             </div>
             <div className="flex items-center justify-center space-x-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm text-gray-500">Taking you to the next step</span>
+              <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+              <span className="text-xs sm:text-sm text-gray-500">Taking you to the next step</span>
             </div>
           </div>
         )}
 
         {step === "rejected" && (
           <div className="text-center space-y-4">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
-              <X className="w-8 h-8 text-red-600" />
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+              <X className="w-6 h-6 sm:w-8 sm:h-8 text-red-600" />
             </div>
-            <p className="text-gray-600">
+            <p className="text-xs sm:text-sm text-gray-600">
               {rejectionMessage}
             </p>
-            <Button onClick={handleRejectionClose} variant="outline" className="w-full">
+            <Button onClick={handleRejectionClose} variant="outline" className="w-full text-xs sm:text-sm">
               Close
             </Button>
           </div>

@@ -87,8 +87,8 @@ const MealPlans = () => {
   };
 
   return (
-    <div className="bg-gray-50 py-8">
-      <div className="container mx-auto px-4">
+    <div className="bg-gray-50 py-6 sm:py-8 md:py-10">
+      <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
         <ProgressIndicator steps={[
           { id: 1, label: "Choose Your Plan" },
           { id: 2, label: "Your Selections" },
@@ -96,12 +96,12 @@ const MealPlans = () => {
           { id: 4, label: "Complete Checkout" }
         ]} currentStep={1} />
         
-        <div className="text-center mb-12 mt-6">
+        <div className="text-center mb-8 sm:mb-10 md:mb-12 mt-4 sm:mt-6">
           {/* Back Button */}
-          <div className="flex justify-start mb-4">
+          <div className="flex justify-start mb-3 sm:mb-4">
             <Link href="/">
-              <Button variant="ghost" className="flex items-center text-gray-600">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <Button variant="ghost" className="flex items-center text-gray-600 text-xs sm:text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
                 Back to Home
@@ -131,50 +131,50 @@ const MealPlans = () => {
         />
 
         {/* Summary & Pricing */}
-        <div className="max-w-lg mx-auto bg-white rounded-xl shadow-md p-6 mb-10">
-          <h3 className="text-xl font-bold mb-4">Your Plan Summary</h3>
+        <div className="max-w-lg mx-auto bg-white rounded-lg sm:rounded-xl shadow-md p-4 sm:p-6 mb-8 sm:mb-10">
+          <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Your Plan Summary</h3>
 
-          <div className="space-y-4 mb-6">
-            <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-              <span className="text-gray-600">{selectedMealCount} meals per week</span>
-              <span className="font-medium">
+          <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
+            <div className="flex justify-between items-center pb-2 border-b border-gray-100 gap-2">
+              <span className="text-xs sm:text-sm text-gray-600">{selectedMealCount} meals per week</span>
+              <span className="font-medium text-xs sm:text-sm text-right">
                 {pricing[selectedMealCount] ? (
                   selectedPortionSize === "mixed" 
-                    ? `From EGP ${pricing[selectedMealCount].standard} per meal`
-                    : `EGP ${pricing[selectedMealCount][selectedPortionSize as keyof typeof pricing[4]]} per meal`
+                    ? `From EGP ${pricing[selectedMealCount].standard}`
+                    : `EGP ${pricing[selectedMealCount][selectedPortionSize as keyof typeof pricing[4]]}`
                 ) : (
                   "Loading..."
                 )}
               </span>
             </div>
 
-            <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-              <span className="text-gray-600">Portion Size</span>
-              <span className="font-medium capitalize">{selectedPortionSize}</span>
+            <div className="flex justify-between items-center pb-2 border-b border-gray-100 gap-2">
+              <span className="text-xs sm:text-sm text-gray-600">Portion Size</span>
+              <span className="font-medium text-xs sm:text-sm capitalize">{selectedPortionSize}</span>
             </div>
 
             {selectedPortionSize === "large" && (
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-gray-600">Large Portion Premium</span>
-                <span className="font-medium">+EGP {largeMealAddOn} per meal</span>
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100 gap-2">
+                <span className="text-xs sm:text-sm text-gray-600">Large Portion +</span>
+                <span className="font-medium text-xs sm:text-sm">+EGP {largeMealAddOn}</span>
               </div>
             )}
 
-            <div className="flex justify-between items-center pt-2 text-lg">
-              <span className="font-bold">Weekly Total</span>
+            <div className="flex justify-between items-center pt-2 gap-2">
+              <span className="font-bold text-sm sm:text-base">Weekly Total</span>
               {selectedPortionSize === "mixed" ? (
                 <div className="text-right">
-                  <span className="font-bold text-primary">From EGP {calculateTotal().toFixed(0)}</span>
-                  <p className="text-xs text-gray-500 mt-1">Final total based on your meal selections</p>
+                  <span className="font-bold text-primary text-sm sm:text-base">From EGP {calculateTotal().toFixed(0)}</span>
+                  <p className="text-xs text-gray-500 mt-1">Final based on choices</p>
                 </div>
               ) : (
-                <span className="font-bold text-primary">EGP {calculateTotal().toFixed(0)}</span>
+                <span className="font-bold text-primary text-sm sm:text-base">EGP {calculateTotal().toFixed(0)}</span>
               )}
             </div>
           </div>
 
           <Link href={`/menu/${currentWeekId}?mealCount=${selectedMealCount}&portionSize=${selectedPortionSize}`}>
-            <Button className="w-full bg-primary hover:bg-primary/90 text-white">
+            <Button className="w-full bg-primary hover:bg-primary/90 text-white text-xs sm:text-sm">
               Select Your Meals
             </Button>
           </Link>

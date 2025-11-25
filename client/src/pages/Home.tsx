@@ -106,13 +106,13 @@ const Home = () => {
       <section className="bg-white relative overflow-hidden min-h-screen">
         {/* Header with Logo and Login */}
         <div 
-          className="relative overflow-hidden h-24 flex items-center justify-between px-8"
+          className="relative overflow-hidden flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6 lg:py-6"
           style={{ 
             backgroundColor: '#a80906'
           }}
         >
           {/* Logo */}
-          <div className="relative z-10 h-14">
+          <div className="relative z-10 h-10 sm:h-12 md:h-14">
             <img 
               src={logoImage} 
               alt="Wagba Logo" 
@@ -125,67 +125,64 @@ const Home = () => {
             <img 
               src={loginButtonImage}
               alt="Login"
-              width="96"
-              height="96"
-              className="cursor-pointer hover:opacity-80 transition-opacity"
-              style={{ width: '96px', height: '96px' }}
+              className="cursor-pointer hover:opacity-80 transition-opacity w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 object-contain"
               onClick={() => navigate('/auth?tab=login&skip_progress=true')}
             />
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
           {/* Hero Image and Text */}
-          <div className="mb-8">
-            <div className="relative bg-gray-100 rounded-2xl overflow-hidden mb-6" style={{ aspectRatio: '16/9' }}>
+          <div className="mb-6 sm:mb-7 md:mb-8 lg:mb-10">
+            <div className="relative bg-gray-100 rounded-xl sm:rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9' }}>
               <img 
                 src={heroData?.backgroundImageUrl || heroImage}
                 alt="Healthy prepared meal" 
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center px-6">
-                <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-2">Chef-Crafted Meals</h1>
-                <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">Without the <span className="inline-block min-w-[200px] text-left">{displayedText}</span></h1>
+              <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center px-3 sm:px-4 md:px-6 lg:px-8">
+                <h1 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-1 sm:mb-2">Chef-Crafted Meals</h1>
+                <h1 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">Without the <span className="inline-block min-w-[120px] sm:min-w-[150px] md:min-w-[200px] lg:min-w-[220px] text-left">{displayedText}</span></h1>
               </div>
             </div>
           </div>
 
           {/* How It Works Section */}
-          <div className="rounded-2xl p-6 mb-8 text-white" style={{ backgroundColor: '#A80906' }}>
-            <div className="text-center mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold flex items-center justify-center gap-2">
+          <div className="rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 mb-6 sm:mb-8 text-white" style={{ backgroundColor: '#A80906' }}>
+            <div className="text-center mb-4 sm:mb-6">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold flex items-center justify-center gap-2">
                 <span className="text-yellow-300">✦</span>
                 How It Works
                 <span className="text-yellow-300">✦</span>
               </h2>
             </div>
 
-            <div className="space-y-6 md:max-w-lg md:mx-auto">
-              <div className="flex gap-4">
-                <div className="text-5xl font-bold opacity-90">01</div>
-                <div>
-                  <h3 className="text-xl font-bold mb-2">Select your favorites</h3>
-                  <p className="text-red-100">
+            <div className="space-y-4 sm:space-y-5 md:space-y-6 md:max-w-lg md:mx-auto">
+              <div className="flex gap-3 sm:gap-4">
+                <div className="text-4xl sm:text-5xl font-bold opacity-90 flex-shrink-0">01</div>
+                <div className="min-w-0">
+                  <h3 className="text-base sm:text-lg md:text-xl font-bold mb-1 sm:mb-2">Select your favorites</h3>
+                  <p className="text-xs sm:text-sm md:text-base text-red-100">
                     Choose meals that match your <em>mood</em> or <em>diet</em>.
                   </p>
                 </div>
               </div>
 
-              <div className="flex gap-4">
-                <div className="text-5xl font-bold opacity-90">02</div>
-                <div>
-                  <h3 className="text-xl font-bold mb-2">We get cookin'</h3>
-                  <p className="text-red-100">
+              <div className="flex gap-3 sm:gap-4">
+                <div className="text-4xl sm:text-5xl font-bold opacity-90 flex-shrink-0">02</div>
+                <div className="min-w-0">
+                  <h3 className="text-base sm:text-lg md:text-xl font-bold mb-1 sm:mb-2">We get cookin'</h3>
+                  <p className="text-xs sm:text-sm md:text-base text-red-100">
                     Our kitchen prepares everything fresh, <em>just for you</em>.
                   </p>
                 </div>
               </div>
 
-              <div className="flex gap-4">
-                <div className="text-5xl font-bold opacity-90">03</div>
-                <div>
-                  <h3 className="text-xl font-bold mb-2">Delivered fresh</h3>
-                  <p className="text-red-100">
+              <div className="flex gap-3 sm:gap-4">
+                <div className="text-4xl sm:text-5xl font-bold opacity-90 flex-shrink-0">03</div>
+                <div className="min-w-0">
+                  <h3 className="text-base sm:text-lg md:text-xl font-bold mb-1 sm:mb-2">Delivered fresh</h3>
+                  <p className="text-xs sm:text-sm md:text-base text-red-100">
                     Your meals arrive fresh and chilled — ready to heat and eat.
                   </p>
                 </div>
@@ -195,29 +192,29 @@ const Home = () => {
 
           {/* Quote Section */}
           <div 
-            className="rounded-2xl p-8 mb-8 relative overflow-hidden"
+            className="rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 lg:p-10 mb-6 sm:mb-8 relative overflow-hidden"
             style={{
               backgroundImage: `url(${quoteBgPatternImage})`,
               backgroundSize: 'cover',
               backgroundRepeat: 'no-repeat',
               backgroundPosition: 'center',
-              minHeight: '200px'
+              minHeight: '180px'
             }}
           >
             <div className="relative z-10 flex flex-col justify-center h-full">
-              <h2 className="text-2xl md:text-3xl font-bold text-red-800 mb-6 leading-tight">
+              <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-red-800 mb-4 sm:mb-6 leading-tight">
                 Make it look simple-<br/>the very complicated thing.
               </h2>
-              <p className="text-red-700 font-bold text-right text-lg">
+              <p className="text-red-700 font-bold text-right text-sm sm:text-base md:text-lg">
                 MASSIMO BOTTURA
               </p>
             </div>
           </div>
 
           {/* Menu Section */}
-          <div className="mb-8">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold flex items-center justify-center gap-2" style={{ color: '#A80906' }}>
+          <div className="mb-6 sm:mb-8">
+            <div className="text-center mb-4 sm:mb-6">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold flex items-center justify-center gap-2" style={{ color: '#A80906' }}>
                 <span className="text-yellow-300">✦</span>
                 THE MENU
                 <span className="text-yellow-300">✦</span>
@@ -226,30 +223,30 @@ const Home = () => {
 
             {/* Carousel Container */}
             <div className="relative overflow-hidden">
-              <div className="flex gap-4 animate-scroll">
+              <div className="flex gap-2 sm:gap-3 md:gap-4 animate-scroll">
                 {/* Display meals from database */}
                 {carouselMeals.filter(meal => meal.isActive).map((meal, index) => (
-                  <div key={meal.id} className="bg-white rounded-lg overflow-hidden shadow-sm flex-shrink-0 w-64">
+                  <div key={meal.id} className="bg-white rounded-lg overflow-hidden shadow-sm flex-shrink-0 w-40 sm:w-48 md:w-56 lg:w-64">
                     <img 
                       src={meal.imageUrl}
                       alt={meal.name}
-                      className="w-full h-32 object-cover"
+                      className="w-full h-24 sm:h-28 md:h-32 object-cover"
                     />
-                    <div className="p-3">
-                      <h3 className="font-bold text-sm">{meal.name}</h3>
+                    <div className="p-2 sm:p-3">
+                      <h3 className="font-bold text-xs sm:text-sm">{meal.name}</h3>
                     </div>
                   </div>
                 ))}
                 {/* Duplicate items for seamless loop */}
                 {carouselMeals.filter(meal => meal.isActive).slice(0, 3).map((meal, index) => (
-                  <div key={`duplicate-${meal.id}`} className="bg-white rounded-lg overflow-hidden shadow-sm flex-shrink-0 w-64">
+                  <div key={`duplicate-${meal.id}`} className="bg-white rounded-lg overflow-hidden shadow-sm flex-shrink-0 w-40 sm:w-48 md:w-56 lg:w-64">
                     <img 
                       src={meal.imageUrl}
                       alt={meal.name}
-                      className="w-full h-32 object-cover"
+                      className="w-full h-24 sm:h-28 md:h-32 object-cover"
                     />
-                    <div className="p-3">
-                      <h3 className="font-bold text-sm">{meal.name}</h3>
+                    <div className="p-2 sm:p-3">
+                      <h3 className="font-bold text-xs sm:text-sm">{meal.name}</h3>
                     </div>
                   </div>
                 ))}
@@ -258,47 +255,47 @@ const Home = () => {
           </div>
 
           {/* Why It Works Section */}
-          <div className="rounded-2xl p-6 mb-8 text-white" style={{ backgroundColor: '#A80906' }}>
-            <div className="text-center mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold flex items-center justify-center gap-2">
+          <div className="rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 mb-6 sm:mb-8 text-white" style={{ backgroundColor: '#A80906' }}>
+            <div className="text-center mb-4 sm:mb-6">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold flex items-center justify-center gap-2">
                 <span className="text-yellow-300">✦</span>
                 Why It Works
                 <span className="text-yellow-300">✦</span>
               </h2>
             </div>
 
-            <div className="space-y-6 md:max-w-lg md:mx-auto">
-              <div className="flex gap-4 items-start">
-                <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
-                  <img src={wiwIcon1} alt="Premium culinary experience" className="w-10 h-10 object-contain" />
+            <div className="space-y-4 sm:space-y-5 md:space-y-6 md:max-w-lg md:mx-auto">
+              <div className="flex gap-3 sm:gap-4 items-start">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center flex-shrink-0">
+                  <img src={wiwIcon1} alt="Premium culinary experience" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold mb-2">Premium culinary experience:</h3>
-                  <p className="text-red-100">
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base md:text-lg font-bold mb-1 sm:mb-2">Premium culinary experience:</h3>
+                  <p className="text-xs sm:text-sm md:text-base text-red-100">
                     Crafted under <em>Michelin-trained</em> leadership.
                   </p>
                 </div>
               </div>
 
-              <div className="flex gap-4 items-start">
-                <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
-                  <img src={wiwIcon2} alt="Health conscious" className="w-10 h-10 object-contain" />
+              <div className="flex gap-3 sm:gap-4 items-start">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center flex-shrink-0">
+                  <img src={wiwIcon2} alt="Health conscious" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold mb-2">Health conscious:</h3>
-                  <p className="text-red-100">
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base md:text-lg font-bold mb-1 sm:mb-2">Health conscious:</h3>
+                  <p className="text-xs sm:text-sm md:text-base text-red-100">
                     Nutrient-dense, high-protein, <em>fresh ingredients</em>.
                   </p>
                 </div>
               </div>
 
-              <div className="flex gap-4 items-start">
-                <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
-                  <img src={wiwIcon3} alt="Flexible no-stress plans" className="w-10 h-10 object-contain" />
+              <div className="flex gap-3 sm:gap-4 items-start">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center flex-shrink-0">
+                  <img src={wiwIcon3} alt="Flexible no-stress plans" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold mb-2">Flexible 'no-stress' plans:</h3>
-                  <p className="text-red-100">
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base md:text-lg font-bold mb-1 sm:mb-2">Flexible 'no-stress' plans:</h3>
+                  <p className="text-xs sm:text-sm md:text-base text-red-100">
                     Pause or cancel at <em>any time</em>.
                   </p>
                 </div>
@@ -309,33 +306,33 @@ const Home = () => {
 
 
           {/* FAQ Section */}
-          <div className="mb-8">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold flex items-center justify-center gap-2" style={{ color: '#A80906' }}>
+          <div className="mb-8 sm:mb-10 md:mb-12">
+            <div className="text-center mb-4 sm:mb-6">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold flex items-center justify-center gap-2" style={{ color: '#A80906' }}>
                 <span className="text-yellow-300">✦</span>
                 FAQ
                 <span className="text-yellow-300">✦</span>
               </h2>
             </div>
 
-            <div className="rounded-2xl p-6" style={{ backgroundColor: '#FCEEF3' }}>
-              <div className="text-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800 mb-2">Meal delivery, made easy</h3>
-                <p className="text-sm text-gray-600">Quick answers about our weekly meals, plans, and delivery.</p>
+            <div className="rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8" style={{ backgroundColor: '#FCEEF3' }}>
+              <div className="text-center mb-3 sm:mb-4">
+                <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-1 sm:mb-2">Meal delivery, made easy</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Quick answers about our weekly meals, plans, and delivery.</p>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {faqs.filter(faq => faq.isActive).sort((a, b) => a.displayOrder - b.displayOrder).map((faq) => {
                   const isExpanded = expandedFaqs.includes(faq.id);
                   return (
                     <div key={faq.id} className="bg-white rounded-lg overflow-hidden">
                       <div 
-                        className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50"
+                        className="p-3 sm:p-4 flex justify-between items-start sm:items-center cursor-pointer hover:bg-gray-50 gap-2"
                         onClick={() => toggleFaq(faq.id)}
                       >
-                        <span className="text-sm text-gray-700 font-bold">{faq.question}</span>
+                        <span className="text-xs sm:text-sm text-gray-700 font-bold line-clamp-2">{faq.question}</span>
                         <svg 
-                          className={`w-4 h-4 text-gray-400 transform transition-transform ${
+                          className={`w-4 h-4 text-gray-400 transform transition-transform flex-shrink-0 mt-1 sm:mt-0 ${
                             isExpanded ? 'rotate-180' : ''
                           }`} 
                           fill="none" 
@@ -346,8 +343,8 @@ const Home = () => {
                         </svg>
                       </div>
                       {isExpanded && (
-                        <div className="px-4 pb-4 border-t border-gray-100">
-                          <p className="text-sm text-gray-600 pt-3 italic">{faq.answer}</p>
+                        <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t border-gray-100">
+                          <p className="text-xs sm:text-sm text-gray-600 pt-2 sm:pt-3 italic">{faq.answer}</p>
                         </div>
                       )}
                     </div>
@@ -361,12 +358,12 @@ const Home = () => {
         </div>
       </section>
       {/* Floating Get Started Button */}
-      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+      <div className="fixed bottom-4 sm:bottom-5 md:bottom-6 left-1/2 transform -translate-x-1/2 z-50 px-2 max-w-full">
         <MovingBorderButton
           borderRadius="1.75rem"
           onClick={handleGetStarted}
-          className="bg-yellow-300 dark:bg-yellow-300 text-black border-yellow-400 dark:border-yellow-400 px-8 py-2 text-lg font-semibold whitespace-nowrap"
-          containerClassName="h-16 min-w-48 p-[3px]"
+          className="bg-yellow-300 dark:bg-yellow-300 text-black border-yellow-400 dark:border-yellow-400 px-4 sm:px-6 md:px-8 py-2 text-xs sm:text-sm md:text-lg font-semibold whitespace-nowrap"
+          containerClassName="h-12 sm:h-14 md:h-16 min-w-40 sm:min-w-44 md:min-w-48 p-[3px]"
           borderClassName="bg-[radial-gradient(#0ea5e9_40%,#3b82f6_60%,transparent_80%)] h-32 w-32"
         >
           {heroData?.ctaText || "Get Started"}
