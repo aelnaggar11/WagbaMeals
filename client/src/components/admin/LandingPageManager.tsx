@@ -121,13 +121,20 @@ export function LandingPageManager() {
           }).then(res => res.json());
         }
       },
-      onSuccess: () => {
+      onSuccess: (data, variables) => {
+        // Only close form if this is a manual submit with ctaText or ctaUrl changes
+        // Don't close for auto-saves (image uploads only)
+        const isManualSubmit = variables.ctaText || variables.ctaUrl;
+        
         toast({
           title: "Success",
           description: "Hero section updated successfully",
         });
         queryClient.refetchQueries({ queryKey: ['/api/admin/landing/hero'] });
-        setIsEditing(false);
+        
+        if (isManualSubmit) {
+          setIsEditing(false);
+        }
       },
       onError: (error) => {
         toast({
