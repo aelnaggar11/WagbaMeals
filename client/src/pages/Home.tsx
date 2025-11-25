@@ -22,6 +22,8 @@ const Home = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(true);
+  const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const words = ["Hassle", "Shopping", "Cooking", "Cleaning", "Mess"];
   
@@ -104,11 +106,38 @@ const Home = () => {
     );
   };
 
+  // Auto-scroll carousel effect
+  useEffect(() => {
+    if (!isAutoScrolling || !carouselRef.current) return;
+
+    const carousel = carouselRef.current;
+    const scrollStep = 2; // pixels per animation frame
+    const scrollInterval = 50; // milliseconds between scrolls
+
+    const autoScroll = setInterval(() => {
+      if (carousel.scrollLeft >= carousel.scrollWidth - carousel.clientWidth) {
+        // Reset to beginning when reaching the end
+        carousel.scrollLeft = 0;
+      } else {
+        carousel.scrollLeft += scrollStep;
+      }
+    }, scrollInterval);
+
+    return () => clearInterval(autoScroll);
+  }, [isAutoScrolling]);
+
   // Carousel drag handlers
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
     if (!carouselRef.current) return;
     
     setIsDragging(true);
+    setIsAutoScrolling(false);
+    
+    // Clear any existing resume timeout
+    if (resumeTimeoutRef.current) {
+      clearTimeout(resumeTimeoutRef.current);
+    }
+    
     const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     setDragStart(clientX - carouselRef.current.offsetLeft);
     setScrollLeft(carouselRef.current.scrollLeft);
@@ -125,6 +154,14 @@ const Home = () => {
 
   const handleDragEnd = () => {
     setIsDragging(false);
+    
+    // Resume auto-scroll after 1 second of inactivity
+    if (resumeTimeoutRef.current) {
+      clearTimeout(resumeTimeoutRef.current);
+    }
+    resumeTimeoutRef.current = setTimeout(() => {
+      setIsAutoScrolling(true);
+    }, 1000);
   };
 
   return (
