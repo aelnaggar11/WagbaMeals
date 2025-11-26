@@ -22,7 +22,19 @@ function resolveWebhookBaseUrl(): string {
     }
   }
 
-  // Fallback to REPLIT_DOMAINS (add https:// protocol)
+  // Use production domain for production environment
+  if (process.env.NODE_ENV === 'production') {
+    console.log('✅ Using production domain (wagba.food) for webhooks');
+    return 'https://wagba.food';
+  }
+
+  // Development fallback (localhost)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('✅ Using localhost for webhooks (development only)');
+    return 'http://localhost:5000';
+  }
+
+  // Fallback to REPLIT_DOMAINS for development if NODE_ENV is not set
   if (process.env.REPLIT_DOMAINS) {
     const domain = process.env.REPLIT_DOMAINS.split(',')[0].trim();
     if (domain) {
@@ -34,12 +46,6 @@ function resolveWebhookBaseUrl(): string {
         console.warn('⚠️ REPLIT_DOMAINS contains invalid domain:', domain);
       }
     }
-  }
-
-  // Development fallback (localhost)
-  if (process.env.NODE_ENV === 'development') {
-    console.warn('⚠️ No webhook URL configured, using localhost (development only)');
-    return 'http://localhost:5000';
   }
 
   // No valid webhook URL available

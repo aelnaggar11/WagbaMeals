@@ -2640,9 +2640,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('🔄 Creating subscription plan before payment intention...');
         
         // Get the webhook URL for subscription notifications
-        const webhookBaseUrl = process.env.REPLIT_DOMAINS 
-          ? `https://${process.env.REPLIT_DOMAINS.split(',')[0].trim()}`
-          : 'http://localhost:5000';
+        const webhookBaseUrl = process.env.NODE_ENV === 'production'
+          ? 'https://wagba.food'
+          : (process.env.REPLIT_DOMAINS 
+            ? `https://${process.env.REPLIT_DOMAINS.split(',')[0].trim()}`
+            : 'http://localhost:5000');
         
         const subscriptionPlan = await paymobService.createSubscriptionPlan({
           name: `Weekly Meal Plan - Order ${orderId}`,
